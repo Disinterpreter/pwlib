@@ -18,24 +18,14 @@
  * Classes to support streaming video input from IEEE 1394 cameras.
  * Detailed explanation can be found at src/ptlib/unix/video4dc1394.cxx
  *
- * $Log: videoio1394dc.h,v $
- * Revision 1.3  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.2  2002/05/30 22:49:35  dereks
- * correct implementation of GetInputDeviceNames().
- *
- * Revision 1.1  2002/02/20 02:37:26  dereks
- * Initial release of Firewire camera support for linux.
- * Many thanks to Ryutaroh Matsumoto <ryutaroh@rmatsumoto.org>.
- *
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
 
-#ifndef _PVIDEOIO1394DC
-
-#define _PVIDEOIO1394DC
+#ifndef PTLIB_VIDEOIO1394DC_H
+#define PTLIB_VIDEOIO1394DC_H
 
 #ifdef __GNUC__
 #pragma interface
@@ -61,30 +51,30 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Open the device given the device name.
       */
-    BOOL Open(
+    PBoolean Open(
       const PString & deviceName,   /// Device name to open
-      BOOL startImmediate = TRUE    /// Immediately start device
+      PBoolean startImmediate = true    /// Immediately start device
     );
 
     /**Determine of the device is currently open.
       */
-    BOOL IsOpen();
+    PBoolean IsOpen();
 
     /**Close the device.
       */
-    BOOL Close();
+    PBoolean Close();
 
     /**Start the video device I/O.
       */
-    BOOL Start();
+    PBoolean Start();
 
     /**Stop the video device I/O capture.
       */
-    BOOL Stop();
+    PBoolean Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    BOOL IsCapturing();
+    PBoolean IsCapturing();
 
     /**Get a list of all of the drivers available.
       */
@@ -99,14 +89,14 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Grab a frame, after a delay as specified by the frame rate.
       */
-    BOOL GetFrameData(
+    PBoolean GetFrameData(
       BYTE * buffer,                 /// Buffer to receive frame
       PINDEX * bytesReturned = NULL  /// OPtional bytes returned.
     );
 
     /**Grab a frame. Do not delay according to the current frame rate parameter.
       */
-    BOOL GetFrameDataNoDelay(
+    PBoolean GetFrameDataNoDelay(
       BYTE * buffer,                 /// Buffer to receive frame
       PINDEX * bytesReturned = NULL  /// OPtional bytes returned.
     );
@@ -118,7 +108,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set brightness of the image. 0xffff-Very bright.
      */
-    BOOL SetBrightness(unsigned newBrightness);
+    PBoolean SetBrightness(unsigned newBrightness);
 
 
     /**Get the whiteness of the image. 0xffff-Very white.
@@ -127,7 +117,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set whiteness of the image. 0xffff-Very white.
      */
-    BOOL SetWhiteness(unsigned newWhiteness);
+    PBoolean SetWhiteness(unsigned newWhiteness);
 
 
     /**Get the colour of the image. 0xffff-lots of colour.
@@ -136,7 +126,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set colour of the image. 0xffff-lots of colour.
      */
-    BOOL SetColour(unsigned newColour);
+    PBoolean SetColour(unsigned newColour);
 
 
     /**Get the contrast of the image. 0xffff-High contrast.
@@ -145,7 +135,7 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set contrast of the image. 0xffff-High contrast.
      */
-    BOOL SetContrast(unsigned newContrast);
+    PBoolean SetContrast(unsigned newContrast);
 
 
     /**Get the hue of the image. 0xffff-High hue.
@@ -154,17 +144,17 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
 
     /**Set hue of the image. 0xffff-High hue.
      */
-    BOOL SetHue(unsigned newHue);
+    PBoolean SetHue(unsigned newHue);
     
     
     /**Return whiteness, brightness, colour, contrast and hue in one call.
      */
-    BOOL GetParameters (int *whiteness, int *brightness, 
+    PBoolean GetParameters (int *whiteness, int *brightness, 
                         int *colour, int *contrast, int *hue);
 
     /**Get the minimum & maximum size of a frame on the device.
     */
-    BOOL GetFrameSizeLimits(
+    PBoolean GetFrameSizeLimits(
       unsigned & minWidth,   /// Variable to receive minimum width
       unsigned & minHeight,  /// Variable to receive minimum height
       unsigned & maxWidth,   /// Variable to receive maximum width
@@ -174,37 +164,37 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
     void ClearMapping();
 
     int GetNumChannels();
-    BOOL SetChannel(
+    PBoolean SetChannel(
          int channelNumber  /// New channel number for device.
     );
-    BOOL SetFrameRate(
+    PBoolean SetFrameRate(
       unsigned rate  /// Frames  per second
     );
-    BOOL SetVideoFormat(
+    PBoolean SetVideoFormat(
       VideoFormat videoFormat   /// New video format
     );
-    BOOL SetFrameSize(
+    PBoolean SetFrameSize(
       unsigned width,   /// New width of frame
       unsigned height   /// New height of frame
     );
-    BOOL SetColourFormat(
+    PBoolean SetColourFormat(
       const PString & colourFormat   // New colour format for device.
     );
 
 
     /**Try all known video formats & see which ones are accepted by the video driver
      */
-    BOOL TestAllFormats();
+    PBoolean TestAllFormats();
 
     /**Set the frame size to be used, trying converters if available.
 
        If the device does not support the size, a set of alternate resolutions
        are attempted.  A converter is setup if possible.
     */
-    BOOL SetFrameSizeConverter(
+    PBoolean SetFrameSizeConverter(
       unsigned width,        /// New width of frame
       unsigned height,       /// New height of frame
-      BOOL     bScaleNotCrop /// Scale or crop/pad preference
+      PBoolean     bScaleNotCrop /// Scale or crop/pad preference
     );
 
     /**Set the colour format to be used, trying converters if available.
@@ -213,15 +203,15 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
        is compatible with a registered converter, and install that converter
        so that the correct format is used.
     */
-    BOOL SetColourFormatConverter(
+    PBoolean SetColourFormatConverter(
       const PString & colourFormat // New colour format for device.
     );
 
 
  protected:
     raw1394handle_t handle;
-    BOOL is_capturing;
-    BOOL UseDMA;
+    PBoolean is_capturing;
+    PBoolean UseDMA;
     nodeid_t * camera_nodes;
     int numCameras;
     dc1394_cameracapture camera;
@@ -231,7 +221,8 @@ class PVideoInput1394DcDevice : public PVideoInputDevice
     unsigned     desiredFrameHeight;
 };
 
-#endif
+
+#endif // PTLIB_VIDEOIO1394DC_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

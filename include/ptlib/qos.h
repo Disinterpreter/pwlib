@@ -17,37 +17,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: qos.h,v $
- * Revision 1.5  2006/02/26 09:30:26  shorne
- * renamed include file to lowercase
- *
- * Revision 1.4  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.3  2005/07/13 11:48:53  csoutheren
- * Backported QOS changes from isvo branch
- *
- * Revision 1.2.10.1  2005/04/25 13:37:10  shorne
- * Added P_KNOCKOUT_WINSOCK32 to avoid compilation errors
- *
- * Revision 1.2  2003/10/27 03:51:38  csoutheren
- * Added ifdef to disable QoS code on systems that do not support it
- *
- * Revision 1.1  2003/10/27 03:20:10  csoutheren
- * Initial version of QoS implementation
- *   Thanks to Henry Harrison of AliceStreet
- *
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef _PQOS
-#define _PQOS
+#ifndef PTLIB_QOS_H
+#define PTLIB_QOS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#if P_HAS_QOS
+#if P_QOS
 #ifdef _WIN32
 #ifndef P_KNOCKOUT_WINSOCK2
 #include <winsock2.h>
@@ -58,7 +40,7 @@
 #endif  // KNOCKOUT_QOS
 #endif  // KNOCKOUT_WINSOCK2
 #endif  // _WIN32
-#endif  // P_HAS_QOS
+#endif  // P_QOS
 
 #ifndef QOS_NOT_SPECIFIED
 #define QOS_NOT_SPECIFIED 0xFFFFFFFF
@@ -122,4 +104,8 @@ public:
 
 };
 
-#endif // _PQOS
+
+#endif // PTLIB_QOS_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

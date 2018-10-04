@@ -26,37 +26,34 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: conchan.h,v $
- * Revision 1.3  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.2  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.1  1999/06/13 13:54:07  robertj
- * Added PConsoleChannel class for access to stdin/stdout/stderr.
- *
+ * $Revision: 23005 $
+ * $Author: rjongbloed $
+ * $Date: 2009-06-28 23:07:13 -0500 (Sun, 28 Jun 2009) $
  */
 
 ///////////////////////////////////////////////////////////////////////////////
 // PConsoleChannel
 
   public:
+    ~PConsoleChannel();
+
     // Overrides from class PChannel
     virtual PString GetName() const;
       // Return the name of the channel.
 
 
-    virtual BOOL Read(void * buf, PINDEX len);
+    virtual PBoolean Read(void * buf, PINDEX len);
       // Low level read from the channel. This function will block until the
       // requested number of characters were read.
 
-    virtual BOOL Write(const void * buf, PINDEX len);
+    virtual PBoolean Write(const void * buf, PINDEX len);
       // Low level write to the channel. This function will block until the
       // requested number of characters were written.
 
-    virtual BOOL Close();
+    virtual PBoolean Close();
       // Close the channel.
+
+  protected:
+    HANDLE m_hConsole;
 
 // End Of File ///////////////////////////////////////////////////////////////

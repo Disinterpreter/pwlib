@@ -26,19 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: serial.cxx,v $
- * Revision 1.4  1998/11/30 12:32:26  robertj
- * Split serial channel and modem, modem to components library.
- *
- * Revision 1.3  1998/09/23 06:22:38  robertj
- * Added open source copyright license.
- *
- * Revision 1.2  1996/04/15 10:57:59  robertj
- * Moved some functions from INL to serial.cxx so unix linker can make smaller executables.
- *
- * Revision 1.1  1996/04/14 02:54:14  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -64,11 +54,13 @@ PSerialChannel::PSerialChannel(const PString & port, DWORD speed, BYTE data,
 }
 
 
+#if P_CONFIG_FILE
 PSerialChannel::PSerialChannel(PConfig & cfg)
 {
   Construct();
   Open(cfg);
 }
+#endif // P_CONFIG_FILE
 
 
 PSerialChannel::~PSerialChannel()
@@ -76,6 +68,8 @@ PSerialChannel::~PSerialChannel()
   Close();
 }
 
+
+#if P_CONFIG_FILE
 
 static const char PortName[] = "PortName";
 static const char PortSpeed[] = "PortSpeed";
@@ -86,10 +80,10 @@ static const char PortInputFlow[] = "PortInputFlow";
 static const char PortOutputFlow[] = "PortOutputFlow";
 
 
-BOOL PSerialChannel::Open(PConfig & cfg)
+PBoolean PSerialChannel::Open(PConfig & cfg)
 {
   PStringList ports = GetPortNames();
-  return Open(cfg.GetString(PortName, ports[0]),
+  return Open(cfg.GetString(PortName, ports.front()),
               cfg.GetInteger(PortSpeed, 9600),
               (BYTE)cfg.GetInteger(PortDataBits, 8),
               (PSerialChannel::Parity)cfg.GetInteger(PortParity, 1),
@@ -110,22 +104,24 @@ void PSerialChannel::SaveSettings(PConfig & cfg)
   cfg.SetInteger(PortOutputFlow, GetOutputFlowControl());
 }
 
+#endif // P_CONFIG_FILE
+
 
 void PSerialChannel::ClearDTR()
 {
-  SetDTR(FALSE);
+  SetDTR(PFalse);
 }
 
 
 void PSerialChannel::ClearRTS()
 {
-  SetRTS(FALSE);
+  SetRTS(PFalse);
 }
 
 
 void PSerialChannel::ClearBreak()
 {
-  SetBreak(FALSE);
+  SetBreak(PFalse);
 }
 
 

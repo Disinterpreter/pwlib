@@ -23,47 +23,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pdns.h,v $
- * Revision 1.11  2006/02/26 11:51:20  csoutheren
- * Extended DNS test program to include URL based SRV lookups
- * Re-arranged SRV lookup code to allow access to internal routine
- * Reformatted code
- *
- * Revision 1.10  2006/02/26 09:26:17  shorne
- * Added DNS SRV record lookups
- *
- * Revision 1.9  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.8  2004/06/24 07:36:24  csoutheren
- * Added definitions of T_SRV and T_NAPTR for hosts that do not have these
- *
- * Revision 1.7  2004/05/31 12:49:47  csoutheren
- * Added handling of unknown DNS types
- *
- * Revision 1.6  2004/05/28 06:50:42  csoutheren
- * Reorganised DNS functions to use templates, and exposed more internals to allow new DNS lookup types to be added
- *
- * Revision 1.5  2003/07/22 23:52:20  dereksmithies
- * Fix from Fabrizio Ammollo to cope with when P_DNS is disabled. Thanks!
- *
- * Revision 1.4  2003/04/16 07:02:55  robertj
- * Cleaned up source.
- *
- * Revision 1.3  2003/04/15 08:14:06  craigs
- * Added single string form of GetSRVRecords
- *
- * Revision 1.2  2003/04/15 08:06:24  craigs
- * Added Unix implementation
- *
- * Revision 1.1  2003/04/15 04:06:56  craigs
- * Initial version
- *
+ * $Revision: 28568 $
+ * $Author: rjongbloed $
+ * $Date: 2012-11-22 00:16:50 -0600 (Thu, 22 Nov 2012) $
  */
 
+#ifndef PTLIB_PDNS_H
+#define PTLIB_PDNS_H
+
 #if P_DNS
-#ifndef _PDNS_H
-#define _PDNS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -76,19 +44,36 @@
 
 #if defined(_WIN32)
 
-#  include <windns.h>
-#  pragma comment(lib, P_DNS_LIBRARY)
+  #include <windns.h>
+  #include <ntverp.h>
 
-#else
+  // Accommodate spelling error in windns.h
+  enum { DnsSectionAdditional = DnsSectionAddtional };
 
-#  define  P_HAS_RESOLVER 1         // set if using Unix-style DNS routines
-#  include <arpa/nameser.h>
-#  include <resolv.h>
-#  if defined(P_MACOSX) && (P_MACOSX >= 700)
-#    include <arpa/nameser_compat.h>
-#  endif
+  #if VER_PRODUCTBUILD < 6000
+    typedef struct
+    {
+        WORD            wOrder;
+        WORD            wPreference;
+        PSTR            pFlags;
+        PSTR            pService;
+        PSTR            pRegularExpression;
+        PSTR            pReplacement;
+    }
+    DNS_NAPTR_DATA;
+  #endif
+
+#else /* _WIN32 */
+
+  #define  P_HAS_RESOLVER 1         // set if using Unix-style DNS routines
+  #include <arpa/nameser.h>
+  #include <resolv.h>
+  #if defined(P_MACOSX) && (P_MACOSX >= 700)
+    #include <arpa/nameser_compat.h>
+  #endif
 
 #endif  // _WIN32
+
 
 #ifdef P_HAS_RESOLVER
 
@@ -111,14 +96,19 @@
 #define DNS_TYPE_SRV  T_SRV
 #define DNS_TYPE_MX  T_MX
 #define DNS_TYPE_A  T_A
+#define DNS_TYPE_AAAA  T_AAAA
 #define DNS_TYPE_NAPTR  T_NAPTR
-#define DnsFreeRecordList 0
+#define DnsFreeRecordList 1
 #define DNS_QUERY_STANDARD 0
 #define DNS_QUERY_BYPASS_CACHE 0
 
 typedef struct _DnsAData {
   DWORD IpAddress;
 } DNS_A_DATA;
+
+typedef struct _DnsAAAAData {
+  DWORD Ip6Address[4];
+} DNS_AAAA_DATA;
 
 typedef struct {
   char   pNameExchange[MAXDNAME];
@@ -155,7 +145,7 @@ typedef enum _DnsSection
   DnsSectionQuestion,
   DnsSectionAnswer,
   DnsSectionAuthority,
-  DnsSectionAddtional,
+  DnsSectionAdditional,
 } DNS_SECTION;
 
 
@@ -173,6 +163,7 @@ class DnsRecord {
 
     union {
       DNS_A_DATA     A;
+      DNS_AAAA_DATA  AAAA;
       DNS_MX_DATA    MX;
       DNS_PTR_DATA   NS;
       DNS_SRV_DATA   SRV;
@@ -180,9 +171,12 @@ class DnsRecord {
     } Data;
 };
 
+typedef DnsRecord DNS_RECORD;
 typedef DnsRecord * PDNS_RECORD;
 
+
 extern void DnsRecordListFree(PDNS_RECORD rec, int FreeType);
+extern PDNS_RECORD DnsRecordSetCopy(PDNS_RECORD src);
 
 extern DNS_STATUS DnsQuery_A(const char * service,
           WORD requestType,
@@ -196,6 +190,19 @@ extern DNS_STATUS DnsQuery_A(const char * service,
 
 namespace PDNS {
 
+///////////////////////////////////////////////////////////////////////////
+
+DNS_STATUS Cached_DnsQuery(
+    const char * name,
+    WORD       type,
+    DWORD      options,
+    void *     extra,
+    PDNS_RECORD * queryResults,
+    void * reserved
+);
+
+
+
 //////////////////////////////////////////////////////////////////////////
 //
 //  this template automates the creation of a list of records for
@@ -203,22 +210,22 @@ namespace PDNS {
 //
 
 template <unsigned type, class RecordListType, class RecordType>
-BOOL Lookup(const PString & name, RecordListType & recordList)
+PBoolean Lookup(const PString & name, RecordListType & recordList)
 {
   if (name.IsEmpty())
-    return FALSE;
+    return false;
 
   recordList.RemoveAll();
 
   PDNS_RECORD results = NULL;
-  DNS_STATUS status = DnsQuery_A((const char *)name, 
-                                 type,
-                                 DNS_QUERY_STANDARD, 
-                                 NULL, 
-                                 &results, 
-                                 NULL);
+  DNS_STATUS status = Cached_DnsQuery((const char *)name, 
+                                      type,
+                                      DNS_QUERY_STANDARD, 
+                                      NULL, 
+                                      &results, 
+                                      NULL);
   if (status != 0)
-    return FALSE;
+    return false;
 
   // find records matching the correct type
   PDNS_RECORD dnsRecord = results;
@@ -242,14 +249,14 @@ class SRVRecord : public PObject
   PCLASSINFO(SRVRecord, PObject);
   public:
     SRVRecord()
-    { used = FALSE; }
+    { used = false; }
 
     Comparison Compare(const PObject & obj) const;
     void PrintOn(ostream & strm) const;
 
     PString            hostName;
     PIPSocket::Address hostAddress;
-    BOOL               used;
+    PBoolean               used;
     WORD port;
     WORD priority;
     WORD weight;
@@ -273,13 +280,13 @@ PDECLARE_SORTED_LIST(SRVRecordList, PDNS::SRVRecord)
   * return a list of DNS SRV record with the specified service type
   */
 
-inline BOOL GetRecords(const PString & service, SRVRecordList & serviceList)
+inline PBoolean GetRecords(const PString & service, SRVRecordList & serviceList)
 { return Lookup<DNS_TYPE_SRV, SRVRecordList, SRVRecord>(service, serviceList); }
 
 /**
   * provided for backwards compatibility
   */
-inline BOOL GetSRVRecords(
+inline PBoolean GetSRVRecords(
       const PString & service,
       SRVRecordList & serviceList
 )
@@ -289,7 +296,7 @@ inline BOOL GetSRVRecords(
   * return a list of DNS SRV record with the specified service, type and domain
   */
 
-BOOL GetSRVRecords(
+PBoolean GetSRVRecords(
       const PString & service,
       const PString & type,
       const PString & domain,
@@ -298,20 +305,26 @@ BOOL GetSRVRecords(
 
 /**
   * Perform a DNS lookup of the specified service
-  * @return TRUE if the service could be resolved, else FALSE
+  * @return true if the service could be resolved, else false
   */
 
-BOOL LookupSRV( 
+PBoolean LookupSRV(
+         const PString & srvQuery,
+         WORD defaultPort,
+         PIPSocketAddressAndPortVector & addrList
+);
+
+PBoolean LookupSRV( 
          const PString & domain,                  ///< domain to lookup
          const PString & service,                 ///< service to use
-                    WORD defaultPort,             ///< default por to use
+         WORD defaultPort,                        ///< default por to use
          PIPSocketAddressAndPortVector & addrList ///< returned list of sockets and ports
-);  
+); 
 
-BOOL LookupSRV( 
+PBoolean LookupSRV( 
          const PURL & url,          ///< URL to lookup
          const PString & service,   ///< service to use
-         PStringList & returnStr    ///< resolved addresses, if return value is TRUE
+         PStringList & returnStr    ///< resolved addresses, if return value is true
 );  
 
 ////////////////////////////////////////////////////////////////
@@ -321,13 +334,13 @@ class MXRecord : public PObject
   PCLASSINFO(MXRecord, PObject);
   public:
     MXRecord()
-    { used = FALSE; }
+    { used = false; }
     Comparison Compare(const PObject & obj) const;
     void PrintOn(ostream & strm) const;
 
     PString            hostName;
     PIPSocket::Address hostAddress;
-    BOOL               used;
+    PBoolean               used;
     WORD               preference;
 };
 
@@ -347,7 +360,7 @@ PDECLARE_SORTED_LIST(MXRecordList, PDNS::MXRecord)
 /**
   * return a list of MX records for the specified domain
   */
-inline BOOL GetRecords(
+inline PBoolean GetRecords(
       const PString & domain,
       MXRecordList & serviceList
 )
@@ -356,7 +369,7 @@ inline BOOL GetRecords(
 /**
   * provided for backwards compatibility
   */
-inline BOOL GetMXRecords(
+inline PBoolean GetMXRecords(
       const PString & domain,
       MXRecordList & serviceList
 )
@@ -364,11 +377,12 @@ inline BOOL GetMXRecords(
   return GetRecords(domain, serviceList);
 }
 
-///////////////////////////////////////////////////////////////////////////
 
 }; // namespace PDNS
 
-#endif // _PDNS_H
 #endif // P_DNS
+
+#endif // PTLIB_PDNS_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

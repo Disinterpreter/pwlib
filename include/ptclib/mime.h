@@ -23,82 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mime.h,v $
- * Revision 1.21  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.20  2004/03/23 06:38:51  csoutheren
- * Update for change in location of Base64 routines
- *
- * Revision 1.19  2004/03/23 05:59:17  csoutheren
- * Moved the Base64 routines into cypher.cxx, which is a more sensible
- * place and reduces the inclusion of unrelated code
- *
- * Revision 1.18  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.17  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.16  2001/10/03 00:24:57  robertj
- * Split out function for adding a single line of MIME info, reduces
- *    duplicated code and is useful in some other areas such as HTTP/1.1
- *
- * Revision 1.15  2001/09/28 00:41:18  robertj
- * Added SetInteger() function to set numeric MIME fields.
- * Removed HasKey() as is confusing due to ancestor Contains().
- * Overrides of SetAt() and Contains() to assure PCaselessString used.
- *
- * Revision 1.14  2000/11/09 00:18:26  robertj
- * Cosmetic change: removed blank lines.
- *
- * Revision 1.13  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.12  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.11  1998/11/30 02:50:52  robertj
- * New directory structure
- *
- * Revision 1.10  1998/09/23 06:19:42  robertj
- * Added open source copyright license.
- *
- * Revision 1.9  1997/02/05 11:53:11  robertj
- * Changed construction of MIME dictionary to be delayed untill it is used.
- *
- * Revision 1.8  1996/09/14 13:09:15  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.7  1996/07/15 10:28:31  robertj
- * Changed memory block base64 conversion functions to be void *.
- *
- * Revision 1.6  1996/03/16 04:38:09  robertj
- * Fixed bug in MIME write function, should be const.
- *
- * Revision 1.5  1996/02/25 03:04:32  robertj
- * Added decoding of Base64 to a block of memory instead of PBYTEArray.
- *
- * Revision 1.4  1996/01/28 14:14:30  robertj
- * Further implementation of secure config.
- *
- * Revision 1.3  1996/01/28 02:46:07  robertj
- * Removal of MemoryPointer classes as usage didn't work for GNU.
- *
- * Revision 1.2  1996/01/26 02:24:27  robertj
- * Further implemetation.
- *
- * Revision 1.1  1996/01/23 13:06:18  robertj
- * Initial revision
- *
+ * $Revision: 26837 $
+ * $Author: rjongbloed $
+ * $Date: 2012-01-08 01:01:11 -0600 (Sun, 08 Jan 2012) $
  */
 
-#ifndef _PMIME
-#define _PMIME
+#ifndef PTLIB_PMIME_H
+#define PTLIB_PMIME_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -107,6 +38,10 @@
 #include <ptclib/inetprot.h>
 #include <ptclib/cypher.h>
 
+
+class PMultiPartList;
+
+
 //////////////////////////////////////////////////////////////////////////////
 // PMIMEInfo
 
@@ -114,173 +49,177 @@
    and variables.
  */
 
-#ifdef DOC_PLUS_PLUS
-class PMIMEInfo : public PStringToString {
-#endif
-PDECLARE_STRING_DICTIONARY(PMIMEInfo, PCaselessString);
+class PMIMEInfo : public PStringOptions
+{
   public:
+    PMIMEInfo() { }
+
+    /// Construct a MIME information dictionary from the specified source.
     PMIMEInfo(
       istream &strm   ///< Stream to read the objects contents from.
     );
     PMIMEInfo(
       PInternetProtocol & socket   ///< Application socket to read MIME info.
     );
-    // Construct a MIME infromation dictionary from the specified source.
+    PMIMEInfo(
+      const PStringToString & dict
+    );
+    PMIMEInfo(
+      const PString & str
+    );
 
 
   // Overrides from class PObject
     /** Output the contents of the MIME dictionary to the stream. This is
-       primarily used by the standard ##operator<<## function.
+       primarily used by the standard <code>operator<<</code> function.
      */
     virtual void PrintOn(
       ostream &strm   ///< Stream to print the object into.
     ) const;
 
     /** Input the contents of the MIME dictionary from the stream. This is
-       primarily used by the standard ##operator>>## function.
+       primarily used by the standard <code>operator>></code> function.
      */
     virtual void ReadFrom(
       istream &strm   ///< Stream to read the objects contents from.
     );
 
 
-  // Overrides from class PStringToString
-    /**Add a new value to the MIME info. If the value is already in the
-       dictionary then this overrides the previous value.
-
-       @return
-       TRUE if the object was successfully added.
-     */
-    BOOL SetAt(
-      const char * key,
-      const PString value
-    ) { return AbstractSetAt(PCaselessString(key), PNEW PString(value)); }
-
-    /**Add a new value to the MIME info. If the value is already in the
-       dictionary then this overrides the previous value.
-
-       @return
-       TRUE if the object was successfully added.
-     */
-    BOOL SetAt(
-      const PString & key,
-      const PString value
-    ) { return AbstractSetAt(PCaselessString(key), PNEW PString(value)); }
-
-    /**Add a new value to the MIME info. If the value is already in the
-       dictionary then this overrides the previous value.
-
-       @return
-       TRUE if the object was successfully added.
-     */
-    BOOL SetAt(
-      const PCaselessString & key,
-      const PString value
-    ) { return AbstractSetAt(PCaselessString(key), PNEW PString(value)); }
-
-    /** Determine if the specified key is present in the MIME information
-       set.
-
-       @return
-       TRUE if the MIME variable is present.
-     */
-    BOOL Contains(
-      const char * key       ///< Key into MIME dictionary to get info.
-    ) const { return GetAt(PCaselessString(key)) != NULL; }
-
-    /** Determine if the specified key is present in the MIME information
-       set.
-
-       @return
-       TRUE if the MIME variable is present.
-     */
-    BOOL Contains(
-      const PString & key       ///< Key into MIME dictionary to get info.
-    ) const { return GetAt(PCaselessString(key)) != NULL; }
-
-    /** Determine if the specified key is present in the MIME information
-       set.
-
-       @return
-       TRUE if the MIME variable is present.
-     */
-    BOOL Contains(
-      const PCaselessString & key       ///< Key into MIME dictionary to get info.
-    ) const { return GetAt(key) != NULL; }
-
   // New functions for class.
     /** Read MIME information from the socket.
 
        @return
-       TRUE if the MIME information was successfully read.
+       true if the MIME information was successfully read.
      */
-    BOOL Read(
+    PBoolean Read(
       PInternetProtocol & socket   ///< Application socket to read MIME info.
     );
 
     /** Write MIME information to the socket.
 
        @return
-       TRUE if the MIME information was successfully read.
+       true if the MIME information was successfully read.
      */
-    BOOL Write(
+    PBoolean Write(
       PInternetProtocol & socket   ///< Application socket to write MIME info.
     ) const;
 
+    /**Return a string presentation of the MIME.
+      */
+    PString AsString() const;
+
     /**Add a MIME field given a "name: value" format string.
        Note that if the field name was already in the MIME dictionary then
-       this will append the new value after a '\n' character to the previous
+       this will append the new value after a '\\n' character to the previous
        value.
 
        @return
-       TRUE is a field was added.
+       true is a field was added.
       */
-    BOOL AddMIME(
+    bool AddMIME(
       const PString & line
     );
-
-    /** Get a string for the particular MIME info field with checking for
-       existance. The #dflt# parameter is substituted if the field
-       does not exist in the MIME information read in.
-
-       @return
-       String for the value of the MIME variable.
-     */
-    PString GetString(
-      const PString & key,       ///< Key into MIME dictionary to get info.
-      const PString & dflt       ///< Default value of field if not in MIME info.
-    ) const;
-
-    /** Get an integer value for the particular MIME info field with checking
-       for existance. The #dflt# parameter is substituted if the
-       field does not exist in the MIME information read in.
-
-       @return
-       Integer value for the MIME variable.
-     */
-    long GetInteger(
-      const PString & key,    ///< Key into MIME dictionary to get info.
-      long dflt = 0           ///< Default value of field if not in MIME info.
-    ) const;
-
-    /** Set an integer value for the particular MIME info field.
-     */
-    void SetInteger(
-      const PCaselessString & key,  ///< Key into MIME dictionary to get info.
-      long value                    ///< New value of field.
+    bool AddMIME(
+      const PString & fieldName, ///< MIME field name
+      const PString & fieldValue ///< MIME field value
+    ) { return InternalAddMIME(fieldName, fieldValue); }
+    bool AddMIME(
+      const PMIMEInfo & mime
     );
+
+    virtual bool InternalAddMIME(
+      const PString & fieldName, ///< MIME field name
+      const PString & fieldValue ///< MIME field value
+    );
+
+    /** Get a complex MIME field.
+        This will parse a complex MIME field of the general form:
+
+           key: base-value;tag1=token;tag2="string";tag3
+           key: <base-value>;tag1=token;tag2="string";tag3
+
+        The base-value will be placed in the dictionary where the key is the
+        empty string. If the base-value is quoted with '<', '>' brackets then
+        the brackets are removed. Note that the string "<>" can be used to have
+        an empty base-value but a field starting with a ';' is illegal and this
+        function will return false.
+        
+        Each tag will be the key for it's entry in the dictionary, if that tag
+        has no '=' sign then it will have an empty string as its value. If the
+        tag value is quoted using '"', then the RFC822 rules are applied and
+        the quotes and '\\' charcters removed.
+
+        IF there are multiple "key" entries in the MIME, or there is an entry
+        of the form:
+
+           key: <base-value>;tag=token, <base-value1>, <base-value2>;tag=token
+
+        then the first entry wil be as described above. All subsequent entries
+        are includedin the dictionary with the key names having the string
+        "n:" prepended, e.g. "1:" would be "base-value1", "2:tag" would be the
+        tag value on the third entry.
+
+        Returns true if the field exists and base-value is non-empty or quoted.
+      */
+    bool GetComplex(
+      const char * key,    ///< Key into MIME dictionary to get info.
+      PStringToString & info  ///< Dictionary of information from field
+    ) const { return ParseComplex(GetString(key), info); }
+    bool GetComplex(
+      const PString & key,    ///< Key into MIME dictionary to get info.
+      PStringToString & info  ///< Dictionary of information from field
+    ) const { return ParseComplex(GetString(key), info); }
+    bool GetComplex(
+      const PCaselessString & key,  ///< Key into MIME dictionary to get info.
+      PStringToString & info        ///< Dictionary of information from field
+    ) const { return ParseComplex(GetString(key), info); }
+    bool GetComplex(
+      const PCaselessString & (*key)(), ///< Key into MIME dictionary to get info.
+      PStringToString & info    ///< Dictionary of information from field
+    ) const { return ParseComplex(GetString(key), info); }
+
+    /// Parse the string as a complex field, see GetComplex()
+    static bool ParseComplex(
+      const PString & str,      ///< String value from MIME field.
+      PStringToString & info    ///< Dictionary of information from field
+    );
+
+    /** Decode parts from a multipart body using the field value.
+      */
+    bool DecodeMultiPartList(
+      PMultiPartList & parts,   ///< Extracted parts.
+      const PString & body,     ///< Body to decode
+      const PCaselessString & key       ///< MIME key for multipart info
+    ) const;
+
+    /** Decode parts from a multipart body using the field value.
+      */
+    bool DecodeMultiPartList(
+      PMultiPartList & parts,   ///< Extracted parts.
+      const PString & body,     ///< Body to decode
+      const PCaselessString & (*key)() = ContentTypeTag ///< MIME key for multipart info
+    ) const { return DecodeMultiPartList(parts, body, key()); }
+
+
+    static const PCaselessString & ContentTypeTag();
+    static const PCaselessString & ContentDispositionTag();
+    static const PCaselessString & ContentTransferEncodingTag();
+    static const PCaselessString & ContentDescriptionTag();
+    static const PCaselessString & ContentIdTag();
+
+    static const PCaselessString & TextPlain();
 
 
     /** Set an association between a file type and a MIME content type. The
        content type is then sent for any file in the directory sub-tree that
        has the same extension.
 
-       Note that if the #merge# parameter if TRUE then the
+       Note that if the <code>merge</code> parameter if true then the
        dictionary is merged into the current association list and is not a
        simple replacement.
 
        The default values placed in this dictionary are:
-\begin{verbatim}
+<pre><code>
 
           ".txt", "text/plain"
           ".text", "text/plain"
@@ -303,14 +242,14 @@ PDECLARE_STRING_DICTIONARY(PMIMEInfo, PCaselessString);
           ".mpeg", "video/mpeg"
           ".qt", "video/quicktime"
           ".mov", "video/quicktime"
-\end{verbatim}
+</code></pre>
 
 
        The default content type will be "application/octet-stream".
      */
     static void SetAssociation(
       const PStringToString & allTypes,  ///< MIME content type associations.
-      BOOL merge = TRUE                  ///< Flag for merging associations.
+      PBoolean merge = true                  ///< Flag for merging associations.
     );
     static void SetAssociation(
       const PString & fileType,         ///< File type (extension) to match.
@@ -328,13 +267,45 @@ PDECLARE_STRING_DICTIONARY(PMIMEInfo, PCaselessString);
       const PString & fileType   ///< File type (extension) to look up.
     );
 
+    /** Output the contents without the trailing CRLF
+     */
+    virtual ostream & PrintContents(
+      ostream & strm
+    ) const;
+
   private:
     static PStringToString & GetContentTypes();
 };
 
 
+//////////////////////////////////////////////////////////////////////////////
+// PMultiPartInfo
 
-#endif
+/** This object describes the information associated with a multi-part bodies.
+  */
+class PMultiPartInfo : public PObject
+{
+    PCLASSINFO(PMultiPartInfo, PObject);
+  public:
+    PMIMEInfo  m_mime;
+    PString    m_textBody;
+    PBYTEArray m_binaryBody;
+};
+
+class PMultiPartList : public PList<PMultiPartInfo>
+{
+    PCLASSINFO(PMultiPartList, PList<PMultiPartInfo>);
+  public:
+    PMultiPartList() { }
+
+    bool Decode(
+      const PString & body,               ///< Body to extract parts from
+      const PStringToString & contentInfo ///< Content-Type info as decoded from PMIMEInfo::GetComplex()
+    );
+};
+
+
+#endif // PTLIB_PMIME_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

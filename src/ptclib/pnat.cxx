@@ -4,7 +4,6 @@
  *
  * NAT Strategy support for Portable Windows Library.
  *
- * Virteos is a Trade Mark of ISVO (Asia) Pte Ltd.
  *
  * Copyright (c) 2004 ISVO (Asia) Pte Ltd. All Rights Reserved.
  *
@@ -27,30 +26,34 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pnat.cxx,v $
- * Revision 1.3  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.2  2005/07/13 11:15:26  csoutheren
- * Backported NAT abstraction files from isvo branch
- *
- * Revision 1.1.2.1  2005/04/25 13:24:55  shorne
- * Initial version
- *
- *
-*/
+ * $Revision: 24883 $
+ * $Author: shorne $
+ * $Date: 2010-11-18 06:08:04 -0600 (Thu, 18 Nov 2010) $
+ */
 
 #include <ptlib.h>
 #include <ptclib/pnat.h>
+#include <ptclib/random.h>
+
+
+static const char PNatMethodBaseClass[] = "PNatMethod";
+template <> PNatMethod * PDevicePluginFactory<PNatMethod>::Worker::Create(const PString & method) const
+{
+   return PNatMethod::Create(method);
+}
+
+typedef PDevicePluginAdapter<PNatMethod> PDevicePluginPNatMethod;
+PFACTORY_CREATE(PFactory<PDevicePluginAdapterBase>, PDevicePluginPNatMethod, PNatMethodBaseClass, true);
+
 
 PNatStrategy::PNatStrategy()
 {
-
+   pluginMgr = NULL;
 }
 
 PNatStrategy::~PNatStrategy()
 {
-
+   natlist.RemoveAll();
 }
 
 void PNatStrategy::AddMethod(PNatMethod * method)
@@ -58,28 +61,59 @@ void PNatStrategy::AddMethod(PNatMethod * method)
   natlist.Append(method);
 }
 
-PNatMethod * PNatStrategy::GetMethod()
+PNatMethod * PNatStrategy::GetMethod(const PIPSocket::Address & address)
 {
-  for (PINDEX i=0; i < natlist.GetSize(); i++) {
-       PNatMethod * meth = (PNatMethod *)natlist.GetAt(i);
-
-     if (meth->IsAvailable())
-       return meth;
+  for (PNatList::iterator i = natlist.begin(); i != natlist.end(); i++) {
+    if (i->IsAvailable(address))
+      return &*i;
   }
 
   return NULL;
 }
 
-void PNatStrategy::SetPortRanges(
-      WORD portBase, WORD portMax, WORD portPairBase, WORD portPairMax)
+PNatMethod * PNatStrategy::GetMethodByName(const PString & name)
 {
-  for (PINDEX i=0; i < natlist.GetSize(); i++) {
-       PNatMethod * meth = (PNatMethod *)natlist.GetAt(i);
-
-     meth->SetPortRanges(portBase,portMax,portPairBase,portPairMax);
+  for (PNatList::iterator i = natlist.begin(); i != natlist.end(); i++) {
+    if (i->GetName() == name) {
+      return &*i;
+	}
   }
+
+  return NULL;
 }
 
+PBoolean PNatStrategy::RemoveMethod(const PString & meth)
+{
+  for (PNatList::iterator i = natlist.begin(); i != natlist.end(); i++) {
+    if (i->GetName() == meth) {
+      natlist.erase(i);
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void PNatStrategy::SetPortRanges(WORD portBase, WORD portMax, WORD portPairBase, WORD portPairMax)
+{
+  for (PNatList::iterator i = natlist.begin(); i != natlist.end(); i++)
+    i->SetPortRanges(portBase, portMax, portPairBase, portPairMax);
+}
+
+
+PNatMethod * PNatStrategy::LoadNatMethod(const PString & name)
+{
+   if (pluginMgr == NULL)
+    pluginMgr = &PPluginManager::GetPluginManager();
+
+  return (PNatMethod *)pluginMgr->CreatePluginsDeviceByName(name, PNatMethodBaseClass);
+}
+
+PStringArray PNatStrategy::GetRegisteredList()
+{
+  PPluginManager * plugMgr = &PPluginManager::GetPluginManager();
+  return plugMgr->GetPluginsProviding(PNatMethodBaseClass);
+}
 
 ///////////////////////////////////////////////////////////////////////
 
@@ -92,6 +126,36 @@ PNatMethod::~PNatMethod()
 {
 
 }
+
+PNatMethod * PNatMethod::Create(const PString & name, PPluginManager * pluginMgr)
+{
+  if (pluginMgr == NULL)
+    pluginMgr = &PPluginManager::GetPluginManager();
+
+  return (PNatMethod *)pluginMgr->CreatePluginsDeviceByName(name, PNatMethodBaseClass,0);
+}
+
+PBoolean PNatMethod::CreateSocketPair(PUDPSocket * & socket1,PUDPSocket * & socket2,
+      const PIPSocket::Address & binding, void * /*userData*/)
+{
+	return CreateSocketPair(socket1,socket2,binding);
+}
+
+void PNatMethod::PrintOn(ostream & strm) const
+{
+  strm << GetName() << " server " << GetServer();
+}
+
+PString PNatMethod::GetServer() const
+{
+  PStringStream str;
+  PIPSocket::Address serverAddress;
+  WORD serverPort;
+  if (GetServerAddress(serverAddress, serverPort))
+    str << serverAddress << ':' << serverPort;
+  return str;
+}
+
 
 void PNatMethod::SetPortRanges(WORD portBase, WORD portMax, WORD portPairBase, WORD portPairMax) 
 {
@@ -129,3 +193,25 @@ void PNatMethod::SetPortRanges(WORD portBase, WORD portMax, WORD portPairBase, W
 
   pairedPortInfo.mutex.Signal();
 }
+
+void PNatMethod::Activate(bool /*active*/)
+{
+
+}
+
+void PNatMethod::SetAlternateAddresses(const PStringArray & /*addresses*/, void * /*userData*/)
+{
+
+}
+
+WORD PNatMethod::RandomPortPair(unsigned int start, unsigned int end)
+{
+	WORD num;
+	PRandom rand;
+	num = (WORD)rand.Generate(start,end);
+	if (PString(num).Right(1).FindOneOf("13579") != P_MAX_INDEX) 
+			num++;  // Make sure the number is even
+
+	return num;
+}
+

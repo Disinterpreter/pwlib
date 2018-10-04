@@ -1,7 +1,7 @@
 /*
  * version.h
  *
- * Version number header file for PWLib
+ * Version number header file for PTLib
  *
  * Copyright (c) 1993-2000 Equivalence Pty. Ltd.
  *
@@ -16,14 +16,15 @@
  * under the License.
  *
  * The Original Code is Portable Windows Library.
+ * Subsequenty renamed 
  *
  * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
  *
  * Contributor(s): ______________________________________.
  */
 
-#ifndef _PWLib_VERSION_H
-#define _PWLib_VERSION_H
+#ifndef _PTLib_VERSION_H
+#define _PTLib_VERSION_H
 
 
 
@@ -32,13 +33,13 @@
    which extracts the version numbers
  */
 
-#define MAJOR_VERSION 1
-#define MINOR_VERSION 11
-#define BUILD_TYPE    ReleaseCode
-#define BUILD_NUMBER 0
+#define MAJOR_VERSION 2
+#define MINOR_VERSION 10
+#define BUILD_TYPE ReleaseCode
+#define BUILD_NUMBER 11
 
 
-#endif  // _PWLib_VERSION_H
+#endif  // _PTLib_VERSION_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

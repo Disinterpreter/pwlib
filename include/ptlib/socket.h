@@ -3,7 +3,7 @@
  *
  * Berkley Socket channel ancestor class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -26,167 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: socket.h,v $
- * Revision 1.49  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.48  2004/08/24 07:08:13  csoutheren
- * Added use of recvmsg to determine which interface UDP packets arrive on
- *
- * Revision 1.47  2004/05/06 11:28:30  rjongbloed
- * Changed P_fd_set to use malloc/free isntead of new/delete due to pedantry about [].
- *
- * Revision 1.46  2004/04/27 04:37:50  rjongbloed
- * Fixed ability to break of a PSocket::Select call under linux when a socket
- *   is closed by another thread.
- *
- * Revision 1.45  2004/01/28 08:53:02  csoutheren
- * Fixed missing delete[] operator. Thanks to Borko Jandras
- *
- * Revision 1.44  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.43  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.42  2002/10/18 08:07:41  robertj
- * Fixed use of FD_ZERO as (strangely) crashes on some paltforms and would
- *   not have cleared enough of an enlarges fd_set anyway.
- *
- * Revision 1.41  2002/10/17 07:17:42  robertj
- * Added ability to increase maximum file handles on a process.
- *
- * Revision 1.40  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.39  2002/04/12 01:42:41  robertj
- * Changed return value on os_connect() and os_accept() to make sure
- *   get the correct error codes propagated up under unix.
- *
- * Revision 1.38  2002/02/14 03:34:18  craigs
- * Added comment on using SetReadTimeout to set maximum wait for Connect
- *
- * Revision 1.37  2001/09/06 02:30:17  robertj
- * Fixed mismatched declarations, thanks Vjacheslav Andrejev
- *
- * Revision 1.36  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.35  2001/03/20 06:44:25  robertj
- * Lots of changes to fix the problems with terminating threads that are I/O
- *   blocked, especially when doing orderly shutdown of service via SIGTERM.
- *
- * Revision 1.34  2000/06/26 13:58:42  robertj
- * Nucleus port (again)
- *
- * Revision 1.33  2000/06/26 11:17:19  robertj
- * Nucleus++ port (incomplete).
- *
- * Revision 1.32  2000/02/18 09:55:21  robertj
- * Added parameter so get/setsockopt can have other levels to SOL_SOCKET.
- *
- * Revision 1.31  1999/03/09 02:59:51  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.30  1999/02/16 08:11:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.29  1998/11/30 02:51:58  robertj
- * New directory structure
- *
- * Revision 1.28  1998/09/23 06:21:25  robertj
- * Added open source copyright license.
- *
- * Revision 1.27  1998/08/27 00:46:58  robertj
- * Resolved signedness problems with various GNU libraries.
- *
- * Revision 1.26  1998/08/25 14:07:42  robertj
- * Added getprotobyxxx wrapper functions.
- *
- * Revision 1.25  1998/01/26 00:35:21  robertj
- * Fixed documentation of PSocket::Select().
- *
- * Revision 1.24  1996/09/14 13:09:24  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.23  1996/07/27 04:14:00  robertj
- * Changed Select() calls to return error codes.
- *
- * Revision 1.22  1996/05/15 10:11:38  robertj
- * Added timeout to accept function.
- *
- * Revision 1.21  1996/03/31 08:52:36  robertj
- * Added socket shutdown function.
- *
- * Revision 1.20  1996/03/18 13:33:12  robertj
- * Fixed incompatibilities to GNU compiler where PINDEX != int.
- *
- * Revision 1.19  1996/03/03 07:37:58  robertj
- * Added Reusability clause to the Listen() function on sockets.
- *
- * Revision 1.18  1996/03/02 03:10:18  robertj
- * Added Apability to get and set Berkeley socket options.
- *
- * Revision 1.17  1996/02/25 03:02:14  robertj
- * Moved some socket functions to platform dependent code.
- * Added array of fds to os_select for unix threading support.
- *
- * Revision 1.16  1996/02/15 14:46:43  robertj
- * Added Select() function to PSocket.
- *
- * Revision 1.15  1995/12/23 03:46:54  robertj
- * Fixed portability issue with closingh sockets.
- *
- * Revision 1.14  1995/12/10 11:35:21  robertj
- * Numerous fixes for sockets.
- *
- * Revision 1.13  1995/10/14 15:05:54  robertj
- * Added functions for changing integer from host to network byte order.
- *
- * Revision 1.12  1995/06/17 11:13:25  robertj
- * Documentation update.
- *
- * Revision 1.11  1995/06/17 00:44:35  robertj
- * More logical design of port numbers and service names.
- * Changed overloaded Open() calls to 3 separate function names.
- *
- * Revision 1.10  1995/06/04 12:36:37  robertj
- * Slight redesign of port numbers on sockets.
- *
- * Revision 1.9  1995/03/14 12:42:39  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.8  1995/03/12  04:45:40  robertj
- * Added more functionality.
- *
- * Revision 1.7  1995/01/03  09:36:19  robertj
- * Documentation.
- *
- * Revision 1.6  1995/01/02  12:16:17  robertj
- * Moved constructor to platform dependent code.
- *
- * Revision 1.5  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.4  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.3  1994/08/21  23:43:02  robertj
- * Changed type of socket port number for better portability.
- *
- * Revision 1.2  1994/07/25  03:36:03  robertj
- * Added sockets to common, normalising to same comment standard.
- *
+ * $Revision: 27568 $
+ * $Author: ededu $
+ * $Date: 2012-05-03 07:57:49 -0500 (Thu, 03 May 2012) $
  */
 
-#ifndef _PSOCKETS
-#define _PSOCKETS
+#ifndef PTLIB_SOCKET_H
+#define PTLIB_SOCKET_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -205,9 +51,9 @@ PLIST(PSocketList, PSocket);
 
 /**A network communications channel. This is based on the concepts in the
    Berkley Sockets library.
-   
-   A socket represents a bidirectional communications channel to a {\it port}
-   at a remote {\it host}.
+
+   A socket represents a bidirectional communications channel to a <i>port</i>
+   at a remote <i>host</i>.
  */
 class PSocket : public PChannel
 {
@@ -224,12 +70,12 @@ class PSocket : public PChannel
        This connects to a "listening" socket at the other end of the
        communications channel.
 
-       Use the SetReadTimeout function to set a maximum time for the Connect
+       Use the SetReadTimeout() function to set a maximum time for the Connect().
 
        @return
-       TRUE if the channel was successfully connected to the remote host.
+       true if the channel was successfully connected to the remote host.
      */
-    virtual BOOL Connect(
+    virtual PBoolean Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
 
@@ -246,14 +92,14 @@ class PSocket : public PChannel
        of this type is then used to generate other "accepting" sockets which
        establish a two way communications channel with the "connecting" socket.
 
-       If the #port# parameter is zero then the port number as
+       If the \p port parameter is zero then the port number as
        defined by the object instance construction or the descendent classes
        SetPort() or SetService() function.
 
        @return
-       TRUE if the channel was successfully opened.
+       true if the channel was successfully opened.
      */
-    virtual BOOL Listen(
+    virtual PBoolean Listen(
       unsigned queueSize = 5,  ///< Number of pending accepts that may be queued.
       WORD port = 0,           ///< Port number to use for the connection.
       Reusability reuse = AddressIsExclusive ///< Can/Cant listen more than once.
@@ -265,32 +111,32 @@ class PSocket : public PChannel
        to make, this will accept a connection made by the "connecting" socket
        created to establish a link.
 
-       The port that the socket uses is the one used in the #Listen()#
-       command of the #socket# parameter. Note an error occurs if
-       the #socket# parameter has not had the #Listen()#
+       The port that the socket uses is the one used in the Listen()
+       command of the \p socket parameter. Note an error occurs if
+       the \p socket parameter has not had the Listen()
        function called on it.
 
        Note that this function will block until a remote system connects to the
        port number specified in the "listening" socket. The time that the
        function will block is determined by the read timeout of the
-       #socket# parameter. This will normally be
-       #PMaxTimeInterval# which indicates an infinite time.
+       \p socket parameter. This will normally be
+       PMaxTimeInterval which indicates an infinite time.
 
        The default behaviour is to assert.
 
        @return
-       TRUE if the channel was successfully opened.
+       true if the channel was successfully opened.
      */
-    virtual BOOL Accept(
+    virtual PBoolean Accept(
       PSocket & socket          ///< Listening socket making the connection.
     );
 
-    /**Close one or both of the data streams associated with a socket 
+    /**Close one or both of the data streams associated with a socket.
 
        @return
-       TRUE if the shutdown was performed
+       true if the shutdown was performed
      */
-    virtual BOOL Shutdown(
+    virtual PBoolean Shutdown(
       ShutdownValue option   ///< Flag for shutdown of read, write or both.
     );
   //@}
@@ -301,46 +147,46 @@ class PSocket : public PChannel
        options of the class SOL_SOCKET.
 
        @return
-       TRUE if the option was successfully set.
+       true if the option was successfully set.
      */
-    BOOL SetOption(
+    PBoolean SetOption(
       int option,             ///< Option to set.
       int value,              ///< New value for option.
-      int level = SOL_SOCKET  ///< Level for option
+      int level = SOL_SOCKET  ///< Level for option.
     );
 
     /**Set options on the socket. These options are defined as Berkeley socket
        options of the class SOL_SOCKET.
 
        @return
-       TRUE if the option was successfully set.
+       true if the option was successfully set.
      */
-    BOOL SetOption(
+    PBoolean SetOption(
       int option,             ///< Option to set.
       const void * valuePtr,  ///< Pointer to new value for option.
       PINDEX valueSize,       ///< Size of new value.
-      int level = SOL_SOCKET  ///< Level for option
+      int level = SOL_SOCKET  ///< Level for option.
     );
 
     /**Get options on the socket. These options are defined as Berkeley socket
        options of the class SOL_SOCKET.
 
        @return
-       TRUE if the option was successfully retreived.
+       true if the option was successfully retrieved.
      */
-    BOOL GetOption(
+    PBoolean GetOption(
       int option,             ///< Option to get.
       int & value,            ///< Integer to receive value.
-      int level = SOL_SOCKET  ///< Level for option
+      int level = SOL_SOCKET  ///< Level for option.
     );
 
     /**Get options on the socket. These options are defined as Berkeley socket
        options of the class SOL_SOCKET.
 
        @return
-       TRUE if the option was successfully retreived.
+       true if the option was successfully retrieved.
      */
-    BOOL GetOption(
+    PBoolean GetOption(
       int option,             ///< Option to get.
       void * valuePtr,        ///< Pointer to buffer for value.
       PINDEX valueSize,       ///< Size of buffer to receive value.
@@ -356,7 +202,7 @@ class PSocket : public PChannel
        Number of protocol or 0 if the protocol was not found.
      */
     static WORD GetProtocolByName(
-      const PString & name      ///< Name of protocol
+      const PString & name      ///< Name of protocol.
     );
 
     /**Get the name of the protocol number specified.
@@ -365,7 +211,7 @@ class PSocket : public PChannel
        Name of protocol or the number if the protocol was not found.
      */
     static PString GetNameByProtocol(
-      WORD proto                ///< Number of protocol
+      WORD proto                ///< Number of protocol.
     );
 
 
@@ -374,24 +220,24 @@ class PSocket : public PChannel
       const PString & service   ///< Name of service to get port number for.
     ) const;
     /**Get the port number for the specified service name.
-    
+
        A name is a unique string contained in a system database. The parameter
        here may be either this unique name, an integer value or both separated
        by a space (name then integer). In the latter case the integer value is
        used if the name cannot be found in the database.
-    
+
        The exact behviour of this function is dependent on whether TCP or UDP
-       transport is being used. The #PTCPSocket# and #PUDPSocket#
+       transport is being used. The PTCPSocket and PUDPSocket
        classes will implement this function.
 
        The static version of the function is independent of the socket type as
-       its first parameter may be "tcp" or "udp", 
+       its first parameter may be "tcp" or "udp".
 
        @return
        Port number for service name, or 0 if service cannot be found.
      */
     static WORD GetPortByService(
-      const char * protocol,     ///< Protocol type for port lookup
+      const char * protocol,     ///< Protocol type for port lookup.
       const PString & service    ///< Name of service to get port number for.
     );
 
@@ -400,18 +246,18 @@ class PSocket : public PChannel
       WORD port   ///< Number for service to find name of.
     ) const;
     /**Get the service name from the port number.
-    
+
        A service name is a unique string contained in a system database. The
        parameter here may be either this unique name, an integer value or both
        separated by a space (name then integer). In the latter case the
        integer value is used if the name cannot be found in the database.
-    
+
        The exact behviour of this function is dependent on whether TCP or UDP
-       transport is being used. The #PTCPSocket# and #PUDPSocket#
+       transport is being used. The PTCPSocket and PUDPSocket
        classes will implement this function.
 
        The static version of the function is independent of the socket type as
-       its first parameter may be "tcp" or "udp", 
+       its first parameter may be "tcp" or "udp".
 
        @return
        Service name for port number.
@@ -434,7 +280,7 @@ class PSocket : public PChannel
        parameter here may be either this unique name, an integer value or both
        separated by a space (name then integer). In the latter case the
        integer value is used if the name cannot be found in the database.
-    
+
        The port number may not be changed while the port is open and the
        function will assert if an attempt is made to do so.
      */
@@ -453,7 +299,7 @@ class PSocket : public PChannel
        instance is using.
 
        @return
-       string service name or a string representation of the port number if no
+       String service name or a string representation of the port number if no
        service with that number can be found.
      */
     PString GetService() const;
@@ -461,7 +307,7 @@ class PSocket : public PChannel
 
   /**@name Multiple socket selection functions */
   //@{
-    /// List of sockets used for #Select()# function
+    /// List of sockets used for Select() function.
     class SelectList : public PSocketList
     {
       PCLASSINFO(SelectList, PSocketList)
@@ -517,7 +363,7 @@ class PSocket : public PChannel
        timeout or data is available to be read or written to the specified
        sockets.
 
-       The #read#, #write# and #except# lists
+       The read, write and except lists
        are modified by the call so that only the sockets that have data
        available are present. If the call timed out then all of these lists
        will be empty.
@@ -526,7 +372,7 @@ class PSocket : public PChannel
        has data available.
 
        @return
-       TRUE if the select was successful or timed out, FALSE if an error
+       true if the select was successful or timed out, false if an error
        occurred. If a timeout occurred then the lists returned will be empty.
 
        For the versions taking sockets directly instead of lists the integer
@@ -559,7 +405,7 @@ class PSocket : public PChannel
     /*This function calls os_socket() with the correct parameters for the
        socket protocol type.
      */
-    virtual BOOL OpenSocket() = 0;
+    virtual PBoolean OpenSocket() = 0;
 
     /**This function returns the protocol name for the socket type.
      */
@@ -568,25 +414,25 @@ class PSocket : public PChannel
 
     int os_close();
     int os_socket(int af, int type, int proto);
-    BOOL os_connect(
+    PBoolean os_connect(
       struct sockaddr * sin,
       PINDEX size
     );
-    BOOL os_recvfrom(
+    PBoolean os_recvfrom(
       void * buf,
       PINDEX len,
       int flags,
       struct sockaddr * from,
       PINDEX * fromlen
     );
-    BOOL os_sendto(
+    PBoolean os_sendto(
       const void * buf,
       PINDEX len,
       int flags,
       struct sockaddr * to,
       PINDEX tolen
     );
-    BOOL os_accept(
+    PBoolean os_accept(
       PSocket & listener,
       struct sockaddr * addr,
       PINDEX * size
@@ -598,7 +444,7 @@ class PSocket : public PChannel
     WORD port;
 
 #if P_HAS_RECVMSG
-    BOOL catchReceiveToAddr;
+    PBoolean catchReceiveToAddr;
     virtual void SetLastReceiveAddr(void * /*addr*/, int /*addrLen*/)
     { }
 #endif
@@ -629,7 +475,7 @@ class P_fd_set {
 
     void Zero();
 
-    BOOL IsPresent(SOCKET fd) const
+    PBoolean IsPresent(SOCKET fd) const
       {
         return FD_ISSET(fd, set);
       }
@@ -639,11 +485,23 @@ class P_fd_set {
         return set;
       }
 
-  private:
+  protected:
     void Construct();
 
     SOCKET max_fd;
     fd_set * set;
+
+  private:
+#ifdef __MINGW32__
+  // avoid compile error when this declaration is private
+  // this could be a gcc bug
+  public:
+    P_fd_set(const P_fd_set &) {}
+  private:
+#else
+    P_fd_set(const P_fd_set &) {}
+#endif
+    void operator=(const P_fd_set &) {}
 };
 
 
@@ -674,7 +532,7 @@ class P_timeval {
 
   private:
     struct timeval tval;
-    BOOL infinite;
+    PBoolean infinite;
 };
 
 #ifdef _WIN32
@@ -686,11 +544,13 @@ class PWinSock : public PSocket
     PWinSock();
     ~PWinSock();
   private:
-    virtual BOOL OpenSocket();
+    virtual PBoolean OpenSocket();
     virtual const char * GetProtocolName() const;
 };
 #endif
 
-#endif
+
+#endif // PTLIB_SOCKET_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

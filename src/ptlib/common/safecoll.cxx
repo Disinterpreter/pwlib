@@ -23,68 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: safecoll.cxx,v $
- * Revision 1.14  2004/10/14 23:01:31  csoutheren
- * Fiuxed problem with usage of Sleep
- *
- * Revision 1.13  2004/10/14 12:31:47  rjongbloed
- * Added synchronous mode for safe collection RemoveAll() to wait until all objects
- *   have actually been deleted before returning.
- *
- * Revision 1.12  2004/10/04 12:54:33  rjongbloed
- * Added functions for locking an unlocking to "auto-unlock" classes.
- *
- * Revision 1.11  2004/08/14 07:42:31  rjongbloed
- * Added trace log at level 6 for helping find PSafeObject reference/dereference errors.
- *
- * Revision 1.10  2004/08/12 12:37:41  rjongbloed
- * Fixed bug recently introduced so removes deleted object from deletion list.
- * Also changed removal list to be correct type.
- *
- * Revision 1.9  2004/08/05 12:15:56  rjongbloed
- * Added classes for auto unlocking read only and read write mutex on
- *   PSafeObject - similar to PWaitAndSIgnal.
- * Utilised mutable keyword for mutex and improved the constness of functions.
- * Added DisallowDeleteObjects to safe collections so can have a PSafeObject in
- *   multiple collections.
- * Added a tempalte function to do casting of PSafePtr to a PSafePtr of a derived
- *   class.
- * Assured that a PSafeObject present on a collection always increments its
- *   reference count so while in collection it is not deleted.
- *
- * Revision 1.8  2004/04/03 08:22:22  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.7  2002/12/10 07:37:34  robertj
- * optimised SetLockMode() so if doesn't change mode it doesn't do anything.
- *
- * Revision 1.6  2002/10/29 00:06:24  robertj
- * Changed template classes so things like PSafeList actually creates the
- *   base collection class as well.
- * Allowed for the PSafeList::Append() to return a locked pointer to the
- *   object just appended.
- *
- * Revision 1.5  2002/10/04 08:22:50  robertj
- * Changed read/write mutex so can be called by same thread without deadlock
- *   removing the need to a lock count in safe pointer.
- * Added asserts if try and dereference a NULL safe pointer.
- * Added more documentation on behaviour.
- *
- * Revision 1.4  2002/08/29 06:53:28  robertj
- * Added optimisiation, separate mutex for toBeRemoved list.
- * Added assert for reference count going below zero.
- * Fixed incorrect usage of lockCount if target of an assignment from another
- *   safe pointer. Would not unlock the safe object which could cause deadlock.
- *
- * Revision 1.3  2002/05/06 00:44:45  robertj
- * Made the lock/unlock read only const so can be used in const functions.
- *
- * Revision 1.2  2002/05/01 04:48:05  robertj
- * GNU compatibility.
- *
- * Revision 1.1  2002/05/01 04:16:44  robertj
- * Added thread safe collection classes.
- *
+ * $Revision: 27948 $
+ * $Author: rjongbloed $
+ * $Date: 2012-06-30 22:54:23 -0500 (Sat, 30 Jun 2012) $
  */
 
 #ifdef __GNUC__
@@ -100,91 +41,126 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-PSafeObject::PSafeObject()
+PSafeObject::PSafeObject(PSafeObject * indirectLock)
+  : safeReferenceCount(0)
+  , safelyBeingRemoved(PFalse)
+  , safeInUse(indirectLock != NULL ? indirectLock->safeInUse : &safeInUseMutex)
 {
-  safeReferenceCount = 0;
-  safelyBeingRemoved = FALSE;
 }
 
 
-BOOL PSafeObject::SafeReference()
+PBoolean PSafeObject::SafeReference()
 {
-  PWaitAndSignal mutex(safetyMutex);
+#if PTRACING
+  unsigned tracedReferenceCount;
+#endif
 
-  if (safelyBeingRemoved)
-    return FALSE;
+  {
+    PWaitAndSignal mutex(safetyMutex);
+    if (safelyBeingRemoved)
+      return PFalse;
+    safeReferenceCount++;
+#if PTRACING
+    tracedReferenceCount = safeReferenceCount;
+#endif
+  }
 
-  safeReferenceCount++;
-  PTRACE(6, "SafeColl\tIncrement reference count to " << safeReferenceCount << " for " << GetClass() << ' ' << (void *)this);
-  return TRUE;
+  PTRACE(7, "SafeColl\tIncrement reference count to " << tracedReferenceCount << " for " << GetClass() << ' ' << (void *)this);
+  return PTrue;
 }
 
 
-void PSafeObject::SafeDereference()
+PBoolean PSafeObject::SafeDereference()
 {
+  PBoolean mayBeDeleted = PFalse;
+#if PTRACING
+  unsigned tracedReferenceCount;
+#endif
+
   safetyMutex.Wait();
   if (PAssert(safeReferenceCount > 0, PLogicError)) {
     safeReferenceCount--;
-    PTRACE(6, "SafeColl\tDecrement reference count to " << safeReferenceCount << " for " << GetClass() << ' ' << (void *)this);
+    mayBeDeleted = safeReferenceCount == 0 && !safelyBeingRemoved;
   }
+#if PTRACING
+  tracedReferenceCount = safeReferenceCount;
+#endif
   safetyMutex.Signal();
+
+  PTRACE(7, "SafeColl\tDecrement reference count to " << tracedReferenceCount << " for " << GetClass() << ' ' << (void *)this);
+
+  return mayBeDeleted;
 }
 
 
-BOOL PSafeObject::LockReadOnly() const
+PBoolean PSafeObject::LockReadOnly() const
 {
+  PTRACE(7, "SafeColl\tWaiting read ("<<(void *)this<<")");
   safetyMutex.Wait();
 
   if (safelyBeingRemoved) {
     safetyMutex.Signal();
-    return FALSE;
+    PTRACE(6, "SafeColl\tBeing removed while waiting read ("<<(void *)this<<")");
+    return PFalse;
   }
 
   safetyMutex.Signal();
-  safeInUseFlag.StartRead();
-  return TRUE;
+  safeInUse->StartRead();
+  PTRACE(6, "SafeColl\tLocked read ("<<(void *)this<<")");
+  return PTrue;
 }
 
 
 void PSafeObject::UnlockReadOnly() const
 {
-  safeInUseFlag.EndRead();
+  PTRACE(6, "SafeColl\tUnlocked read ("<<(void *)this<<")");
+  safeInUse->EndRead();
 }
 
 
-BOOL PSafeObject::LockReadWrite()
+PBoolean PSafeObject::LockReadWrite()
 {
+  PTRACE(7, "SafeColl\tWaiting readWrite ("<<(void *)this<<")");
   safetyMutex.Wait();
 
   if (safelyBeingRemoved) {
     safetyMutex.Signal();
-    return FALSE;
+    PTRACE(6, "SafeColl\tBeing removed while waiting readWrite ("<<(void *)this<<")");
+    return PFalse;
   }
 
   safetyMutex.Signal();
-  safeInUseFlag.StartWrite();
-  return TRUE;
+  safeInUse->StartWrite();
+  PTRACE(6, "SafeColl\tLocked readWrite ("<<(void *)this<<")");
+  return PTrue;
 }
 
 
 void PSafeObject::UnlockReadWrite()
 {
-  safeInUseFlag.EndWrite();
+  PTRACE(6, "SafeColl\tUnlocked readWrite ("<<(void *)this<<")");
+  safeInUse->EndWrite();
 }
 
 
 void PSafeObject::SafeRemove()
 {
   safetyMutex.Wait();
-  safelyBeingRemoved = TRUE;
+  safelyBeingRemoved = PTrue;
   safetyMutex.Signal();
 }
 
 
-BOOL PSafeObject::SafelyCanBeDeleted() const
+PBoolean PSafeObject::SafelyCanBeDeleted() const
 {
   PWaitAndSignal mutex(safetyMutex);
   return safelyBeingRemoved && safeReferenceCount == 0;
+}
+
+
+bool PSafeObject::GarbageCollection()
+{
+  return true;
 }
 
 
@@ -204,7 +180,7 @@ PSafeLockReadOnly::~PSafeLockReadOnly()
 }
 
 
-BOOL PSafeLockReadOnly::Lock()
+PBoolean PSafeLockReadOnly::Lock()
 {
   locked = safeObject.LockReadOnly();
   return locked;
@@ -215,7 +191,7 @@ void PSafeLockReadOnly::Unlock()
 {
   if (locked) {
     safeObject.UnlockReadOnly();
-    locked = FALSE;
+    locked = PFalse;
   }
 }
 
@@ -237,7 +213,7 @@ PSafeLockReadWrite::~PSafeLockReadWrite()
 }
 
 
-BOOL PSafeLockReadWrite::Lock()
+PBoolean PSafeLockReadWrite::Lock()
 {
   locked = safeObject.LockReadWrite();
   return locked;
@@ -248,7 +224,7 @@ void PSafeLockReadWrite::Unlock()
 {
   if (locked) {
     safeObject.UnlockReadWrite();
-    locked = FALSE;
+    locked = PFalse;
   }
 }
 
@@ -260,7 +236,7 @@ PSafeCollection::PSafeCollection(PCollection * coll)
   collection = coll;
   collection->DisallowDeleteObjects();
   toBeRemoved.DisallowDeleteObjects();
-  deleteObjects = TRUE;
+  deleteObjects = PTrue;
 }
 
 
@@ -268,41 +244,53 @@ PSafeCollection::~PSafeCollection()
 {
   deleteObjectsTimer.Stop();
 
-  toBeRemoved.AllowDeleteObjects();
-  toBeRemoved.RemoveAll();
+  RemoveAll();
 
-  collection->AllowDeleteObjects();
+  /* Delete objects moved to deleted list in RemoveAll(), we don't use
+     DeleteObjectsToBeRemoved() as that will do a garbage collection which might
+     prevent deletion. Need to be a bit more forceful here. */
+  for (PList<PSafeObject>::iterator i = toBeRemoved.begin(); i != toBeRemoved.end(); ++i) {
+    i->GarbageCollection();
+    if (i->SafelyCanBeDeleted())
+      delete &*i;
+    else {
+      // If anything still has a PSafePtr .. "detach" it from the collection so
+      // will be deleted whan that PSafePtr finally goes out of scope.
+      i->safelyBeingRemoved = false;
+    }
+  }
+
   delete collection;
 }
 
 
-BOOL PSafeCollection::SafeRemove(PSafeObject * obj)
+PBoolean PSafeCollection::SafeRemove(PSafeObject * obj)
 {
   if (obj == NULL)
-    return FALSE;
+    return PFalse;
 
   PWaitAndSignal mutex(collectionMutex);
   if (!collection->Remove(obj))
-    return FALSE;
+    return PFalse;
 
   SafeRemoveObject(obj);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSafeCollection::SafeRemoveAt(PINDEX idx)
+PBoolean PSafeCollection::SafeRemoveAt(PINDEX idx)
 {
   PWaitAndSignal mutex(collectionMutex);
   PSafeObject * obj = PDownCast(PSafeObject, collection->RemoveAt(idx));
   if (obj == NULL)
-    return FALSE;
+    return PFalse;
 
   SafeRemoveObject(obj);
-  return TRUE;
+  return PTrue;
 }
 
 
-void PSafeCollection::RemoveAll(BOOL synchronous)
+void PSafeCollection::RemoveAll(PBoolean synchronous)
 {
   collectionMutex.Wait();
 
@@ -325,32 +313,41 @@ void PSafeCollection::SafeRemoveObject(PSafeObject * obj)
   if (obj == NULL)
     return;
 
-  obj->SafeDereference();
+  // Make sure SfeRemove() called before SafeDereference() to avoid race condition
+  if (deleteObjects) {
+    obj->SafeRemove();
 
-  if (!deleteObjects)
-    return;
+    removalMutex.Wait();
+    toBeRemoved.Append(obj);
+    removalMutex.Signal();
+  }
 
-  obj->SafeRemove();
-
-  removalMutex.Wait();
-  toBeRemoved.Append(obj);
-  removalMutex.Signal();
+  /* Even though we are marked as not to delete objects, we still need to obey
+     the rule that if there are no references left the object is deleted. If
+     the object is still "owned" by a PSafeCollection that has NOT got
+     deleteObjects false, then SafeDereference returns false so we don't delete
+     is here. If there are no PSafePtr()s or PSafeCollections()'s anywhere we
+     need to delete it.
+     */
+  if (obj->SafeDereference() && !deleteObjects)
+    delete obj;
 }
 
 
-BOOL PSafeCollection::DeleteObjectsToBeRemoved()
+PBoolean PSafeCollection::DeleteObjectsToBeRemoved()
 {
   PWaitAndSignal lock(removalMutex);
 
-  PINDEX i = 0;
-  while (i < toBeRemoved.GetSize()) {
-    if (toBeRemoved[i].SafelyCanBeDeleted()) {
-      PObject * obj = toBeRemoved.RemoveAt(i);
+  PList<PSafeObject>::iterator i = toBeRemoved.begin();
+  while (i != toBeRemoved.end()) {
+    if (i->GarbageCollection() && i->SafelyCanBeDeleted()) {
+      PObject * obj = &*i;
+      toBeRemoved.Remove(obj);
       removalMutex.Signal();
       DeleteObject(obj);
       removalMutex.Wait();
 
-      i = 0; // Restart looking through list
+      i = toBeRemoved.begin(); // Restart looking through list
     }
     else
       i++;
@@ -386,6 +383,30 @@ PINDEX PSafeCollection::GetSize() const
 {
   PWaitAndSignal lock(collectionMutex);
   return collection->GetSize();
+}
+
+
+void PSafeCollection::CopySafeCollection(PCollection * other)
+{
+  DisallowDeleteObjects();
+
+  for (PINDEX i = 0; i < other->GetSize(); ++i) {
+    PSafeObject * obj = dynamic_cast<PSafeObject *>(other->GetAt(i));
+    if (obj != NULL && obj->SafeReference())
+      collection->Append(obj);
+  }
+}
+
+
+void PSafeCollection::CopySafeDictionary(PAbstractDictionary * other)
+{
+  DisallowDeleteObjects();
+
+  for (PINDEX i = 0; i < other->GetSize(); ++i) {
+    PSafeObject * obj = dynamic_cast<PSafeObject *>(&other->AbstractGetDataAt(i));
+    if (obj != NULL && obj->SafeReference())
+      collection->Insert(other->AbstractGetKeyAt(i), obj);
+  }
 }
 
 
@@ -455,6 +476,12 @@ PObject::Comparison PSafePtrBase::Compare(const PObject & obj) const
 }
 
 
+void PSafePtrBase::PrintOn(ostream &strm) const
+{
+  strm << currentObject;
+}
+
+
 void PSafePtrBase::Assign(const PSafePtrBase & enumerator)
 {
   if (this == &enumerator)
@@ -477,6 +504,7 @@ void PSafePtrBase::Assign(const PSafeCollection & safeCollection)
   ExitSafetyMode(WithDereference);
 
   collection = &safeCollection;
+  currentObject = NULL;
   lockMode = PSafeReadWrite;
 
   Assign((PINDEX)0);
@@ -606,10 +634,21 @@ void PSafePtrBase::Previous()
 }
 
 
-BOOL PSafePtrBase::SetSafetyMode(PSafetyMode mode)
+void PSafePtrBase::SetNULL()
+{
+  // lockCount ends up zero after this
+  ExitSafetyMode(WithDereference);
+
+  collection = NULL;
+  currentObject = NULL;
+  lockMode = PSafeReference;
+}
+
+
+PBoolean PSafePtrBase::SetSafetyMode(PSafetyMode mode)
 {
   if (lockMode == mode)
-    return TRUE;
+    return PTrue;
 
   ExitSafetyMode(NoDereference);
   lockMode = mode;
@@ -617,34 +656,34 @@ BOOL PSafePtrBase::SetSafetyMode(PSafetyMode mode)
 }
 
 
-BOOL PSafePtrBase::EnterSafetyMode(EnterSafetyModeOption ref)
+PBoolean PSafePtrBase::EnterSafetyMode(EnterSafetyModeOption ref)
 {
   if (currentObject == NULL)
-    return FALSE;
+    return PFalse;
 
   if (ref == WithReference && !currentObject->SafeReference()) {
     currentObject = NULL;
-    return FALSE;
+    return PFalse;
   }
 
   switch (lockMode) {
     case PSafeReadOnly :
       if (currentObject->LockReadOnly())
-        return TRUE;
+        return PTrue;
       break;
 
     case PSafeReadWrite :
       if (currentObject->LockReadWrite())
-        return TRUE;
+        return PTrue;
       break;
 
     case PSafeReference :
-      return TRUE;
+      return PTrue;
   }
 
   currentObject->SafeDereference();
   currentObject = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -666,8 +705,187 @@ void PSafePtrBase::ExitSafetyMode(ExitSafetyModeOption ref)
       break;
   }
 
-  if (ref == WithDereference)
-    currentObject->SafeDereference();
+  if (ref == WithDereference && currentObject->SafeDereference()) {
+    PSafeObject * objectToDelete = currentObject;
+    currentObject = NULL;
+    DeleteObject(objectToDelete);
+  }
+}
+
+
+void PSafePtrBase::DeleteObject(PSafeObject * obj)
+{
+  if (obj == NULL)
+    return;
+
+  PTRACE(6, "SafeColl\tDeleting object (" << obj << ')');
+  delete obj;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+
+PSafePtrMultiThreaded::PSafePtrMultiThreaded(PSafeObject * obj, PSafetyMode mode)
+  : PSafePtrBase(NULL, mode)
+  , m_objectToDelete(NULL)
+{
+  LockPtr();
+
+  currentObject = obj;
+  EnterSafetyMode(WithReference);
+
+  UnlockPtr();
+}
+
+
+PSafePtrMultiThreaded::PSafePtrMultiThreaded(const PSafeCollection & safeCollection,
+                                             PSafetyMode mode,
+                                             PINDEX idx)
+  : PSafePtrBase(NULL, mode)
+  , m_objectToDelete(NULL)
+{
+  LockPtr();
+
+  collection = &safeCollection;
+  Assign(idx);
+
+  UnlockPtr();
+}
+
+
+PSafePtrMultiThreaded::PSafePtrMultiThreaded(const PSafeCollection & safeCollection,
+                                             PSafetyMode mode,
+                                             PSafeObject * obj)
+  : PSafePtrBase(NULL, mode)
+  , m_objectToDelete(NULL)
+{
+  LockPtr();
+
+  collection = &safeCollection;
+  Assign(obj);
+
+  UnlockPtr();
+}
+
+
+PSafePtrMultiThreaded::PSafePtrMultiThreaded(const PSafePtrMultiThreaded & enumerator)
+  : m_objectToDelete(NULL)
+{
+  LockPtr();
+  enumerator.m_mutex.Wait();
+
+  collection = enumerator.collection;
+  currentObject = enumerator.currentObject;
+  lockMode = enumerator.lockMode;
+
+  EnterSafetyMode(WithReference);
+
+  enumerator.m_mutex.Signal();
+  UnlockPtr();
+}
+
+
+PSafePtrMultiThreaded::~PSafePtrMultiThreaded()
+{
+  LockPtr();
+  ExitSafetyMode(WithDereference);
+  currentObject = NULL;
+  UnlockPtr();
+}
+
+
+PObject::Comparison PSafePtrMultiThreaded::Compare(const PObject & obj) const
+{
+  PWaitAndSignal mutex(m_mutex);
+  return PSafePtrBase::Compare(obj);
+}
+
+
+void PSafePtrMultiThreaded::SetNULL()
+{
+  LockPtr();
+  PSafePtrBase::SetNULL();
+  UnlockPtr();
+}
+
+
+PBoolean PSafePtrMultiThreaded::SetSafetyMode(PSafetyMode mode)
+{
+  PWaitAndSignal mutex(m_mutex);
+  return PSafePtrBase::SetSafetyMode(mode);
+}
+
+
+void PSafePtrMultiThreaded::Assign(const PSafePtrMultiThreaded & ptr)
+{
+  LockPtr();
+  ptr.m_mutex.Wait();
+  PSafePtrBase::Assign(ptr);
+  ptr.m_mutex.Signal();
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Assign(const PSafePtrBase & ptr)
+{
+  LockPtr();
+  PSafePtrBase::Assign(ptr);
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Assign(const PSafeCollection & safeCollection)
+{
+  LockPtr();
+  PSafePtrBase::Assign(safeCollection);
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Assign(PSafeObject * obj)
+{
+  LockPtr();
+  PSafePtrBase::Assign(obj);
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Assign(PINDEX idx)
+{
+  LockPtr();
+  PSafePtrBase::Assign(idx);
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Next()
+{
+  LockPtr();
+  PSafePtrBase::Next();
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::Previous()
+{
+  LockPtr();
+  PSafePtrBase::Previous();
+  UnlockPtr();
+}
+
+
+void PSafePtrMultiThreaded::DeleteObject(PSafeObject * obj)
+{
+  m_objectToDelete = obj;
+}
+
+
+void PSafePtrMultiThreaded::UnlockPtr()
+{
+  PSafeObject * obj = m_objectToDelete;
+  m_objectToDelete = NULL;
+  m_mutex.Signal();
+  PSafePtrBase::DeleteObject(obj);
 }
 
 

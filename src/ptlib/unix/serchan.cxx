@@ -26,88 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: serchan.cxx,v $
- * Revision 1.32  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.31  2005/03/10 03:27:30  dereksmithies
- * Fix an address typo.
- *
- * Revision 1.30  2005/01/03 02:52:52  csoutheren
- * Fixed problem with default speed of serial ports
- * Fixed problem with using obsolete lock directory for serial ports
- *
- * Revision 1.29  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.28  2004/02/22 04:06:47  ykiryanov
- * ifdef'd all functions because BeOS don't support it
- *
- * Revision 1.27  2002/11/02 00:32:21  robertj
- * Further fixes to VxWorks (Tornado) port, thanks Andreas Sikkema.
- *
- * Revision 1.26  2002/10/17 13:44:27  robertj
- * Port to RTEMS, thanks Vladimir Nesic.
- *
- * Revision 1.25  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.24  2002/03/27 06:42:16  robertj
- * Implemented the DTR etc functions and ttya/ttyb strings for sunos,
- *    thanks tommi.korhonen@insta.fi & Raimo Ruokonen <rruokonen@koti.soon.fi>
- *
- * Revision 1.23  2001/09/10 03:03:36  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.22  2001/08/11 15:38:43  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.21  2001/01/04 17:57:41  rogerh
- * Fix a cut and past error in my previous commit
- *
- * Revision 1.20  2001/01/04 10:28:07  rogerh
- * FreeBSD does not set the Baud Rate with c_cflags. Add the 'BSD' way
- *
- * Revision 1.19  2001/01/03 10:56:01  rogerh
- * CBAUD is not defined on FreeBSD.
- *
- * Revision 1.18  2000/12/29 07:36:18  craigs
- * Finally got working correctly!
- *
- * Revision 1.17  2000/11/14 14:56:24  rogerh
- * Fix #define parameters (fd should be just f)
- *
- * Revision 1.16  2000/11/14 14:52:32  rogerh
- * Fix SET/GET typo error
- *
- * Revision 1.15  2000/11/12 23:30:41  craigs
- * Fixed problems with serial port configuration
- *
- * Revision 1.14  2000/06/21 01:01:22  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.13  2000/04/09 18:19:23  rogerh
- * Add my changes for NetBSD support.
- *
- * Revision 1.12  2000/04/06 12:11:32  rogerh
- * MacOS X support submitted by Kevin Packard
- *
- * Revision 1.11  2000/03/08 12:17:09  rogerh
- * Add OpenBSD support
- *
- * Revision 1.10  1998/12/21 06:08:08  robertj
- * Fixed warning on solaris x86 GNU system.
- *
- * Revision 1.9  1998/11/30 21:51:54  robertj
- * New directory structure.
- *
- * Revision 1.8  1998/11/24 09:39:14  robertj
- * FreeBSD port.
- *
- * Revision 1.7  1998/09/24 04:12:17  robertj
- * Added open software license.
- *
+ * $Revision: 28508 $
+ * $Author: ededu $
+ * $Date: 2012-10-27 15:38:14 -0500 (Sat, 27 Oct 2012) $
  */
  
 #pragma implementation "serchan.h"
@@ -118,7 +39,7 @@
 #include <signal.h>
 #include <sys/ioctl.h>
 
-#if defined(P_LINUX)
+#if defined(P_LINUX) || defined(P_GNU_HURD)
 #define  TCSETATTR(f,t)  tcsetattr(f,TCSANOW,t)
 #define  TCGETATTR(f,t)  tcgetattr(f,t)
 
@@ -192,11 +113,11 @@ void PSerialChannel::Construct()
 #endif // P_VXWORKS
 }
 
-BOOL PSerialChannel::Close()
+PBoolean PSerialChannel::Close()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
   if (os_handle >= 0) {
 
@@ -212,7 +133,7 @@ BOOL PSerialChannel::Close()
 }
 
 
-BOOL PSerialChannel::Open(const PString & port, 
+PBoolean PSerialChannel::Open(const PString & port, 
                                     DWORD speed,
                                      BYTE data,
                                    Parity parity,
@@ -227,14 +148,14 @@ BOOL PSerialChannel::Open(const PString & port,
 //  // check prefix of name
 //  if (port.Left(PORT_PREFIX_LEN) != PORT_PREFIX) {
 //    lastError = BadParameter;
-//    return FALSE;
+//    return PFalse;
 //  }
 
 //  // check suffix
 //  int portnum = (port.Right(port.GetLength()-PORT_PREFIX_LEN)).AsInteger();
 //  if ((portnum < PORT_START) || (portnum >= (PORT_START + PORT_COUNT))) {
 //    lastError = BadParameter;
-//    return FALSE;
+//    return PFalse;
 //  }
 
   // save the port name
@@ -242,7 +163,7 @@ BOOL PSerialChannel::Open(const PString & port,
 
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   // construct lock filename 
@@ -284,7 +205,7 @@ BOOL PSerialChannel::Open(const PString & port,
   if ((os_handle = ::open((const char *)device_name, O_RDWR|O_NONBLOCK|O_NOCTTY)) < 0) {
     ConvertOSError(os_handle);
     Close();
-    return FALSE;
+    return PFalse;
   }
 
   // save the channel name
@@ -305,27 +226,27 @@ BOOL PSerialChannel::Open(const PString & port,
       !SetOutputFlowControl(outputFlow)) {
     errno = EINVAL;
     ConvertOSError(-1);
-    return FALSE;
+    return PFalse;
   }
 
   ::fcntl(os_handle, F_SETFD, 1);
 
 #endif // P_VXWORKS
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
+PBoolean PSerialChannel::SetSpeed(DWORD newBaudRate)
 {
   if (newBaudRate == baudRate)
-    return TRUE;
+    return PTrue;
 
   if (os_handle < 0)
-    return TRUE;
+    return PTrue;
 
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int baud;
@@ -422,6 +343,26 @@ BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
       baud = B230400;
       break;
 #endif
+#ifdef B460800
+    case 460800:
+      baud = B460800;
+      break;
+#endif
+#ifdef B576000
+    case 576000:
+      baud = B576000;
+      break;
+#endif
+#ifdef B921600
+    case 921600:
+      baud = B921600;
+      break;
+#endif
+#ifdef B1152000
+    case 1152000:
+      baud = B1152000;
+      break;
+#endif
     default:
       baud = -1;
   };
@@ -429,7 +370,7 @@ BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
   if (baud == -1) {
     errno = EINVAL;
     ConvertOSError(-1);
-    return FALSE;
+    return PFalse;
   }
 
   // save new baud rate
@@ -437,8 +378,11 @@ BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
 
 #if defined(P_FREEBSD) || defined(P_OPENBSD) || defined (P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS)
   // The BSD way
-  Termio.c_ispeed = baud; 
+  Termio.c_ispeed = baud;
   Termio.c_ospeed = baud;
+#elif defined(P_GNU_HURD)
+  Termio.__ispeed = baud;
+  Termio.__ospeed = baud;
 #else
   // The Linux way
   Termio.c_cflag &= ~CBAUD;
@@ -446,7 +390,7 @@ BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
 #endif
 
   if (os_handle < 0)
-    return TRUE;
+    return PTrue;
 
   // initialise the port
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
@@ -455,14 +399,14 @@ BOOL PSerialChannel::SetSpeed(DWORD newBaudRate)
 }
 
 
-BOOL PSerialChannel::SetDataBits(BYTE data)
+PBoolean PSerialChannel::SetDataBits(BYTE data)
 {
   if (data == dataBits)
-    return TRUE;
+    return PTrue;
 
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags;
@@ -497,7 +441,7 @@ BOOL PSerialChannel::SetDataBits(BYTE data)
   if (flags == 0) {
     errno = EINVAL;
     ConvertOSError(-1);
-    return FALSE;
+    return PFalse;
   }
 
   // set the new number of data bits
@@ -506,21 +450,21 @@ BOOL PSerialChannel::SetDataBits(BYTE data)
   Termio.c_cflag |= flags;
 
   if (os_handle < 0)
-    return TRUE;
+    return PTrue;
 
   return ConvertOSError(TCSETATTR(os_handle, &Termio));
 
 #endif // P_VXWORKS
 }
 
-BOOL PSerialChannel::SetParity(Parity parity)
+PBoolean PSerialChannel::SetParity(Parity parity)
 {
   if (parity == parityBits)
-    return TRUE;
+    return PTrue;
 
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags;
@@ -545,11 +489,11 @@ BOOL PSerialChannel::SetParity(Parity parity)
   if (flags < 0) {
     errno = EINVAL;
     ConvertOSError(-1);
-    return FALSE;
+    return PFalse;
   }
 
   if (os_handle < 0)
-    return TRUE;
+    return PTrue;
 
   // set the new parity
   parityBits = parity;
@@ -561,14 +505,14 @@ BOOL PSerialChannel::SetParity(Parity parity)
 #endif // P_VXWORKS
 }
 
-BOOL PSerialChannel::SetStopBits(BYTE stop)
+PBoolean PSerialChannel::SetStopBits(BYTE stop)
 {
   if (stop == stopBits)
-    return TRUE;
+    return PTrue;
 
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags;
@@ -586,11 +530,11 @@ BOOL PSerialChannel::SetStopBits(BYTE stop)
   if (flags < 0) {
     errno = EINVAL;
     ConvertOSError(-1);
-    return FALSE;
+    return PFalse;
   }
 
   if (os_handle < 0)
-    return TRUE;
+    return PTrue;
 
   // set the new number of stop bits
   stopBits = stop;
@@ -622,9 +566,9 @@ PSerialChannel::Parity PSerialChannel::GetParity() const
   return parityBits;
 }
 
-BOOL PSerialChannel::SetInputFlowControl(FlowControl)
+PBoolean PSerialChannel::SetInputFlowControl(FlowControl)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -634,9 +578,9 @@ PSerialChannel::FlowControl PSerialChannel::GetInputFlowControl() const
 }
 
 
-BOOL PSerialChannel::SetOutputFlowControl(FlowControl)
+PBoolean PSerialChannel::SetOutputFlowControl(FlowControl)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -646,7 +590,7 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 }
 
 
-void PSerialChannel::SetDTR(BOOL mode)
+void PSerialChannel::SetDTR(PBoolean mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -655,14 +599,14 @@ void PSerialChannel::SetDTR(BOOL mode)
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   flags &= ~TIOCM_DTR;
-  if ( mode == TRUE )
+  if ( mode == PTrue )
     flags |= TIOCM_DTR;
   ioctl(os_handle,TIOCMSET,&flags);  // set back
 
   /* 
   ALTERNATE IMPLEMENTATION?
   Uses "Local Mode" bits?
-  if ( mode TRUE )
+  if ( mode PTrue )
     ioctl(os_handle, TIOCSDTR, 0);
   else 
     ioctl(os_handle, TIOCCDTR, 0);
@@ -672,7 +616,7 @@ void PSerialChannel::SetDTR(BOOL mode)
 }
 
 
-void PSerialChannel::SetRTS(BOOL mode)
+void PSerialChannel::SetRTS(PBoolean mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -681,7 +625,7 @@ void PSerialChannel::SetRTS(BOOL mode)
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
   flags &= ~TIOCM_RTS;
-  if ( mode == TRUE )
+  if ( mode == PTrue )
     flags |= TIOCM_RTS;
   ioctl(os_handle,TIOCMSET,&flags);  // set back
 
@@ -689,7 +633,7 @@ void PSerialChannel::SetRTS(BOOL mode)
 }
 
 
-void PSerialChannel::SetBreak(BOOL mode)
+void PSerialChannel::SetBreak(PBoolean mode)
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
@@ -704,64 +648,64 @@ void PSerialChannel::SetBreak(BOOL mode)
 }
 
 
-BOOL PSerialChannel::GetCTS()
+PBoolean PSerialChannel::GetCTS()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags = 0;
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
-  return (flags&TIOCM_CTS)?TRUE:FALSE;
+  return (flags&TIOCM_CTS)?PTrue:PFalse;
 
 #endif // P_VXWORKS
 }
 
 
-BOOL PSerialChannel::GetDSR()
+PBoolean PSerialChannel::GetDSR()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags = 0;
 
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
-  return (flags&TIOCM_DSR)?TRUE:FALSE;
+  return (flags&TIOCM_DSR)?PTrue:PFalse;
 
 #endif // P_VXWORKS
 }
 
 
-BOOL PSerialChannel::GetDCD()
+PBoolean PSerialChannel::GetDCD()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags = 0;
 
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
-  return (flags&TIOCM_CD)?TRUE:FALSE;
+  return (flags&TIOCM_CD)?PTrue:PFalse;
 
 #endif // P_VXWORKS
 }
 
 
-BOOL PSerialChannel::GetRing()
+PBoolean PSerialChannel::GetRing()
 {
 #if defined(P_VXWORKS) || defined (__BEOS__)
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 #else
 
   int flags = 0;
   
   ioctl(os_handle,TIOCMGET,&flags);  // get the bits
-  return (flags&TIOCM_RNG)?TRUE:FALSE;
+  return (flags&TIOCM_RNG)?PTrue:PFalse;
 
 #endif // P_VXWORKS
 }
@@ -774,7 +718,7 @@ PStringList PSerialChannel::GetPortNames()
   char * env = getenv(PORTLISTENV);
   if (env != NULL) {
     PString str(env);
-    PStringArray tokens = str.Tokenise(" ,\t", FALSE);
+    PStringArray tokens = str.Tokenise(" ,\t", PFalse);
     PINDEX i;
     for (i = 0; i < tokens.GetSize(); i++) 
       ports.AppendString(tokens[i]);

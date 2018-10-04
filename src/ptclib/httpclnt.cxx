@@ -23,263 +23,18 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: httpclnt.cxx,v $
- * Revision 1.37  2004/10/26 18:25:54  ykiryanov
- * Added (const char*) qualifier to url parameter, similar to one below
- *
- * Revision 1.36  2004/10/21 09:20:33  csoutheren
- * Fixed compile problems on gcc 2.95.x
- *
- * Revision 1.35  2004/08/17 15:18:30  csoutheren
- * Added support for MovedTemp/MovedPerm to GetDocument
- * Fixed problem with empty URL passed to ExecuteCommand
- *
- * Revision 1.34  2004/04/19 12:53:06  csoutheren
- * Fix for iostream changes thanks to David Parr
- *
- * Revision 1.33  2003/04/23 07:00:15  rogerh
- * Fix the encoding checking. the find_ip sample program now works again
- *
- * Revision 1.32  2003/01/28 06:48:35  robertj
- * Added https support to PHTTPClient (if #define P_SSL availbel).
- *
- * Revision 1.31  2002/12/03 22:38:35  robertj
- * Removed get document that just returns a content length as the chunked
- *   transfer encoding makes this very dangerous.
- * Added GetTextDocument() to get a URL content into a PString.
- * Added a version pf PostData() that gets the reponse content into a PString.
- * Added ReadContentBody() that takes a PString, not just PBYTEArray.
- * Fixed bug where conten-encoding must be checked even if there is a
- *   full content length MIME field.
- *
- * Revision 1.30  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.29  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.28  2002/05/28 01:41:50  robertj
- * Fixed bug in reading chunked data, thanks David Iodice
- *
- * Revision 1.27  2001/10/30 07:02:28  robertj
- * Fixed problem with bad servers causing endless loops in client.
- *
- * Revision 1.26  2001/10/03 00:26:34  robertj
- * Upgraded client to HTTP/1.1 and for chunked mode entity bodies.
- *
- * Revision 1.25  2001/09/28 08:55:15  robertj
- * More changes to support restartable PHTTPClient
- *
- * Revision 1.24  2001/09/28 00:43:47  robertj
- * Added automatic setting of some outward MIME fields.
- * Added "user agent" string field for automatic inclusion.
- * Added function to read the contents of the HTTP request.
- * Added "restarting" of connection if lost persistence.
- *
- * Revision 1.23  2001/09/11 03:27:46  robertj
- * Improved error processing on high level protocol failures, usually
- *   caused by unexpected shut down of a socket.
- *
- * Revision 1.22  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.21  2001/02/22 05:27:14  robertj
- * Added "nicer" version of GetDocument in HTTP client class.
- *
- * Revision 1.20  1999/05/13 04:59:24  robertj
- * Increased amount of buffering on output request write.
- *
- * Revision 1.19  1999/05/11 12:23:52  robertj
- * Fixed bug introduced in last revision to have arbitrary HTTP commands, missing CRLF.
- *
- * Revision 1.18  1999/05/04 15:26:01  robertj
- * Improved HTTP/1.1 compatibility (pass through user commands).
- * Fixed problems with quicktime installer.
- *
- * Revision 1.17  1998/11/30 04:51:55  robertj
- * New directory structure
- *
- * Revision 1.16  1998/09/23 06:22:09  robertj
- * Added open source copyright license.
- *
- * Revision 1.15  1998/07/24 06:57:21  robertj
- * Fixed error returned on illegal URL passed to unopened socket.
- * Changed PostData function so just has string for data instead of dictionary.
- *
- * Revision 1.14  1998/06/16 03:32:56  robertj
- * Changed TCP connection shutdown to be parameterised.
- *
- * Revision 1.13  1998/06/13 15:03:58  robertj
- * More conditions for NOT shutting down write.
- *
- * Revision 1.12  1998/06/13 12:28:04  robertj
- * Added shutdown to client command if no content length specified.
- *
- * Revision 1.11  1998/04/14 03:42:41  robertj
- * Fixed error code propagation in HTTP client.
- *
- * Revision 1.10  1998/02/03 06:27:10  robertj
- * Fixed propagation of error codes, especially EOF.
- * Fixed writing to some CGI scripts that require CRLF outside of byte count.
- *
- * Revision 1.9  1998/01/26 00:39:00  robertj
- * Added function to allow HTTPClient to automatically connect if URL has hostname.
- * Fixed incorrect return values on HTTPClient GetDocument(), Post etc functions.
- *
- * Revision 1.8  1997/06/12 12:33:35  robertj
- * Fixed bug where mising MIME fields is regarded as an eror.
- *
- * Revision 1.7  1997/03/31 08:26:58  robertj
- * GNU compiler compatibilty.
- *
- * Revision 1.6  1997/03/28 04:40:46  robertj
- * Fixed bug in Post function doing wrong command.
- *
- * Revision 1.5  1997/03/18 22:04:03  robertj
- * Fix bug for binary POST commands.
- *
- * Revision 1.4  1996/12/21 01:26:21  robertj
- * Fixed bug in persistent connections when server closes socket during command.
- *
- * Revision 1.3  1996/12/12 09:24:44  robertj
- * Persistent connection support.
- *
- * Revision 1.2  1996/10/08 13:12:03  robertj
- * Fixed bug in HTTP/0.9 response, first 5 character not put back properly.
- *
- * Revision 1.1  1996/09/14 13:02:18  robertj
- * Initial revision
- *
- * Revision 1.37  1996/08/25 09:37:41  robertj
- * Added function to detect "local" host name.
- * Fixed printing of trailing '/' in empty URL, is distinction between with and without.
- *
- * Revision 1.36  1996/08/22 13:22:26  robertj
- * Fixed bug in print of URLs, extra @ signs.
- *
- * Revision 1.35  1996/08/19 13:42:40  robertj
- * Fixed errors in URL parsing and display.
- * Fixed "Forbidden" problem out of HTTP authorisation system.
- * Fixed authorisation so if have no user/password on basic authentication, does not require it.
- *
- * Revision 1.34  1996/07/27 04:13:47  robertj
- * Fixed use of HTTP proxy on non-persistent connections.
- *
- * Revision 1.33  1996/07/15 10:37:20  robertj
- * Improved proxy "self" detection (especially localhost).
- *
- * Revision 1.32  1996/06/28 13:20:24  robertj
- * Modified HTTPAuthority so gets PHTTPReqest (mainly for URL) passed in.
- * Moved HTTP form resource to another compilation module.
- * Fixed memory leak in POST command.
- *
- * Revision 1.31  1996/06/10 10:00:00  robertj
- * Added global function for query parameters parsing.
- *
- * Revision 1.30  1996/06/07 13:52:23  robertj
- * Added PUT to HTTP proxy FTP. Necessitating redisign of entity body processing.
- *
- * Revision 1.29  1996/06/05 12:33:04  robertj
- * Fixed bug in parsing URL with no path, is NOT absolute!
- *
- * Revision 1.28  1996/05/30 10:07:26  robertj
- * Fixed bug in version number checking of return code compatibility.
- *
- * Revision 1.27  1996/05/26 03:46:42  robertj
- * Compatibility to GNU 2.7.x
- *
- * Revision 1.26  1996/05/23 10:02:13  robertj
- * Added common function for GET and HEAD commands.
- * Fixed status codes to be the actual status code instead of sequential enum.
- * This fixed some problems with proxy pass through of status codes.
- * Fixed bug in URL parsing of username and passwords.
- *
- * Revision 1.19.1.1  1996/04/17 11:08:22  craigs
- * New version by craig pending confirmation by robert
- *
- * Revision 1.19  1996/04/05 01:46:30  robertj
- * Assured PSocket::Write always writes the number of bytes specified, no longer need write loops.
- * Added workaraound for NT Netscape Navigator bug with persistent connections.
- *
- * Revision 1.18  1996/03/31 09:05:07  robertj
- * HTTP 1.1 upgrade.
- *
- * Revision 1.17  1996/03/17 05:48:07  robertj
- * Fixed host name print out of URLs.
- * Added hit count to PHTTPResource.
- *
- * Revision 1.16  1996/03/16 05:00:26  robertj
- * Added ParseReponse() for splitting reponse line into code and info.
- * Added client side support for HTTP socket.
- * Added hooks for proxy support in HTTP socket.
- * Added translation type to TranslateString() to accommodate query variables.
- * Defaulted scheme field in URL to "http".
- * Inhibited output of port field on string conversion of URL according to scheme.
- *
- * Revision 1.15  1996/03/11 10:29:50  robertj
- * Fixed bug in help image HTML.
- *
- * Revision 1.14  1996/03/10 13:15:24  robertj
- * Redesign to make resources thread safe.
- *
- * Revision 1.13  1996/03/02 03:27:37  robertj
- * Added function to translate a string to a form suitable for inclusion in a URL.
- * Added radio button and selection boxes to HTTP form resource.
- * Fixed bug in URL parsing, losing first / if hostname specified.
- *
- * Revision 1.12  1996/02/25 11:14:24  robertj
- * Radio button support for forms.
- *
- * Revision 1.11  1996/02/25 03:10:34  robertj
- * Removed pass through HTTP resource.
- * Fixed PHTTPConfig resource to use correct name for config key.
- *
- * Revision 1.10  1996/02/19 13:48:28  robertj
- * Put multiple uses of literal strings into const variables.
- * Fixed URL parsing so that the unmangling of strings occurs correctly.
- * Moved nested classes from PHTTPForm.
- * Added overwrite option to AddResource().
- * Added get/set string to PHTTPString resource.
- *
- * Revision 1.9  1996/02/13 13:09:17  robertj
- * Added extra parameters to callback function in PHTTPResources, required
- *   by descendants to make informed decisions on data being loaded.
- *
- * Revision 1.8  1996/02/08 12:26:29  robertj
- * Redesign of resource callback mechanism.
- * Added new resource types for HTML data entry forms.
- *
- * Revision 1.7  1996/02/03 11:33:19  robertj
- * Changed RadCmd() so can distinguish between I/O error and unknown command.
- *
- * Revision 1.6  1996/02/03 11:11:49  robertj
- * Numerous bug fixes.
- * Added expiry date and ismodifiedsince support.
- *
- * Revision 1.5  1996/01/30 23:32:40  robertj
- * Added single .
- *
- * Revision 1.4  1996/01/28 14:19:09  robertj
- * Split HTML into separate source file.
- * Beginning of pass through resource type.
- * Changed PCharArray in OnLoadData to PString for convenience in mangling data.
- * Made PHTTPSpace return standard page on selection of partial path.
- *
- * Revision 1.3  1996/01/28 02:49:16  robertj
- * Further implementation.
- *
- * Revision 1.2  1996/01/26 02:24:30  robertj
- * Further implemetation.
- *
- * Revision 1.1  1996/01/23 13:04:32  robertj
- * Initial revision
- *
+ * $Revision: 29065 $
+ * $Author: rjongbloed $
+ * $Date: 2013-02-11 18:26:26 -0600 (Mon, 11 Feb 2013) $
  */
 
 #include <ptlib.h>
+
+#if P_HTTP
+
 #include <ptlib/sockets.h>
 #include <ptclib/http.h>
+#include <ptclib/guid.h>
 
 #if P_SSL
 #include <ptclib/pssl.h>
@@ -287,17 +42,29 @@
 
 #include <ctype.h>
 
+////////////////////////////////////////////////////////////////////////////////////
+
+static PHTTPClientAuthenticationFactory::Worker<PHTTPClientBasicAuthentication> httpClient_basicAuthenticator("basic");
+static PHTTPClientAuthenticationFactory::Worker<PHTTPClientDigestAuthentication> httpClient_md5Authenticator("digest");
+static const char * const AlgorithmNames[PHTTPClientDigestAuthentication::NumAlgorithms] = {
+  "MD5"
+};
+
+#define new PNEW
+
+
+static __inline bool IsOK(int response) { return (response/100) == 2; }
+
+static PINDEX MaxTraceContentSize = 1000;
+
 
 //////////////////////////////////////////////////////////////////////////////
 // PHTTPClient
 
-PHTTPClient::PHTTPClient()
-{
-}
-
-
 PHTTPClient::PHTTPClient(const PString & userAgent)
-  : userAgentName(userAgent)
+  : m_userAgentName(userAgent)
+  , m_persist(true)
+  , m_authentication(NULL)
 {
 }
 
@@ -306,10 +73,9 @@ int PHTTPClient::ExecuteCommand(Commands cmd,
                                 const PURL & url,
                                 PMIMEInfo & outMIME,
                                 const PString & dataBody,
-                                PMIMEInfo & replyMime,
-                                BOOL persist)
+                                PMIMEInfo & replyMime)
 {
-  return ExecuteCommand(commandNames[cmd], url, outMIME, dataBody, replyMime, persist);
+  return ExecuteCommand(commandNames[cmd], url, outMIME, dataBody, replyMime);
 }
 
 
@@ -317,20 +83,21 @@ int PHTTPClient::ExecuteCommand(const PString & cmdName,
                                 const PURL & url,
                                 PMIMEInfo & outMIME,
                                 const PString & dataBody,
-                                PMIMEInfo & replyMime,
-                                BOOL persist)
+                                PMIMEInfo & replyMIME)
 {
-  if (!outMIME.Contains(DateTag))
-    outMIME.SetAt(DateTag, PTime().AsString());
+  if (!outMIME.Contains(DateTag()))
+    outMIME.SetAt(DateTag(), PTime().AsString());
 
-  if (!userAgentName && !outMIME.Contains(UserAgentTag))
-    outMIME.SetAt(UserAgentTag, userAgentName);
+  if (!m_userAgentName && !outMIME.Contains(UserAgentTag()))
+    outMIME.SetAt(UserAgentTag(), m_userAgentName);
 
-  if (persist)
-    outMIME.SetAt(ConnectionTag, KeepAliveTag);
+  if (m_persist)
+    outMIME.SetAt(ConnectionTag(), KeepAliveTag());
 
+  bool needAuthentication = true;
+  PURL adjustableURL = url;
   for (PINDEX retry = 0; retry < 3; retry++) {
-    if (!AssureConnect(url, outMIME))
+    if (!AssureConnect(adjustableURL, outMIME))
       break;
 
     if (!WriteCommand(cmdName, url.AsString(PURL::URIOnly), outMIME, dataBody)) {
@@ -340,62 +107,114 @@ int PHTTPClient::ExecuteCommand(const PString & cmdName,
     }
 
     // If not persisting need to shut down write so other end stops reading
-    if (!persist)
+    if (!m_persist)
       Shutdown(ShutdownWrite);
 
     // Await a response, if all OK exit loop
-    if (ReadResponse(replyMime))
-      break;
+    if (ReadResponse(replyMIME) && (lastResponseCode != Continue || ReadResponse(replyMIME))) {
+      switch (lastResponseCode) {
+        case MovedPermanently:
+        case MovedTemporarily:
+          adjustableURL = replyMIME("Location");
+          if (!adjustableURL.IsEmpty())
+            return lastResponseCode;
+          break;
 
-    // If not persisting, we have no oppurtunity to write again, just error out
-    if (!persist)
-      break;
+        case UnAuthorised:
+          if (needAuthentication && replyMIME.Contains("WWW-Authenticate") && !(m_userName.IsEmpty() && m_password.IsEmpty())) {
+            needAuthentication = false;
 
-    // If have had a failure to read a response but there was no error then
-    // we have a shutdown socket probably due to a lack of persistence so ...
-    if (GetErrorCode(LastReadError) != NoError)
-      break;
+            // authenticate 
+            PString errorMsg;
+            PHTTPClientAuthentication * newAuth = PHTTPClientAuthentication::ParseAuthenticationRequired(false, replyMIME, errorMsg);
+            if (newAuth == NULL)
+              return false;
 
-    // ... we close the channel and allow AssureConnet() to reopen it.
-    Close();
+            newAuth->SetUsername(m_userName);
+            newAuth->SetPassword(m_password);
+
+            delete m_authentication;
+            m_authentication = newAuth;
+            break;
+          }
+          // Do next case
+
+        default:
+          return lastResponseCode;
+      }
+    }
+    else {
+      // If not persisting, we have no oppurtunity to write again, just error out
+      if (!m_persist)
+        break;
+
+      // ... we close the channel and allow AssureConnet() to reopen it.
+      Close();
+    }
   }
 
   return lastResponseCode;
 }
 
 
-BOOL PHTTPClient::WriteCommand(Commands cmd,
-                               const PString & url,
-                               PMIMEInfo & outMIME,
-                               const PString & dataBody)
+bool PHTTPClient::WriteCommand(Commands cmd,
+                        const PString & url,
+                            PMIMEInfo & outMIME,
+                        const PString & dataBody)
 {
   return WriteCommand(commandNames[cmd], url, outMIME, dataBody);
 }
 
 
-BOOL PHTTPClient::WriteCommand(const PString & cmdName,
+bool PHTTPClient::WriteCommand(const PString & cmdName,
                                const PString & url,
-                               PMIMEInfo & outMIME,
+                                   PMIMEInfo & outMIME,
                                const PString & dataBody)
 {
   ostream & this_stream = *this;
-  PINDEX len = dataBody.GetSize()-1;
-  if (!outMIME.Contains(ContentLengthTag))
-    outMIME.SetInteger(ContentLengthTag, len);
+  PINDEX len = dataBody.GetLength();
+  if (!outMIME.Contains(ContentLengthTag()))
+    outMIME.SetInteger(ContentLengthTag(), len);
 
-  if (cmdName.IsEmpty())
-    this_stream << "GET";
-  else
-    this_stream << cmdName;
+  if (m_authentication != NULL) {
+    PHTTPClientAuthenticator auth(cmdName, url, outMIME, dataBody);
+    m_authentication->Authorise(auth);
+  }
 
-  this_stream << ' ' << (url.IsEmpty() ? "/" :  (const char*) url) << " HTTP/1.1\r\n"
+  PString cmd(cmdName.IsEmpty() ? "GET" : cmdName);
+
+#if PTRACING
+  if (PTrace::CanTrace(3)) {
+    ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
+    strm << "HTTP\tSending ";
+    if (PTrace::CanTrace(4))
+      strm << '\n';
+    strm << cmdName << ' ';
+    if (url.IsEmpty())
+      strm << '/';
+    else
+      strm << url;
+    if (PTrace::CanTrace(4)) {
+      strm << '\n' << outMIME;
+      if (!dataBody.IsEmpty()) {
+        int amt = PTrace::CanTrace(5) ? 10000 : 100;
+        strm << dataBody.Left(amt);
+        if (len > amt)
+          strm << "\n....";
+      }
+    }
+    strm << PTrace::End;
+  } 
+#endif
+
+  this_stream << cmd << ' ' << (url.IsEmpty() ? "/" :  (const char*) url) << " HTTP/1.1\r\n"
               << setfill('\r') << outMIME;
 
   return Write((const char *)dataBody, len);
 }
 
 
-BOOL PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
+bool PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
 {
   PString http = ReadString(7);
   if (!http) {
@@ -404,7 +223,8 @@ BOOL PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
     if (http.Find("HTTP/") == P_MAX_INDEX) {
       lastResponseCode = PHTTP::RequestOK;
       lastResponseInfo = "HTTP/0.9";
-      return TRUE;
+      PTRACE(3, "HTTP\tRead HTTP/0.9 OK");
+      return PTrue;
     }
 
     if (http[0] == '\n')
@@ -412,9 +232,39 @@ BOOL PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
     else if (http[0] == '\r' &&  http[1] == '\n')
       ReadString(2);
 
-    if (PHTTP::ReadResponse())
-      if (replyMIME.Read(*this))
-        return TRUE;
+    if (PHTTP::ReadResponse()) {
+      bool readOK = replyMIME.Read(*this);
+
+      PString body;
+      if (lastResponseCode >= 300) {
+        if (replyMIME.GetInteger(ContentLengthTag(), INT_MAX) > MaxTraceContentSize)
+          InternalReadContentBody(replyMIME, NULL); // Waste body
+        else
+          ReadContentBody(replyMIME, body);
+      }
+
+#if PTRACING
+      if (PTrace::CanTrace(3)) {
+        ostream & strm = PTrace::Begin(3, __FILE__, __LINE__);
+        strm << "HTTP\tResponse ";
+        if (PTrace::CanTrace(4))
+          strm << '\n';
+        strm << lastResponseCode << ' ' << lastResponseInfo;
+        if (PTrace::CanTrace(4)) {
+          strm << '\n' << replyMIME;
+          if (!body.IsEmpty())
+            strm << body;
+        }
+        strm << PTrace::End;
+      }
+#endif
+
+      if (!body.IsEmpty())
+        lastResponseInfo += '\n' + body;
+
+      if (readOK)
+        return PTrue;
+    }
   }
  
   lastResponseCode = -1;
@@ -425,48 +275,70 @@ BOOL PHTTPClient::ReadResponse(PMIMEInfo & replyMIME)
     SetErrorValues(ProtocolFailure, 0, LastReadError);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PHTTPClient::ReadContentBody(PMIMEInfo & replyMIME, PString & body)
+bool PHTTPClient::ReadContentBody(PMIMEInfo & replyMIME)
 {
-  BOOL ok = InternalReadContentBody(replyMIME, body);
-  body.SetSize(body.GetSize()+1);
-  return ok;
+  return InternalReadContentBody(replyMIME, NULL);
 }
 
 
-BOOL PHTTPClient::ReadContentBody(PMIMEInfo & replyMIME, PBYTEArray & body)
+bool PHTTPClient::ReadContentBody(PMIMEInfo & replyMIME, PString & body)
 {
-  return InternalReadContentBody(replyMIME, body);
+  PCharArray rawBody;
+  if (!InternalReadContentBody(replyMIME, &rawBody))
+    return false;
+
+  body = PString(rawBody, rawBody.GetSize());
+  return true;
 }
 
 
-BOOL PHTTPClient::InternalReadContentBody(PMIMEInfo & replyMIME, PAbstractArray & body)
+bool PHTTPClient::ReadContentBody(PMIMEInfo & replyMIME, PBYTEArray & body)
 {
-  PCaselessString encoding = replyMIME(TransferEncodingTag);
+  return InternalReadContentBody(replyMIME, &body);
+}
 
-  if (encoding != ChunkedTag) {
-    if (replyMIME.Contains(ContentLengthTag)) {
-      PINDEX length = replyMIME.GetInteger(ContentLengthTag);
-      body.SetSize(length);
-      return ReadBlock(body.GetPointer(), length);
+
+bool PHTTPClient::InternalReadContentBody(PMIMEInfo & replyMIME, PAbstractArray * body)
+{
+  PCaselessString encoding = replyMIME(TransferEncodingTag());
+
+  if (encoding != ChunkedTag()) {
+    if (replyMIME.Contains(ContentLengthTag())) {
+      PINDEX length = replyMIME.GetInteger(ContentLengthTag());
+      if (body != NULL) {
+        body->SetSize(length);
+        return ReadBlock(body->GetPointer(), length);
+      }
+      while (length-- > 0) {
+        if (ReadChar() < 0)
+          return false;
+      }
+      return true;
     }
 
     if (!(encoding.IsEmpty())) {
       lastResponseCode = -1;
       lastResponseInfo = "Unknown Transfer-Encoding extension";
-      return FALSE;
+      return PFalse;
     }
 
-    // Must be raw, read to end file variety
-    static const PINDEX ChunkSize = 2048;
-    PINDEX bytesRead = 0;
-    while (ReadBlock((char *)body.GetPointer(bytesRead+ChunkSize)+bytesRead, ChunkSize))
-      bytesRead += GetLastReadCount();
+    if (body != NULL) {
+      // Must be raw, read to end file variety
+      static const PINDEX ChunkSize = 2048;
+      PINDEX bytesRead = 0;
+      while (ReadBlock((char *)body->GetPointer(bytesRead+ChunkSize)+bytesRead, ChunkSize))
+        bytesRead += GetLastReadCount();
 
-    body.SetSize(bytesRead + GetLastReadCount());
+      body->SetSize(bytesRead + GetLastReadCount());
+    }
+    else {
+      while (ReadChar() >= 0)
+        ;
+    }
     return GetErrorCode(LastReadError) == NoError;
   }
 
@@ -476,124 +348,154 @@ BOOL PHTTPClient::InternalReadContentBody(PMIMEInfo & replyMIME, PAbstractArray 
     // Read chunk length line
     PString chunkLengthLine;
     if (!ReadLine(chunkLengthLine))
-      return FALSE;
+      return PFalse;
 
     // A zero length chunk is end of output
     PINDEX chunkLength = chunkLengthLine.AsUnsigned(16);
     if (chunkLength == 0)
       break;
 
-    // Read the chunk
-    if (!ReadBlock((char *)body.GetPointer(bytesRead+chunkLength)+bytesRead, chunkLength))
-      return FALSE;
-    bytesRead+= chunkLength;
+    if (body != NULL) {
+      // Read the chunk
+      if (!ReadBlock((char *)body->GetPointer(bytesRead+chunkLength)+bytesRead, chunkLength))
+        return PFalse;
+      bytesRead+= chunkLength;
+    }
+    else {
+      while (chunkLength-- > 0) {
+        if (ReadChar() < 0)
+          return false;
+      }
+    }
 
     // Read the trailing CRLF
     if (!ReadLine(chunkLengthLine))
-      return FALSE;
+      return PFalse;
   }
 
   // Read the footer
   PString footer;
   do {
     if (!ReadLine(footer))
-      return FALSE;
+      return PFalse;
   } while (replyMIME.AddMIME(footer));
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PHTTPClient::GetTextDocument(const PURL & url,
-                                  PString & document,
-                                  BOOL persist)
+bool PHTTPClient::GetTextDocument(const PURL & url,
+                                     PString & document,
+                               const PString & requiredContentType)
 {
   PMIMEInfo outMIME, replyMIME;
-  if (!GetDocument(url, outMIME, replyMIME, persist))
-    return FALSE;
+  if (!GetDocument(url, outMIME, replyMIME))
+    return PFalse;
 
-  return ReadContentBody(replyMIME, document);
-}
-
-
-BOOL PHTTPClient::GetDocument(const PURL & _url,
-                              PMIMEInfo & _outMIME,
-                              PMIMEInfo & replyMIME,
-                              BOOL persist)
-{
-  int count = 0;
-  static const char locationTag[] = "Location";
-  PURL url = _url;
-  for (;;) {
-    PMIMEInfo outMIME = _outMIME;
-    replyMIME.RemoveAll();
-    PString u = url.AsString();
-    int code = ExecuteCommand(GET, url, outMIME, PString(), replyMIME, persist);
-    switch (code) {
-      case RequestOK:
-        return TRUE;
-      case MovedPermanently:
-      case MovedTemporarily:
-        {
-          if (count > 10)
-            return FALSE;
-          PString str = replyMIME(locationTag);
-          if (str.IsEmpty())
-            return FALSE;
-          PString doc;
-          if (!ReadContentBody(replyMIME, doc))
-            return FALSE;
-          url = str;
-          count++;
-        }
-        break;
-      default:
-        return FALSE;
-    }
+  PCaselessString actualContentType = replyMIME(ContentTypeTag());
+  if (!requiredContentType.IsEmpty() && !actualContentType.IsEmpty() &&
+        actualContentType.NumCompare(requiredContentType, requiredContentType.Find(';')) != EqualTo) {
+    PTRACE(2, "HTTP\tIncorrect Content-Type for document: expecting " << requiredContentType << ", got " << actualContentType);
+    InternalReadContentBody(replyMIME, NULL); // Waste body
+    return false;
   }
+
+  if (!ReadContentBody(replyMIME, document)) {
+    PTRACE(2, "HTTP\tRead of body failed");
+    return false;
+  }
+
+  PTRACE_IF(4, !document.IsEmpty(), "HTTP\tReceived body:\n"
+            << document.Left(MaxTraceContentSize) << (document.GetLength() > MaxTraceContentSize ? "\n...." : ""));
+  return true;
 }
 
 
-BOOL PHTTPClient::GetHeader(const PURL & url,
+bool PHTTPClient::GetDocument(const PURL & url, PMIMEInfo & outMIME, PMIMEInfo & replyMIME)
+{
+  return IsOK(ExecuteCommand(GET, url, outMIME, PString::Empty(), replyMIME));
+}
+
+
+bool PHTTPClient::GetDocument(const PURL & url, PMIMEInfo & replyMIME)
+{
+  PMIMEInfo outMIME;
+  return IsOK(ExecuteCommand(GET, url, outMIME, PString::Empty(), replyMIME));
+}
+
+
+bool PHTTPClient::GetHeader(const PURL & url, PMIMEInfo & outMIME, PMIMEInfo & replyMIME)
+{
+  return IsOK(ExecuteCommand(HEAD, url, outMIME, PString::Empty(), replyMIME));
+}
+
+
+bool PHTTPClient::PostData(const PURL & url, const PStringToString & data)
+{
+  PStringStream entityBody;
+  PURL::OutputVars(entityBody, data, '\0', '&', '=', PURL::QueryTranslation);
+  entityBody << "\r\n"; // Add CRLF for compatibility with some CGI servers.
+
+  PMIMEInfo outMIME;
+  return PostData(url, outMIME, entityBody);
+}
+
+
+bool PHTTPClient::PostData(const PURL & url, PMIMEInfo & outMIME, const PString & data)
+{
+  PMIMEInfo replyMIME;
+  return PostData(url, outMIME, data, replyMIME) && ReadContentBody(replyMIME);
+}
+
+
+bool PHTTPClient::PostData(const PURL & url,
                             PMIMEInfo & outMIME,
+                        const PString & data,
+                            PMIMEInfo & replyMIME)
+{
+  if (!outMIME.Contains(ContentTypeTag()))
+    outMIME.SetAt(ContentTypeTag(), "application/x-www-form-urlencoded");
+
+  return IsOK(ExecuteCommand(POST, url, outMIME, data, replyMIME));
+}
+
+
+bool PHTTPClient::PostData(const PURL & url,
+                            PMIMEInfo & outMIME,
+                        const PString & data,
                             PMIMEInfo & replyMIME,
-                            BOOL persist)
+                              PString & body)
 {
-  return ExecuteCommand(HEAD, url, outMIME, PString(), replyMIME, persist) == RequestOK;
+  return PostData(url, outMIME, data, replyMIME) && ReadContentBody(replyMIME, body);
 }
 
 
-BOOL PHTTPClient::PostData(const PURL & url,
-                           PMIMEInfo & outMIME,
-                           const PString & data,
-                           PMIMEInfo & replyMIME,
-                           BOOL persist)
+bool PHTTPClient::PutTextDocument(const PURL & url,
+                                  const PString & document,
+                                  const PString & contentType)
 {
-  PString dataBody = data;
-  if (!outMIME.Contains(ContentTypeTag)) {
-    outMIME.SetAt(ContentTypeTag, "application/x-www-form-urlencoded");
-    dataBody += "\r\n"; // Add CRLF for compatibility with some CGI servers.
-  }
-
-  return ExecuteCommand(POST, url, outMIME, data, replyMIME, persist) == RequestOK;
+  PMIMEInfo outMIME, replyMIME;
+  outMIME.SetAt(ContentTypeTag(), contentType);
+  return IsOK(ExecuteCommand(PUT, url, outMIME, document, replyMIME));
 }
 
 
-BOOL PHTTPClient::PostData(const PURL & url,
-                           PMIMEInfo & outMIME,
-                           const PString & data,
-                           PMIMEInfo & replyMIME,
-                           PString & body,
-                           BOOL persist)
+bool PHTTPClient::PutDocument(const PURL & url,
+                              PMIMEInfo & outMIME,
+                              PMIMEInfo & replyMIME)
 {
-  if (!PostData(url, outMIME, data, replyMIME, persist))
-    return FALSE;
-
-  return ReadContentBody(replyMIME, body);
+  return IsOK(ExecuteCommand(PUT, url, outMIME, PString::Empty(), replyMIME));
 }
 
 
-BOOL PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
+bool PHTTPClient::DeleteDocument(const PURL & url)
+{
+  PMIMEInfo outMIME, replyMIME;
+  return IsOK(ExecuteCommand(DELETE, url, outMIME, PString::Empty(), replyMIME));
+}
+
+
+bool PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
 {
   PString host = url.GetHostName();
 
@@ -613,7 +515,7 @@ BOOL PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
         lastResponseCode = -2;
         lastResponseInfo = tcp->GetErrorText();
         delete tcp;
-        return FALSE;
+        return PFalse;
       }
 
       PSSLChannel * ssl = new PSSLChannel;
@@ -621,13 +523,13 @@ BOOL PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
         lastResponseCode = -2;
         lastResponseInfo = ssl->GetErrorText();
         delete ssl;
-        return FALSE;
+        return PFalse;
       }
 
       if (!Open(ssl)) {
         lastResponseCode = -2;
         lastResponseInfo = GetErrorText();
-        return FALSE;
+        return PFalse;
       }
     }
     else
@@ -636,7 +538,7 @@ BOOL PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
     if (!Connect(host, url.GetPort())) {
       lastResponseCode = -2;
       lastResponseInfo = GetErrorText();
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -652,8 +554,417 @@ BOOL PHTTPClient::AssureConnect(const PURL & url, PMIMEInfo & outMIME)
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
+
+
+void PHTTPClient::SetAuthenticationInfo(
+  const PString & userName,
+  const PString & password
+)
+{
+  m_userName = userName;
+  m_password = password;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+PHTTPClientAuthentication::PHTTPClientAuthentication()
+{
+  isProxy = PFalse;
+}
+
+
+PObject::Comparison PHTTPClientAuthentication::Compare(const PObject & other) const
+{
+  const PHTTPClientAuthentication * otherAuth = dynamic_cast<const PHTTPClientAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
+
+  Comparison result = GetUsername().Compare(otherAuth->GetUsername());
+  if (result != EqualTo)
+    return result;
+
+  return GetPassword().Compare(otherAuth->GetPassword());
+}
+
+
+PString PHTTPClientAuthentication::GetAuthParam(const PString & auth, const char * name) const
+{
+  PString value;
+
+  PINDEX pos = auth.Find(name);
+  if (pos != P_MAX_INDEX)  {
+    pos += (int)strlen(name);
+    while (isspace(auth[pos]) || (auth[pos] == ','))
+      pos++;
+    if (auth[pos] == '=') {
+      pos++;
+      while (isspace(auth[pos]))
+        pos++;
+      if (auth[pos] == '"') {
+        pos++;
+        value = auth(pos, auth.Find('"', pos)-1);
+      }
+      else {
+        PINDEX base = pos;
+        while (auth[pos] != '\0' && !isspace(auth[pos]) && (auth[pos] != ','))
+          pos++;
+        value = auth(base, pos-1);
+      }
+    }
+  }
+
+  return value;
+}
+
+PString PHTTPClientAuthentication::AsHex(PMessageDigest5::Code & digest) const
+{
+  PStringStream out;
+  out << hex << setfill('0');
+  for (PINDEX i = 0; i < 16; i++)
+    out << setw(2) << (unsigned)((BYTE *)&digest)[i];
+  return out;
+}
+
+PString PHTTPClientAuthentication::AsHex(const PBYTEArray & data) const
+{
+  PStringStream out;
+  out << hex << setfill('0');
+  for (PINDEX i = 0; i < data.GetSize(); i++)
+    out << setw(2) << (unsigned)data[i];
+  return out;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+PHTTPClientBasicAuthentication::PHTTPClientBasicAuthentication()
+{
+}
+
+
+PObject::Comparison PHTTPClientBasicAuthentication::Compare(const PObject & other) const
+{
+  const PHTTPClientBasicAuthentication * otherAuth = dynamic_cast<const PHTTPClientBasicAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
+
+  return PHTTPClientAuthentication::Compare(other);
+}
+
+PBoolean PHTTPClientBasicAuthentication::Parse(const PString & /*auth*/, PBoolean /*proxy*/)
+{
+  return true;
+}
+
+PBoolean PHTTPClientBasicAuthentication::Authorise(AuthObject & authObject) const
+{
+  PBase64 digestor;
+  digestor.StartEncoding();
+  digestor.ProcessEncoding(username + ":" + password);
+  PString result = digestor.GetEncodedString();
+
+  PStringStream auth;
+  auth << "Basic " << result;
+
+  authObject.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
+  return true;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+PHTTPClientDigestAuthentication::PHTTPClientDigestAuthentication()
+  : algorithm(NumAlgorithms)
+  , qopAuth(false)
+  , qopAuthInt(false)
+  , stale(false)
+{
+}
+
+PHTTPClientDigestAuthentication & PHTTPClientDigestAuthentication::operator =(const PHTTPClientDigestAuthentication & auth)
+{
+  isProxy   = auth.isProxy;
+  authRealm = auth.authRealm;
+  username  = auth.username;
+  password  = auth.password;
+  nonce     = auth.nonce;
+  opaque    = auth.opaque;
+          
+  qopAuth    = auth.qopAuth;
+  qopAuthInt = auth.qopAuthInt;
+  stale      = auth.stale;
+  cnonce     = auth.cnonce;
+  nonceCount.SetValue(auth.nonceCount);
+
+  return *this;
+}
+
+PObject::Comparison PHTTPClientDigestAuthentication::Compare(const PObject & other) const
+{
+  const PHTTPClientDigestAuthentication * otherAuth = dynamic_cast<const PHTTPClientDigestAuthentication *>(&other);
+  if (otherAuth == NULL)
+    return LessThan;
+
+  if (stale || otherAuth->stale)
+    return LessThan;
+
+  if (algorithm < otherAuth->algorithm)
+    return LessThan;
+  if (algorithm > otherAuth->algorithm)
+    return GreaterThan;
+
+  Comparison result = authRealm.Compare(otherAuth->authRealm);
+  if (result != EqualTo)
+    return result;
+
+  return PHTTPClientAuthentication::Compare(other);
+}
+
+PBoolean PHTTPClientDigestAuthentication::Parse(const PString & p_auth, PBoolean proxy)
+{
+  PCaselessString auth = p_auth;
+
+  authRealm.MakeEmpty();
+  nonce.MakeEmpty();
+  opaque.MakeEmpty();
+  algorithm = NumAlgorithms;
+
+  qopAuth = qopAuthInt = PFalse;
+  cnonce.MakeEmpty();
+  nonceCount.SetValue(1);
+
+  if (auth.Find("digest") == P_MAX_INDEX) {
+    PTRACE(1, "HTTP\tDigest auth does not contian digest keyword");
+    return false;
+  }
+
+  algorithm = Algorithm_MD5;  // default
+  PCaselessString str = GetAuthParam(auth, "algorithm");
+  if (!str.IsEmpty()) {
+    while (str != AlgorithmNames[algorithm]) {
+      algorithm = (Algorithm)(algorithm+1);
+      if (algorithm >= PHTTPClientDigestAuthentication::NumAlgorithms) {
+        PTRACE(1, "HTTP\tUnknown digest algorithm " << str);
+        return PFalse;
+      }
+    }
+  }
+
+  authRealm = GetAuthParam(auth, "realm");
+  if (authRealm.IsEmpty()) {
+    PTRACE(1, "HTTP\tNo realm in authentication");
+    return PFalse;
+  }
+
+  nonce = GetAuthParam(auth, "nonce");
+  if (nonce.IsEmpty()) {
+    PTRACE(1, "HTTP\tNo nonce in authentication");
+    return PFalse;
+  }
+
+  opaque = GetAuthParam(auth, "opaque");
+  if (!opaque.IsEmpty()) {
+    PTRACE(2, "HTTP\tAuthentication contains opaque data");
+  }
+
+  PString qopStr = GetAuthParam(auth, "qop");
+  if (!qopStr.IsEmpty()) {
+    PTRACE(3, "HTTP\tAuthentication contains qop-options " << qopStr);
+    PStringList options = qopStr.Tokenise(',', PTrue);
+    qopAuth    = options.GetStringsIndex("auth") != P_MAX_INDEX;
+    qopAuthInt = options.GetStringsIndex("auth-int") != P_MAX_INDEX;
+    cnonce = PGloballyUniqueID().AsString();
+  }
+
+  PCaselessString staleStr = GetAuthParam(auth, "stale");
+  PTRACE_IF(3, !staleStr.IsEmpty(), "HTTP\tAuthentication contains stale flag \"" << staleStr << '"');
+  stale = staleStr.Find("true") != P_MAX_INDEX;
+
+  isProxy = proxy;
+  return PTrue;
+}
+
+
+PBoolean PHTTPClientDigestAuthentication::Authorise(AuthObject & authObject) const
+{
+  PTRACE(3, "HTTP\tAdding authentication information");
+
+  PMessageDigest5 digestor;
+  PMessageDigest5::Code a1, a2, entityBodyCode, response;
+
+  PString uriText = authObject.GetURI();
+  PINDEX pos = uriText.Find(";");
+  if (pos != P_MAX_INDEX)
+    uriText = uriText.Left(pos);
+
+  digestor.Start();
+  digestor.Process(username);
+  digestor.Process(":");
+  digestor.Process(authRealm);
+  digestor.Process(":");
+  digestor.Process(password);
+  digestor.Complete(a1);
+
+  if (qopAuthInt) {
+    digestor.Start();
+    digestor.Process(authObject.GetEntityBody());
+    digestor.Complete(entityBodyCode);
+  }
+
+  digestor.Start();
+  digestor.Process(authObject.GetMethod());
+  digestor.Process(":");
+  digestor.Process(uriText);
+  if (qopAuthInt) {
+    digestor.Process(":");
+    digestor.Process(AsHex(entityBodyCode));
+  }
+  digestor.Complete(a2);
+
+  PStringStream auth;
+  auth << "Digest "
+          "username=\"" << username << "\", "
+          "realm=\"" << authRealm << "\", "
+          "nonce=\"" << nonce << "\", "
+          "uri=\"" << uriText << "\", "
+          "algorithm=" << AlgorithmNames[algorithm];
+
+  digestor.Start();
+  digestor.Process(AsHex(a1));
+  digestor.Process(":");
+  digestor.Process(nonce);
+  digestor.Process(":");
+
+  if (qopAuthInt || qopAuth) {
+    PString nc(psprintf("%08x", (unsigned int)nonceCount));
+    ++nonceCount;
+    PString qop;
+    if (qopAuthInt)
+      qop = "auth-int";
+    else
+      qop = "auth";
+    digestor.Process(nc);
+    digestor.Process(":");
+    digestor.Process(cnonce);
+    digestor.Process(":");
+    digestor.Process(qop);
+    digestor.Process(":");
+    digestor.Process(AsHex(a2));
+    digestor.Complete(response);
+    auth << ", "
+         << "response=\"" << AsHex(response) << "\", "
+         << "cnonce=\"" << cnonce << "\", "
+         << "nc=" << nc << ", "
+         << "qop=" << qop;
+  }
+  else {
+    digestor.Process(AsHex(a2));
+    digestor.Complete(response);
+    auth << ", response=\"" << AsHex(response) << "\"";
+  }
+
+  if (!opaque.IsEmpty())
+    auth << ", opaque=\"" << opaque << "\"";
+
+  authObject.GetMIME().SetAt(isProxy ? "Proxy-Authorization" : "Authorization", auth);
+  return PTrue;
+}
+
+PHTTPClientAuthentication * PHTTPClientAuthentication::ParseAuthenticationRequired(bool isProxy, const PMIMEInfo & replyMIME, PString & errorMsg)
+{
+  PString line = replyMIME(isProxy ? "Proxy-Authenticate" : "WWW-Authenticate");
+
+  // find authentication
+  PINDEX pos = line.Find(' ');
+  PString scheme = line.Left(pos).Trim().ToLower();
+  PHTTPClientAuthentication * newAuth = PHTTPClientAuthenticationFactory::CreateInstance(scheme);
+  if (newAuth == NULL) {
+    delete newAuth;
+    errorMsg = "Unknown authentication scheme " + scheme;
+    return NULL;
+  }
+
+  // parse the new authentication scheme
+  if (!newAuth->Parse(line, isProxy)) {
+    delete newAuth;
+    errorMsg = "Failed to parse authentication for scheme " + scheme;
+    return NULL;
+  }
+
+  // switch authentication schemes
+  return newAuth;
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+PHTTPClientAuthenticator::PHTTPClientAuthenticator(const PString & method, const PString & uri, PMIMEInfo & mime, const PString & body)
+  : m_method(method)
+  , m_uri(uri)
+  , m_mime(mime)
+  , m_body(body)
+{
+}
+
+PMIMEInfo & PHTTPClientAuthenticator::GetMIME()
+{
+  return m_mime;
+}
+
+PString PHTTPClientAuthenticator::GetURI()
+{
+  return m_uri;
+}
+
+PString PHTTPClientAuthenticator::GetEntityBody()
+{
+  return m_body;
+}
+
+PString PHTTPClientAuthenticator::GetMethod()
+{
+  return m_method;
+}
+
+////////////////////////////////////////////////////////////////////////////////////
+
+#undef new
+
+class PURL_HttpLoader : public PURLLoader
+{
+    PCLASSINFO(PURL_HttpLoader, PURLLoader);
+  public:
+    virtual bool Load(const PURL & url, PString & str, const PString & requiredContentType)
+    {
+      PHTTPClient http;
+      return http.GetTextDocument(url, str, requiredContentType);
+    }
+
+    virtual bool Load(const PURL & url, PBYTEArray & data, const PString & requiredContentType)
+    {
+      PHTTPClient http;
+      PMIMEInfo outMIME, replyMIME;
+      if (!http.GetDocument(url, outMIME, replyMIME))
+        return false;
+
+      PCaselessString actualContentType = replyMIME(PHTTP::ContentTypeTag());
+      if (!requiredContentType.IsEmpty() && !actualContentType.IsEmpty() &&
+            actualContentType.NumCompare(requiredContentType, requiredContentType.Find(';')) != EqualTo) {
+        PTRACE(2, "HTTP\tIncorrect Content-Type for document: expecting " << requiredContentType << ", got " << actualContentType);
+        return false;
+      }
+
+      return http.ReadContentBody(replyMIME, data);
+    }
+};
+
+PFACTORY_CREATE(PURLLoaderFactory, PURL_HttpLoader, "http", true);
+#if P_SSL
+static PURLLoaderFactory::Worker<PURL_HttpLoader> httpsLoader("https", true);
+#endif
+
+#endif // P_HTTP
 
 
 // End Of File ///////////////////////////////////////////////////////////////

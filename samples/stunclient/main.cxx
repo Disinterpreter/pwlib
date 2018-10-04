@@ -23,25 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.6  2004/10/26 06:00:45  csoutheren
- * Added -t and -o options
- *
- * Revision 1.5  2004/02/24 11:15:48  rjongbloed
- * Added function to get external router address, also did a bunch of documentation.
- *
- * Revision 1.4  2003/02/05 06:26:49  robertj
- * More work in making the STUN usable for Symmetric NAT systems.
- *
- * Revision 1.3  2003/02/04 07:02:55  robertj
- * Removed ports in test, added delete of created udp socket.
- *
- * Revision 1.2  2003/02/04 05:23:59  craigs
- * Added new functions
- *
- * Revision 1.1  2003/02/04 03:31:04  robertj
- * Added STUN
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -64,12 +48,14 @@ StunClient::StunClient()
 void StunClient::Main()
 {
   PArgList & args = GetArguments();
+#if PTRACING
   args.Parse("t-trace."       "-no-trace."
              "o-output:"      "-no-output.");
 
   PTrace::Initialise(args.GetOptionCount('t'),
                    args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
                    PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
+#endif
 
   WORD portbase, portmax;
 

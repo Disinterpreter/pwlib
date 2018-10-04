@@ -25,16 +25,9 @@
  *                 Mark Cooke (mpc@star.sr.bham.ac.uk)
  *                 Nicola Orru' <nigu@itadinanta.it>
  *
- * $Log: vidinput_names.cxx,v $
- * Revision 1.4  2006/01/07 16:09:58  dsandras
- * Removed name duplication for now.
- *
- * Revision 1.3  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.2  2004/11/07 22:48:47  dominance
- * fixed copyright of v4l2 plugin. Last commit's credits go to Nicola Orru' <nigu@itadinanta.it> ...
- *
+ * $Revision: 20949 $
+ * $Author: ms30002000 $
+ * $Date: 2008-09-14 04:02:41 -0500 (Sun, 14 Sep 2008) $
  */
 #include "vidinput_names.h"
 
@@ -43,6 +36,19 @@ void  V4LXNames::ReadDeviceDirectory(PDirectory devdir, POrdinalToString & vid)
   if (!devdir.Open())
     return;
 
+#if defined (P_SOLARIS) || defined (P_NETBSD)
+  int devnum = 0;
+  do {
+    PString filename = devdir.GetEntryName();
+    if (!filename.NumCompare("video", 5 , 0)) {
+      PString devname = devdir + filename;
+      struct stat s;
+      if (lstat(devname, &s) == 0) {
+        vid.SetAt(devnum++, devname);
+      }
+    }
+  } while (devdir.Next());
+#else  
   do {
     PString filename = devdir.GetEntryName();
     PString devname = devdir + filename;
@@ -68,10 +74,13 @@ void  V4LXNames::ReadDeviceDirectory(PDirectory devdir, POrdinalToString & vid)
       }
     }
   } while (devdir.Next());
+#endif  
 }
 
 void V4LXNames::PopulateDictionary()
 {
+  PWaitAndSignal m(mutex);
+
   PINDEX i, j;
   PStringToString tempList;
 
@@ -127,6 +136,8 @@ PString V4LXNames::GetDeviceName(PString userName)
 
 void V4LXNames::AddUserDeviceName(PString userName, PString devName)
 {
+  PWaitAndSignal m(mutex);
+
   if (userName != devName) { // must be a real userName!
     userKey.SetAt(userName, devName);
     deviceKey.SetAt(devName, userName);

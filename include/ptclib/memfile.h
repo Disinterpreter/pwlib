@@ -26,36 +26,18 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: memfile.h,v $
- * Revision 1.6  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.5  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.4  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.3  2002/08/05 05:40:45  robertj
- * Fixed missing pragma interface/implementation
- *
- * Revision 1.2  2002/06/27 03:53:35  robertj
- * Cleaned up documentation and added Compare() function.
- *
- * Revision 1.1  2002/06/26 09:01:19  craigs
- * Initial version
- *
+ * $Revision: 26949 $
+ * $Author: rjongbloed $
+ * $Date: 2012-02-07 20:27:07 -0600 (Tue, 07 Feb 2012) $
  */
 
-#ifndef _PMEMFILE
-#define _PMEMFILE
+#ifndef PTLIB_PMEMFILE_H
+#define PTLIB_PMEMFILE_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
 
 /**This class is used to allow a block of memory to substitute for a disk file.
  */
@@ -74,13 +56,17 @@ class PMemoryFile : public PFile
     PMemoryFile(
       const PBYTEArray & data  ///< New content filr memory file.
     );
+
+    /**Destroy the memory file
+      */
+    ~PMemoryFile();
   //@}
 
 
   /**@name Overrides from class PObject */
   //@{
     /**Determine the relative rank of the two objects. This is essentially the
-       string comparison of the #PFilePath# names of the files.
+       string comparison of the <code>PFilePath</code> names of the files.
 
        @return
        relative rank of the file paths.
@@ -93,18 +79,56 @@ class PMemoryFile : public PFile
 
   /**@name Overrides from class PChannel */
   //@{
+    /**Open the current file in the specified mode and with
+       the specified options. If the file object already has an open file then
+       it is closed.
+       
+       If there has not been a filename attached to the file object (via
+       <code>SetFilePath()</code>, the <code>name</code> parameter or a previous
+       open) then a new unique temporary filename is generated.
+
+       @return
+       true if the file was successfully opened.
+     */
+    virtual PBoolean Open(
+      OpenMode mode = ReadWrite,  // Mode in which to open the file.
+      int opts = ModeDefault      // Options for open operation.
+    );
+
+    /**Open the specified file name in the specified mode and with
+       the specified options. If the file object already has an open file then
+       it is closed.
+       
+       Note: if <code>mode</code> is StandardInput, StandardOutput or StandardError,
+       then the <code>name</code> parameter is ignored.
+
+       @return
+       true if the file was successfully opened.
+     */
+    virtual PBoolean Open(
+      const PFilePath & name,    // Name of file to open.
+      OpenMode mode = ReadWrite, // Mode in which to open the file.
+      int opts = ModeDefault     // <code>OpenOptions</code> enum# for open operation.
+    );
+      
+    /** Close the channel, shutting down the link to the data source.
+
+       @return true if the channel successfully closed.
+     */
+    virtual PBoolean Close();
+
     /**Low level read from the memory file channel. The read timeout is
        ignored.  The GetLastReadCount() function returns the actual number
        of bytes read.
 
        The GetErrorCode() function should be consulted after Read() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE indicates that at least one character was read from the channel.
-       FALSE means no bytes were read due to timeout or some other I/O error.
+       true indicates that at least one character was read from the channel.
+       false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -114,11 +138,11 @@ class PMemoryFile : public PFile
        of bytes written.
 
        The GetErrorCode() function should be consulted after Write() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
-       @return TRUE if at least len bytes were written to the channel.
+       @return true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -133,29 +157,29 @@ class PMemoryFile : public PFile
        @return
        length of file in bytes.
      */
-    off_t GetLength() const;
+    virtual off_t GetLength() const;
       
     /**Set the size of the file, padding with 0 bytes if it would require
        expanding the file, or truncating it if being made shorter.
 
        @return
-       TRUE if the file size was changed to the length specified.
+       true if the file size was changed to the length specified.
      */
-    BOOL SetLength(
+    virtual PBoolean SetLength(
       off_t len   ///< New length of file.
     );
 
     /**Set the current active position in the file for the next read or write
-       operation. The #pos# variable is a signed number which is
-       added to the specified origin. For #origin == PFile::Start#
-       only positive values for #pos# are meaningful. For
-       #origin == PFile::End# only negative values for
-       #pos# are meaningful.
+       operation. The <code>pos</code> variable is a signed number which is
+       added to the specified origin. For <code>origin == PFile::Start</code>
+       only positive values for <code>pos</code> are meaningful. For
+       <code>origin == PFile::End</code> only negative values for
+       <code>pos</code> are meaningful.
 
        @return
-       TRUE if the new file position was set.
+       true if the new file position was set.
      */
-    BOOL SetPosition(
+    virtual PBoolean SetPosition(
       off_t pos,                         ///< New position to set.
       FilePositionOrigin origin = Start  ///< Origin for position change.
     );
@@ -166,7 +190,7 @@ class PMemoryFile : public PFile
        @return
        current file position relative to start of file.
      */
-    off_t GetPosition() const;
+    virtual off_t GetPosition() const;
   //@}
 
 
@@ -174,18 +198,17 @@ class PMemoryFile : public PFile
   //@{
     /**Get the memory data the file has operated with.
       */
-    const PBYTEArray & GetData() const { return data; }
+    const PBYTEArray & GetData() const { return m_data; }
   //@}
 
 
   protected:
-    PBYTEArray data;
-    off_t position;
+    PBYTEArray m_data;
+    off_t      m_position;
 };
 
 
-#endif // _PMEMFILE
+#endif // PTLIB_PMEMFILE_H
 
 
 // End of File ///////////////////////////////////////////////////////////////
-

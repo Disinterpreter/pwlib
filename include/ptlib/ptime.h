@@ -26,125 +26,17 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ptime.h,v $
- * Revision 1.35  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.34  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.33  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.32  2002/12/10 04:45:14  robertj
- * Added support in PTime for ISO 8601 format.
- *
- * Revision 1.31  2002/10/29 00:07:03  robertj
- * Added IsValid() function to indicate that a PTime is set correctly.
- *
- * Revision 1.30  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.29  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.28  2000/04/29 08:14:52  robertj
- * Added some documentation on string formats that can be parsed into a time.
- *
- * Revision 1.27  2000/04/29 04:49:00  robertj
- * Added microseconds to string output.
- *
- * Revision 1.26  2000/04/05 02:50:16  robertj
- * Added microseconds to PTime class.
- *
- * Revision 1.25  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.24  1999/02/16 08:11:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.23  1998/09/23 06:21:15  robertj
- * Added open source copyright license.
- *
- * Revision 1.22  1998/01/04 08:04:27  robertj
- * Changed gmtime and locatime to use operating system specific functions.
- *
- * Revision 1.21  1997/01/12 04:21:40  robertj
- * Added IsPast() and IsFuture() functions for time comparison.
- *
- * Revision 1.20  1996/05/09 12:16:06  robertj
- * Fixed syntax error found by Mac platform.
- *
- * Revision 1.19  1996/02/15 14:47:34  robertj
- * Fixed bugs in time zone compensation (some in the C library).
- *
- * Revision 1.18  1996/02/13 12:58:43  robertj
- * Changed GetTimeZone() so can specify standard/daylight time.
- *
- * Revision 1.17  1996/02/08 12:13:03  robertj
- * Changed zone parameter in PTime to indicate the time zone as minutes not enum.
- * Staticised some functions that are system global.
- *
- * Revision 1.16  1996/02/03 11:04:52  robertj
- * Added string constructor for times, parses date/time from string.
- *
- * Revision 1.15  1996/01/03 11:09:34  robertj
- * Added Universal Time and Time Zones to PTime class.
- *
- * Revision 1.14  1995/06/17 11:13:10  robertj
- * Documentation update.
- *
- * Revision 1.13  1995/03/14 12:42:18  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.12  1995/01/11  09:45:12  robertj
- * Documentation and normalisation.
- *
- * Revision 1.11  1995/01/09  12:34:05  robertj
- * Removed unnecesary return value from I/O functions.
- *
- * Revision 1.10  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.9  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.8  1994/07/27  05:58:07  robertj
- * Synchronisation.
- *
- * Revision 1.7  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.6  1994/01/13  03:16:09  robertj
- * Added function to return time as a string.
- *
- * Revision 1.5  1994/01/03  04:42:23  robertj
- * Mass changes to common container classes and interactors etc etc etc.
- *
- * Revision 1.4  1993/12/31  06:45:38  robertj
- * Made inlines optional for debugging purposes.
- *
- * Revision 1.3  1993/08/27  18:17:47  robertj
- * Made time functions common to all platforms.
- * Moved timer resolution function to PTimeInterval wher it belongs.
- *
- * Revision 1.2  1993/07/14  12:49:16  robertj
- * Fixed RCS keywords.
- *
+ * $Revision: 26282 $
+ * $Author: rjongbloed $
+ * $Date: 2011-08-08 02:09:32 -0500 (Mon, 08 Aug 2011) $
  */
 
-#ifndef _PTIME
-#define _PTIME
+#ifndef PTLIB_TIME_H
+#define PTLIB_TIME_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
-
-
-#include <time.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -180,14 +72,14 @@ class PTime : public PObject
     /**Create a time object instance.
        This initialises the time with the current time in the current time zone.
      */
-    PTime();
+    PTime() { SetCurrentTime(); }
 
     /**Create a time object instance.
        This initialises the time to the specified time.
      */
     PTime(
-      time_t tsecs,          ///< Time in seconds since 00:00:00 1/1/70 UTC
-      long usecs = 0
+      time_t tsecs,     ///< Time in seconds since 00:00:00 1/1/70 UTC
+      long usecs = 0    ///< microseconds part of time.
     ) { theTime = tsecs; microseconds = usecs; }
 
     /**Create a time object instance.
@@ -244,8 +136,8 @@ class PTime : public PObject
       const PObject & obj   ///< Other time to compare against.
     ) const;
 
-    /**Output the time to the stream. This uses the #AsString()# function
-       with the #ShortDateTime# parameter.
+    /**Output the time to the stream. This uses the <code>AsString()</code> function
+       with the <code>ShortDateTime</code> parameter.
      */
     virtual void PrintOn(
       ostream & strm    ///< Stream to output the time to.
@@ -275,12 +167,12 @@ class PTime : public PObject
   /**@name Access functions */
   //@{
     /**Determine if the timestamp is valid.
-       This will return TRUE if the timestamp can be represented as a time
+       This will return true if the timestamp can be represented as a time
        in the epoch. The epoch is the 1st January 1970.
 
        In practice this means the time is > 13 hours to allow for time zones.
       */
-    BOOL IsValid() const;
+    PBoolean IsValid() const;
 
     /**Get the total microseconds since the epoch. The epoch is the 1st
        January 1970.
@@ -289,6 +181,17 @@ class PTime : public PObject
        microseconds.
      */
     PInt64 GetTimestamp() const;
+
+    /**Set the the objects time with the current time in the current time zone.
+      */
+    void SetCurrentTime();
+
+    /**Set the time in seconds and microseconds.
+      */
+    void SetTimestamp(
+      time_t seconds,
+      long usecs = 0
+    );
 
     /**Get the total seconds since the epoch. The epoch is the 1st
        January 1970.
@@ -391,16 +294,16 @@ class PTime : public PObject
     /**Determine if the time is in the past or in the future.
 
        @return
-       TRUE if time is before the current real time.
+       true if time is before the current real time.
      */
-    BOOL IsPast() const;
+    PBoolean IsPast() const;
 
     /**Determine if the time is in the past or in the future.
 
        @return
-       TRUE if time is after the current real time.
+       true if time is after the current real time.
      */
-    BOOL IsFuture() const;
+    PBoolean IsFuture() const;
   //@}
 
   /**@name Time Zone configuration functions */
@@ -408,9 +311,9 @@ class PTime : public PObject
     /**Get flag indicating daylight savings is current.
     
        @return
-       TRUE if daylight savings time is active.
+       true if daylight savings time is active.
      */
-    static BOOL IsDaylightSavings();
+    static PBoolean IsDaylightSavings();
 
     /// Flag for time zone adjustment on daylight savings.
     enum TimeZoneType {
@@ -494,11 +397,13 @@ class PTime : public PObject
   //@{
     /// Standard time formats for string representations of a time and date.
     enum TimeFormat {
-      /// Internet standard format.
+      /// Internet standard format. (eg. Wed, 09 Feb 2011 11:25:58 +01:00)
       RFC1123,
-      /// Short form ISO standard format.
+      /// Another Internet standard format. (eg. 2011-02-09T11:14:41ZZ)
+      RFC3339,
+      /// Short form ISO standard format. (eg. 20110209T111108Z)
       ShortISO8601,
-      /// Long form ISO standard format.
+      /// Long form ISO standard format. (eg. 2011-02-09 T 11:13:06 Z)
       LongISO8601,
       /// Date with weekday, full month names and time with seconds.
       LongDateTime,
@@ -516,6 +421,8 @@ class PTime : public PObject
       ShortDate,
       /// Time without seconds.
       ShortTime,
+      /// Epoch format (e.g. 1234476388.123456)
+      EpochTime,
       NumTimeStrings
     };
 
@@ -533,40 +440,64 @@ class PTime : public PObject
     /* Convert the time to a string using the format code or string as a
        formatting template. The special characters in the formatting string
        are:
-\begin{description}
-       \item[h]         hour without leading zero
-       \item[hh]        hour with leading zero
-       \item[m]         minute without leading zero
-       \item[mm]        minute with leading zero
-       \item[s]         second without leading zero
-       \item[ss]        second with leading zero
-       \item[u]         tenths of second
-       \item[uu]        hundedths of second with leading zero
-       \item[uuu]       millisecond with leading zeros
-       \item[uuuu]      microsecond with leading zeros
-       \item[a]         the am/pm string
-       \item[w/ww/www]  abbreviated day of week name
-       \item[wwww]      full day of week name
-       \item[d]         day of month without leading zero
-       \item[dd]        day of month with leading zero
-       \item[M]         month of year without leading zero
-       \item[MM]        month of year with leading zero
-       \item[MMM]       month of year as abbreviated text
-       \item[MMMM]      month of year as full text
-       \item[y/yy]      year without century
-       \item[yyy/yyyy]  year with century
-       \item[z]         the time zone description
-\end{description}
+       <table border=0>
+       <tr><td>h         <td>hour without leading zero
+       <tr><td>hh        <td>hour with leading zero
+       <tr><td>m         <td>minute without leading zero
+       <tr><td>mm        <td>minute with leading zero
+       <tr><td>s         <td>second without leading zero
+       <tr><td>ss        <td>second with leading zero
+       <tr><td>u         <td>tenths of second
+       <tr><td>uu        <td>hundedths of second with leading zero
+       <tr><td>uuu       <td>millisecond with leading zeros
+       <tr><td>uuuu      <td>microsecond with leading zeros
+       <tr><td>a         <td>the am/pm string
+       <tr><td>w/ww/www  <td>abbreviated day of week name
+       <tr><td>wwww      <td>full day of week name
+       <tr><td>d         <td>day of month without leading zero
+       <tr><td>dd        <td>day of month with leading zero
+       <tr><td>M         <td>month of year without leading zero
+       <tr><td>MM        <td>month of year with leading zero
+       <tr><td>MMM       <td>month of year as abbreviated text
+       <tr><td>MMMM      <td>month of year as full text
+       <tr><td>y/yy      <td>year without century
+       <tr><td>yyy/yyyy  <td>year with century
+       <tr><td>z         <td>the time zone description ('GMT' for UTC)
+       <tr><td>Z         <td>the time zone description ('Z' for UTC)
+       <tr><td>ZZ        <td>the time zone description (':' separates hour/minute)
+       </table>
 
        All other characters are copied to the output string unchanged.
        
        Note if there is an 'a' character in the string, the hour will be in 12
        hour format, otherwise in 24 hour format.
+
+       @return empty string if time is invalid.
      */
     PString AsString(
       const char * formatPtr,    ///< Arbitrary format C string pointer for time.
       int zone = Local           ///< Time zone for the time.
     ) const;
+
+    /**Parse a string representation of time.
+       This initialises the time to the specified time, parsed from the
+       string. The string may be in many different formats, for example:
+          "5/03/1999 12:34:56"
+          "15/06/1999 12:34:56"
+          "15/06/01 12:34:56 PST"
+          "5/06/02 12:34:56"
+          "5/23/1999 12:34am"
+          "5/23/00 12:34am"
+          "1999/23/04 12:34:56"
+          "Mar 3, 1999 12:34pm"
+          "3 Jul 2004 12:34pm"
+          "12:34:56 5 December 1999"
+          "10 minutes ago"
+          "2 weeks"
+     */
+    bool Parse(
+      const PString & str
+    );
   //@}
 
   /**@name Internationalisation functions */
@@ -581,9 +512,9 @@ class PTime : public PObject
     /**Get the internationalised time format: AM/PM or 24 hour.
     
        @return
-       TRUE is 12 hour, FALSE if 24 hour.
+       true is 12 hour, false if 24 hour.
      */
-    static BOOL GetTimeAMPM();
+    static PBoolean GetTimeAMPM();
 
     /**Get the internationalised time AM string.
     
@@ -671,6 +602,8 @@ class PTime : public PObject
 #endif
 };
 
-#endif
+
+#endif // PTLIB_TIME_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

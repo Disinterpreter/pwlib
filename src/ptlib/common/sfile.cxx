@@ -26,16 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: sfile.cxx,v $
- * Revision 1.3  2005/01/03 12:48:42  csoutheren
- * Added new configure options and ability to disable/enable modules
- *
- * Revision 1.2  1999/03/09 08:18:24  robertj
- * Adjustment found during documentation frenzy.
- *
- * Revision 1.1  1998/09/24 07:25:49  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifdef __GNUC__
@@ -75,19 +68,19 @@ PStructuredFile::PStructuredFile(const PFilePath & name, OpenMode mode, int opts
 }
 
 
-BOOL PStructuredFile::Read(void * buffer)
+PBoolean PStructuredFile::Read(void * buffer)
 {
   PAssert(structureSize > 0, PInvalidParameter);
   if (!PFile::Read(buffer, structureSize))
-    return FALSE;
+    return PFalse;
   if (GetLastReadCount() != structureSize)
-    return FALSE;
+    return PFalse;
   // Translate all structure elements according to endian-ness.
-  return TRUE;
+  return PTrue;
 }
       
 
-BOOL PStructuredFile::Write(const void * buffer)
+PBoolean PStructuredFile::Write(const void * buffer)
 {
   PAssert(structureSize > 0, PInvalidParameter);
   // Translate all structure elements according to endian-ness.

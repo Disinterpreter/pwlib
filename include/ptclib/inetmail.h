@@ -24,83 +24,13 @@
  *
  * Contributor(s): Federico Pinna and Reitek S.p.A.
  *
- * $Log: inetmail.h,v $
- * Revision 1.20  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.19  2004/04/21 00:29:55  csoutheren
- * Added SASL authentication to PPOP3Client and PSMTPClient
- * Thanks to Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.18  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.17  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.16  2000/11/10 01:08:11  robertj
- * Added content transfer encoding and automatic base64 translation.
- *
- * Revision 1.15  2000/11/09 06:01:58  robertj
- * Added MIME version and content disposition to RFC822 class.
- *
- * Revision 1.14  2000/11/09 05:50:23  robertj
- * Added RFC822 aware channel class for doing internet mail.
- *
- * Revision 1.13  2000/06/21 01:01:21  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.12  2000/06/19 11:33:53  robertj
- * Fixed incorrect comment documentation
- *
- * Revision 1.11  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.10  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.9  1998/11/30 02:50:51  robertj
- * New directory structure
- *
- * Revision 1.8  1998/09/23 06:19:36  robertj
- * Added open source copyright license.
- *
- * Revision 1.7  1996/12/21 01:24:15  robertj
- * Added missing open message to pop server.
- *
- * Revision 1.6  1996/09/16 12:57:45  robertj
- * Removed redundant functions.
- *
- * Revision 1.5  1996/09/14 13:17:59  robertj
- * Renamed file and changed to be a protocol off new indirect channel to separate
- *   the protocol from the low level byte transport channel.
- *
- * Revision 1.4  1996/07/27 04:14:49  robertj
- * Redesign and reimplement of mail sockets.
- *
- * Revision 1.3  1996/06/28 13:16:32  robertj
- * Changed SMTP incoming message handler so can tell when started, processing or ended message.
- *
- * Revision 1.2  1996/03/16 04:38:24  robertj
- * Added ParseReponse() for splitting reponse line into code and info.
- *
- * Revision 1.1  1996/01/23 13:04:20  robertj
- * Initial revision
- *
- * Revision 1.3  1995/06/17 11:12:15  robertj
- * Documentation update.
- *
- * Revision 1.2  1995/06/17 00:39:53  robertj
- * More implementation.
- *
- * Revision 1.1  1995/06/04 13:17:16  robertj
- * Initial revision
- *
+ * $Revision: 25387 $
+ * $Author: rjongbloed $
+ * $Date: 2011-03-22 22:51:09 -0500 (Tue, 22 Mar 2011) $
  */
 
-#ifndef _PMAILPROTOCOL
-#define _PMAILPROTOCOL
+#ifndef PTLIB_INETMAIL_H
+#define PTLIB_INETMAIL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -119,7 +49,7 @@ class PSocket;
 
    When acting as a client, the procedure is to make the connection to a
    remote server, then to send a message using the following procedure:
-      <PRE><CODE>
+      <CODE>
       PSMTPClient mail("mailserver");
       if (mail.IsOpen()) {
         mail.BeginMessage("Me@here.com.au", "Fred@somwhere.com");
@@ -129,7 +59,7 @@ class PSocket;
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
 
     When acting as a server, a descendant class would be created to override
     at least the <A>LookUpName()</A> and <A>HandleMessage()</A> functions.
@@ -137,7 +67,7 @@ class PSocket;
     capabilities, but these two will give a basic SMTP server functionality.
 
     The server socket thread would continuously call the
-    <A>ProcessMessage()</A> function until it returns FALSE. This will then
+    <A>ProcessMessage()</A> function until it returns false. This will then
     call the appropriate virtual function on parsing the SMTP protocol.
 */
 class PSMTP : public PInternetProtocol
@@ -163,7 +93,7 @@ class PSMTP : public PInternetProtocol
 
    When acting as a client, the procedure is to make the connection to a
    remote server, then to send a message using the following procedure:
-      <PRE><CODE>
+      <CODE>
       PSMTPSocket mail("mailserver");
       if (mail.IsOpen()) {
         mail.BeginMessage("Me@here.com.au", "Fred@somwhere.com");
@@ -173,7 +103,7 @@ class PSMTP : public PInternetProtocol
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
 */
 class PSMTPClient : public PSMTP
 {
@@ -198,9 +128,9 @@ class PSMTPClient : public PSMTP
     /** Close the socket, and if connected as a client, QUITs from server.
 
        @return
-       TRUE if the channel was closed and the QUIT accepted by the server.
+       true if the channel was closed and the QUIT accepted by the server.
      */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
 
   // New functions for class.
@@ -209,9 +139,9 @@ class PSMTPClient : public PSMTP
         and a common method is found
 
        @return
-       TRUE if logged in.
+       true if logged in.
      */
-    BOOL LogIn(
+    PBoolean LogIn(
       const PString & username,   ///< User name on remote system.
       const PString & password    ///< Password for user name.
     );
@@ -222,39 +152,39 @@ class PSMTPClient : public PSMTP
        be used to transmit the data itself.
 
        @return
-       TRUE if message was handled, FALSE if an error occurs.
+       true if message was handled, false if an error occurs.
      */
-    BOOL BeginMessage(
+    PBoolean BeginMessage(
       const PString & from,        ///< User name of sender.
       const PString & to,          ///< User name of recipient.
-      BOOL eightBitMIME = FALSE    ///< Mesage will be 8 bit MIME.
+      PBoolean eightBitMIME = false    ///< Mesage will be 8 bit MIME.
     );
-    BOOL BeginMessage(
+    PBoolean BeginMessage(
       const PString & from,        ///< User name of sender.
       const PStringList & toList,  ///< List of user names of recipients.
-      BOOL eightBitMIME = FALSE    ///< Mesage will be 8 bit MIME.
+      PBoolean eightBitMIME = false    ///< Mesage will be 8 bit MIME.
     );
 
     /** End transmission of a message using the SMTP socket as a client.
 
        @return
-       TRUE if message was accepted by remote server, FALSE if an error occurs.
+       true if message was accepted by remote server, false if an error occurs.
      */
-    BOOL EndMessage();
+    PBoolean EndMessage();
 
 
   protected:
-    BOOL OnOpen();
+    PBoolean OnOpen();
 
-    BOOL    haveHello;
-    BOOL    extendedHello;
-    BOOL    eightBitMIME;
+    PBoolean    haveHello;
+    PBoolean    extendedHello;
+    PBoolean    eightBitMIME;
     PString fromAddress;
     PStringList toNames;
-    BOOL    sendingData;
+    PBoolean    sendingData;
 
   private:
-    BOOL _BeginMessage();
+    bool InternalBeginMessage();
 };
 
 
@@ -262,7 +192,7 @@ class PSMTPClient : public PSMTP
 
    When acting as a client, the procedure is to make the connection to a
    remote server, then to send a message using the following procedure:
-      <PRE><CODE>
+      <CODE>
       PSMTPSocket mail("mailserver");
       if (mail.IsOpen()) {
         mail.BeginMessage("Me@here.com.au", "Fred@somwhere.com");
@@ -272,7 +202,7 @@ class PSMTPClient : public PSMTP
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
 
     When acting as a server, a descendant class would be created to override
     at least the <A>LookUpName()</A> and <A>HandleMessage()</A> functions.
@@ -280,7 +210,7 @@ class PSMTPClient : public PSMTP
     capabilities, but these two will give a basic SMTP server functionality.
 
     The server socket thread would continuously call the
-    <A>ProcessMessage()</A> function until it returns FALSE. This will then
+    <A>ProcessMessage()</A> function until it returns false. This will then
     call the appropriate virtual function on parsing the SMTP protocol.
 */
 class PSMTPServer : public PSMTP
@@ -302,10 +232,10 @@ class PSMTPServer : public PSMTP
        is used when the socket is acting as a server.
 
        @return
-       TRUE if more processing may be done, FALSE if the QUIT command was
-       received or the <A>OnUnknown()</A> function returns FALSE.
+       true if more processing may be done, false if the QUIT command was
+       received or the <A>OnUnknown()</A> function returns false.
      */
-    BOOL ProcessCommand();
+    PBoolean ProcessCommand();
 
     void ServerReset();
     // Reset the state of the SMTP server socket.
@@ -338,7 +268,7 @@ class PSMTPServer : public PSMTP
 
     /** Look up a name in the context of the SMTP server.
 
-       The default bahaviour simply returns FALSE.
+       The default bahaviour simply returns false.
 
        @return
        Result of name look up operation.
@@ -352,21 +282,21 @@ class PSMTPServer : public PSMTP
        the partial or complete message received, depending on the
        <CODE>completed</CODE> parameter.
 
-       The default behaviour is to simply return FALSE;
+       The default behaviour is to simply return false;
 
        @return
-       TRUE if message was handled, FALSE if an error occurs.
+       true if message was handled, false if an error occurs.
      */
-    virtual BOOL HandleMessage(
+    virtual PBoolean HandleMessage(
       PCharArray & buffer,  ///< Buffer containing message data received.
-      BOOL starting,        ///< This is the first call for the message.
-      BOOL completed        ///< This is the last call for the message.
+      PBoolean starting,        ///< This is the first call for the message.
+      PBoolean completed        ///< This is the last call for the message.
       ///< Indication that the entire message has been received.
     );
 
 
   protected:
-    BOOL OnOpen();
+    PBoolean OnOpen();
 
     virtual void OnHELO(
       const PCaselessString & remoteHost  ///< Name of remote host.
@@ -434,10 +364,10 @@ class PSMTPServer : public PSMTP
     /** Handle an unknown command.
 
        @return
-       TRUE if more processing may be done, FALSE if the
-       <A>ProcessCommand()</A> function is to return FALSE.
+       true if more processing may be done, false if the
+       <A>ProcessCommand()</A> function is to return false.
      */
-    virtual BOOL OnUnknown(
+    virtual PBoolean OnUnknown(
       const PCaselessString & command  ///< Complete command line received.
     );
 
@@ -454,10 +384,10 @@ class PSMTPServer : public PSMTP
        <CODE>messageBufferSize</CODE> bytes have been read.
 
        @return
-       TRUE if partial message received, FALSE if the end of the data was
+       true if partial message received, false if the end of the data was
        received.
      */
-    virtual BOOL OnTextData(PCharArray & buffer, BOOL & completed);
+    virtual PBoolean OnTextData(PCharArray & buffer, PBoolean & completed);
 
     /** Read an eight bit MIME message that is being received by the socket. The
        MIME message is terminated by the CR/LF/./CR/LF sequence.
@@ -467,15 +397,15 @@ class PSMTPServer : public PSMTP
        <CODE>messageBufferSize</CODE> bytes have been read.
 
        @return
-       TRUE if partial message received, FALSE if the end of the data was
+       true if partial message received, false if the end of the data was
        received.
      */
-    virtual BOOL OnMIMEData(PCharArray & buffer, BOOL & completed);
+    virtual PBoolean OnMIMEData(PCharArray & buffer, PBoolean & completed);
 
 
   // Member variables
-    BOOL        extendedHello;
-    BOOL        eightBitMIME;
+    PBoolean        extendedHello;
+    PBoolean        eightBitMIME;
     PString     fromAddress;
     PString     fromPath;
     PStringList toNames;
@@ -493,7 +423,7 @@ class PSMTPServer : public PSMTP
 
    When acting as a client, the procedure is to make the connection to a
    remote server, then to retrieve a message using the following procedure:
-      <PRE><CODE>
+      <CODE>
       PPOP3Client mail("popserver");
       if (mail.IsOpen()) {
         if (mail.LogIn("Me", "password")) {
@@ -514,7 +444,7 @@ class PSMTPServer : public PSMTP
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
 
     When acting as a server, a descendant class would be created to override
     at least the <A>HandleOpenMailbox()</A>, <A>HandleSendMessage()</A> and
@@ -523,7 +453,7 @@ class PSMTPServer : public PSMTP
     basic POP3 server functionality.
 
     The server socket thread would continuously call the
-    <A>ProcessMessage()</A> function until it returns FALSE. This will then
+    <A>ProcessMessage()</A> function until it returns false. This will then
     call the appropriate virtual function on parsing the POP3 protocol.
  */
 class PPOP3 : public PInternetProtocol
@@ -546,7 +476,7 @@ class PPOP3 : public PInternetProtocol
        <CODE>lastResponseCode</CODE> and <CODE>lastResponseInfo</CODE>.
 
        The default bahaviour looks for a space or a '-' and splits the code
-       and info either side of that character, then returns FALSE.
+       and info either side of that character, then returns false.
 
        @return
        Position of continuation character in response, 0 if no continuation
@@ -557,8 +487,8 @@ class PPOP3 : public PInternetProtocol
     );
 
   // Member variables
-    static PString okResponse;
-    static PString errResponse;
+    static const PString & okResponse();
+    static const PString & errResponse();
 };
 
 
@@ -566,7 +496,7 @@ class PPOP3 : public PInternetProtocol
 
    When acting as a client, the procedure is to make the connection to a
    remote server, then to retrieve a message using the following procedure:
-      <PRE><CODE>
+      <CODE>
       PPOP3Client mail;
       if (mail.Connect("popserver")) {
         if (mail.LogIn("Me", "password")) {
@@ -587,7 +517,7 @@ class PPOP3 : public PInternetProtocol
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
  */
 class PPOP3Client : public PPOP3
 {
@@ -612,9 +542,9 @@ class PPOP3Client : public PPOP3
     /** Close the socket, and if connected as a client, QUITs from server.
 
        @return
-       TRUE if the channel was closed and the QUIT accepted by the server.
+       true if the channel was closed and the QUIT accepted by the server.
      */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
 
   // New functions for class.
@@ -630,9 +560,9 @@ class PPOP3Client : public PPOP3
     /** Log into the POP server using the mailbox and access codes specified.
 
        @return
-       TRUE if logged in.
+       true if logged in.
      */
-    BOOL LogIn(
+    PBoolean LogIn(
       const PString & username,       ///< User name on remote system.
       const PString & password,       ///< Password for user name.
       int options = AllowUserPass     ///< See LoginOptions above
@@ -667,13 +597,13 @@ class PPOP3Client : public PPOP3
 
     /* Begin the retrieval of an entire message. The application may then use
        the <A>PApplicationSocket::ReadLine()</A> function with the
-       <CODE>unstuffLine</CODE> parameter set to TRUE. Repeated calls until
-       its return valus is FALSE will read the message headers and body.
+       <CODE>unstuffLine</CODE> parameter set to true. Repeated calls until
+       its return valus is false will read the message headers and body.
 
        @return
        Array of strings continaing message headers.
      */
-    BOOL BeginMessage(
+    PBoolean BeginMessage(
       PINDEX messageNumber
         /** Number of message to retrieve. This is an integer from 1 to the
            maximum number of messages available.
@@ -685,7 +615,7 @@ class PPOP3Client : public PPOP3
        @return
        Array of strings continaing message headers.
      */
-    BOOL DeleteMessage(
+    PBoolean DeleteMessage(
       PINDEX messageNumber
         /* Number of message to retrieve. This is an integer from 1 to the
            maximum number of messages available.
@@ -694,10 +624,10 @@ class PPOP3Client : public PPOP3
 
 
   protected:
-    BOOL OnOpen();
+    PBoolean OnOpen();
 
   // Member variables
-    BOOL loggedIn;
+    PBoolean loggedIn;
     PString apopBanner;
 };
 
@@ -711,7 +641,7 @@ class PPOP3Client : public PPOP3
     basic POP3 server functionality.
 
     The server socket thread would continuously call the
-    <A>ProcessMessage()</A> function until it returns FALSE. This will then
+    <A>ProcessMessage()</A> function until it returns false. This will then
     call the appropriate virtual function on parsing the POP3 protocol.
  */
 class PPOP3Server : public PPOP3
@@ -733,10 +663,10 @@ class PPOP3Server : public PPOP3
        is used when the socket is acting as a server.
 
        @return
-       TRUE if more processing may be done, FALSE if the QUIT command was
-       received or the <A>OnUnknown()</A> function returns FALSE.
+       true if more processing may be done, false if the QUIT command was
+       received or the <A>OnUnknown()</A> function returns false.
      */
-    BOOL ProcessCommand();
+    PBoolean ProcessCommand();
 
     /** Log the specified user into the mail system and return sizes of each
        message in mail box.
@@ -745,9 +675,9 @@ class PPOP3Server : public PPOP3
        member fields <CODE>messageSizes</CODE> and <CODE>messageIDs</CODE>.
 
        @return
-       TRUE if user and password were valid.
+       true if user and password were valid.
      */
-    virtual BOOL HandleOpenMailbox(
+    virtual PBoolean HandleOpenMailbox(
       const PString & username,  ///< User name for mail box
       const PString & password   ///< Password for user name
     );
@@ -757,7 +687,7 @@ class PPOP3Server : public PPOP3
        stuffing enabled.
 
        @return
-       TRUE if successfully sent message.
+       true if successfully sent message.
      */
     virtual void HandleSendMessage(
       PINDEX messageNumber, ///< Number of message to send.
@@ -770,7 +700,7 @@ class PPOP3Server : public PPOP3
        deleted using the DELE command.
 
        @return
-       TRUE if successfully sent message.
+       true if successfully sent message.
      */
     virtual void HandleDeleteMessage(
       PINDEX messageNumber, ///< Number of message to send.
@@ -779,7 +709,7 @@ class PPOP3Server : public PPOP3
     
 
   protected:
-    BOOL OnOpen();
+    PBoolean OnOpen();
 
     virtual void OnUSER(
       const PString & name  ///< Name of user.
@@ -836,10 +766,10 @@ class PPOP3Server : public PPOP3
     /** Handle an unknown command.
 
        @return
-       TRUE if more processing may be done, FALSE if the
-       <A>ProcessCommand()</A> function is to return FALSE.
+       true if more processing may be done, false if the
+       <A>ProcessCommand()</A> function is to return false.
      */
-    virtual BOOL OnUnknown(
+    virtual PBoolean OnUnknown(
       const PCaselessString & command  ///< Complete command line received.
     );
 
@@ -858,7 +788,7 @@ class PPOP3Server : public PPOP3
    the stream so the Read() and Write() functions only deal with the message
    body.
    For example to send a message using the SMTP classes:
-      <PRE><CODE>
+      <CODE>
       PSMTPClient mail("mailserver");
       if (mail.IsOpen()) {
         PRFC822Channel message;
@@ -875,7 +805,7 @@ class PPOP3Server : public PPOP3
       }
       else
          PError << "Mail conection failed." << endl;
-      </PRE></CODE>
+      </CODE>
   */
 class PRFC822Channel : public PIndirectChannel
 {
@@ -901,7 +831,7 @@ class PRFC822Channel : public PIndirectChannel
        This assures that all mime fields etc are closed off before closing
        the underliying channel.
       */
-    BOOL Close();
+    PBoolean Close();
 
     /** Low level write to the channel.
 
@@ -909,9 +839,9 @@ class PRFC822Channel : public PIndirectChannel
        will be output via this function.
 
        @return
-       TRUE if at least len bytes were written to the channel.
+       true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -945,7 +875,7 @@ class PRFC822Channel : public PIndirectChannel
        Note this must be called before any writes are done to the message or
        part.
       */
-    BOOL MultipartMessage(
+    PBoolean MultipartMessage(
       const PString & boundary
     );
 
@@ -1032,7 +962,7 @@ class PRFC822Channel : public PIndirectChannel
       */
     void SetTransferEncoding(
       const PString & encoding,   ///< Encoding type
-      BOOL autoTranslate = TRUE   ///< Automatically convert to encoding type
+      PBoolean autoTranslate = true   ///< Automatically convert to encoding type
     );
 
 
@@ -1045,26 +975,26 @@ class PRFC822Channel : public PIndirectChannel
     );
 
     // Common MIME header tags
-    static const char MimeVersionTag[];
-    static const char FromTag[];
-    static const char ToTag[];
-    static const char CCTag[];
-    static const char BCCTag[];
-    static const char SubjectTag[];
-    static const char DateTag[];
-    static const char ReturnPathTag[];
-    static const char ReceivedTag[];
-    static const char MessageIDTag[];
-    static const char MailerTag[];
-    static const char ContentTypeTag[];
-    static const char ContentDispositionTag[];
-    static const char ContentTransferEncodingTag[];
+    static const PCaselessString & MimeVersionTag();
+    static const PCaselessString & FromTag();
+    static const PCaselessString & ToTag();
+    static const PCaselessString & CCTag();
+    static const PCaselessString & BCCTag();
+    static const PCaselessString & SubjectTag();
+    static const PCaselessString & DateTag();
+    static const PCaselessString & ReturnPathTag();
+    static const PCaselessString & ReceivedTag();
+    static const PCaselessString & MessageIDTag();
+    static const PCaselessString & MailerTag();
+    static const PCaselessString & ContentTypeTag() { return PMIMEInfo::ContentTypeTag(); }
+    static const PCaselessString & ContentDispositionTag() { return PMIMEInfo::ContentDispositionTag(); }
+    static const PCaselessString & ContentTransferEncodingTag() { return PMIMEInfo::ContentTransferEncodingTag(); }
 
     /**Send this message using an SMTP socket.
        This will create a PSMTPClient and connect to the specified host then
        send the message to the remote SMTP server.
       */
-    BOOL SendWithSMTP(
+    PBoolean SendWithSMTP(
       const PString & hostname
     );
 
@@ -1072,24 +1002,24 @@ class PRFC822Channel : public PIndirectChannel
        This assumes PSMTPClient is open the sends the message to the remote
        SMTP server.
       */
-    BOOL SendWithSMTP(
+    PBoolean SendWithSMTP(
       PSMTPClient * smtp
     );
 
 
   protected:
-    BOOL OnOpen();
+    PBoolean OnOpen();
 
-    BOOL        writeHeaders;
+    PBoolean        writeHeaders;
     PMIMEInfo   headers;
-    BOOL        writePartHeaders;
+    PBoolean        writePartHeaders;
     PMIMEInfo   partHeaders;
     PStringList boundaries;
     PBase64   * base64;
 };
 
 
-#endif  // _PMAILPROTOCOL
+#endif  // PTLIB_INETMAIL_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

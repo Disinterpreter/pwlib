@@ -26,22 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: remconn.cxx,v $
- * Revision 1.20  2004/02/22 03:36:41  ykiryanov
- * Added inclusion of signal.h on BeOS to define SIGINT
- *
- * Revision 1.19  2003/12/02 10:46:15  csoutheren
- * Added patch for Solaris, thanks to Michal Zygmuntowicz
- *
- * Revision 1.18  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.17  1998/11/30 21:51:49  robertj
- * New directory structure.
- *
- * Revision 1.16  1998/09/24 04:12:15  robertj
- * Added open software license.
- *
+ * $Revision: 21137 $
+ * $Author: ms30002000 $
+ * $Date: 2008-09-22 11:57:19 -0500 (Mon, 22 Sep 2008) $
  */
 
 #pragma implementation "remconn.h"
@@ -49,6 +36,7 @@
 #include <ptlib.h>
 #include <ptlib/pipechan.h>
 #include <ptlib/remconn.h>
+#include <ptlib/pprocess.h>
 
 #include <stdio.h>
 #include <sys/ioctl.h>
@@ -61,7 +49,7 @@
 #include <signal.h>
 #endif
 
-#ifdef __BEOS__
+#ifdef P_BEOS
 #include <signal.h>
 #endif
 
@@ -138,15 +126,15 @@ PRemoteConnection::~PRemoteConnection()
 }
 
 
-BOOL PRemoteConnection::Open(const PString & name, BOOL existing)
+PBoolean PRemoteConnection::Open(const PString & name, PBoolean existing)
 {
   return Open(name, "", "", existing);
 }
 
-BOOL PRemoteConnection::Open(const PString & name,
+PBoolean PRemoteConnection::Open(const PString & name,
                              const PString & user,
                              const PString & pword,
-                             BOOL existing)
+                             PBoolean existing)
 {
   userName = user;
   password = pword;
@@ -155,7 +143,7 @@ BOOL PRemoteConnection::Open(const PString & name,
   if (name.IsEmpty()) {
     status = NoNameOrNumber;
     PProcess::PXShowSystemWarning(1000, ErrorTable[0].str);
-    return FALSE;
+    return PFalse;
   }
 
   // cannot open remote connection not in config file
@@ -164,7 +152,7 @@ BOOL PRemoteConnection::Open(const PString & name,
   if ((phoneNumber = config.GetString(name, NumberStr, "")).IsEmpty()) {
     status = NoNameOrNumber;
     PProcess::PXShowSystemWarning(1001, ErrorTable[1].str);
-    return FALSE;
+    return PFalse;
   }
 
   // if there is a connection active, check to see if it has the same name
@@ -174,12 +162,12 @@ BOOL PRemoteConnection::Open(const PString & name,
       PPPDeviceStatus(deviceStr) > 0) {
     osError = errno;
     status = Connected;
-    return TRUE;
+    return PTrue;
   }
   osError = errno;
 
   if (existing)
-    return FALSE;
+    return PFalse;
 
   Close();
 
@@ -249,10 +237,10 @@ BOOL PRemoteConnection::Open(const PString & name,
   //
   // setup the chat command
   //
-  PString chatCmd = chatErrs & modemInit & dialPrefix + phoneNumber & loginStr;
+  PString chatCmd = chatErrs & (modemInit & (dialPrefix + (phoneNumber & loginStr)));
   if (!chatCmd.IsEmpty()) {
     argArray[argCount++] = "connect";
-    argArray[argCount++] = chatStr & "-t" + timeoutStr & chatCmd;
+    argArray[argCount++] = chatStr & ("-t" + (timeoutStr & chatCmd));
   }
 
   if (!addressStr)
@@ -276,7 +264,7 @@ BOOL PRemoteConnection::Open(const PString & name,
 
     if (PPPDeviceStatus(deviceStr) > 0) {
       osError = errno;
-      return TRUE;
+      return PTrue;
     }
 
     if (!timer.IsRunning())
@@ -292,7 +280,7 @@ BOOL PRemoteConnection::Open(const PString & name,
   //
   Close();
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -316,7 +304,7 @@ void PRemoteConnection::Construct()
 }
 
 
-BOOL PRemoteConnection::Open(BOOL existing)
+PBoolean PRemoteConnection::Open(PBoolean existing)
 {
   return Open(remoteName, existing);
 }
@@ -401,7 +389,7 @@ static int PPPDeviceStatus(const char * devName)
   return stat;
 #else
 #warning "No PPPDeviceExists implementation defined"
-  return FALSE;
+  return PFalse;
 #endif
 }
 
@@ -434,7 +422,7 @@ PRemoteConnection::Status PRemoteConnection::GetConfiguration(
   config.dnsAddress = cfg.GetString(NameServerStr);
   config.script = cfg.GetString(LoginStr, DefaultLogin);
   config.subEntries = 0;
-  config.dialAllSubEntries = FALSE;
+  config.dialAllSubEntries = PFalse;
 
   return Connected;
 }
@@ -442,7 +430,7 @@ PRemoteConnection::Status PRemoteConnection::GetConfiguration(
 
 PRemoteConnection::Status PRemoteConnection::SetConfiguration(
                  const Configuration & config,  // Configuration of remote connection
-                 BOOL create            // Flag to create connection if not present
+                 PBoolean create            // Flag to create connection if not present
                )
 {
   return SetConfiguration(remoteName, config, create);
@@ -452,7 +440,7 @@ PRemoteConnection::Status PRemoteConnection::SetConfiguration(
 PRemoteConnection::Status PRemoteConnection::SetConfiguration(
                  const PString & name,          // Remote connection name to configure
                  const Configuration & config,  // Configuration of remote connection
-                 BOOL create            // Flag to create connection if not present
+                 PBoolean create            // Flag to create connection if not present
                )
 {
   if (config.phoneNumber.IsEmpty())

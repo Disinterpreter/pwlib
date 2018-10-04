@@ -23,28 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: notifier_ext.h,v $
- * Revision 1.5  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.4  2004/05/17 11:02:39  csoutheren
- * Added extra documentation
- *
- * Revision 1.3  2004/05/09 07:23:48  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.2  2004/04/26 01:34:58  rjongbloed
- * Change nofier list to be able to used in containers, thanks Federico Pinna, Reitek S.p.A.
- *
- * Revision 1.1  2004/04/22 12:31:00  rjongbloed
- * Added PNotifier extensions and XMPP (Jabber) support,
- *   thanks to Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef _PNOTIFIER_EXT
-#define _PNOTIFIER_EXT
+#ifndef PTLIB_NOTIFIER_EXT_H
+#define PTLIB_NOTIFIER_EXT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -68,8 +53,8 @@ class PSmartNotifieeRegistrar
     unsigned    GetID() const           { return m_ID; }
 
     static unsigned    RegisterNotifiee(void * obj);
-    static BOOL        UnregisterNotifiee(unsigned id);
-    static BOOL        UnregisterNotifiee(void * obj);
+    static PBoolean        UnregisterNotifiee(unsigned id);
+    static PBoolean        UnregisterNotifiee(void * obj);
     static void *      GetNotifiee(unsigned id);
 
   protected:
@@ -87,7 +72,7 @@ class PSmartNotifierFunction : public PNotifierFunction
     PSmartNotifierFunction(unsigned id) : PNotifierFunction(&id), m_NotifieeID(id) { }
     unsigned GetNotifieeID() const { return m_NotifieeID; }
     void * GetNotifiee() const { return PSmartNotifieeRegistrar::GetNotifiee(m_NotifieeID); }
-    BOOL IsValid() const { return GetNotifiee() != 0; }
+    PBoolean IsValid() const { return GetNotifiee() != 0; }
 };
 
 #define PDECLARE_SMART_NOTIFIEE \
@@ -105,7 +90,7 @@ class PSmartNotifierFunction : public PNotifierFunction
           if (obj) \
             ((notifiee*)obj)->func((notifier &)note, extra); \
           else \
-            PTRACE(2, "Invalid notifiee"); \
+            PTRACE(2, "PWLib\tInvalid notifiee"); \
       } \
   }; \
   friend class func##_PSmartNotifier; \
@@ -130,17 +115,15 @@ class PNotifierList : public PObject
 
     void Add(PNotifier * handler)       { m_TheList.Append(handler); }
     void Remove(PNotifier * handler)    { m_TheList.Remove(handler); }
-    BOOL RemoveTarget(PObject * obj);
-    BOOL Fire(PObject& obj, INT val = 0);
+    PBoolean RemoveTarget(PObject * obj);
+    PBoolean Fire(PObject& obj, INT val = 0);
 
     // Moves all the notifiers in "that" to "this"
     void  Move(PNotifierList& that);
 };
 
 
-#endif  // _PNOTIFIER_EXT
+#endif  // PTLIB_NOTIFIER_EXT_H
+
 
 // End of File ///////////////////////////////////////////////////////////////
-
-
-

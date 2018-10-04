@@ -26,37 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: doswin.cxx,v $
- * Revision 1.10  1998/09/24 03:30:43  robertj
- * Added open software license.
- *
- * Revision 1.9  1996/01/02 12:55:15  robertj
- * Fixed copy of directories.
- *
- * Revision 1.8  1995/12/10 11:56:42  robertj
- * Moved error code for specific WIN32 and MS-DOS versions.
- *
- * Revision 1.7  1995/08/24 12:41:10  robertj
- * Changed PChannel so not a PContainer.
- *
- * Revision 1.6  1995/07/31 12:14:52  robertj
- * Added semaphore class.
- *
- * Revision 1.5  1995/06/17 00:59:18  robertj
- * Moved PPipeChannel::Execute from common dos/windows to individual files.
- *
- * Revision 1.4  1995/04/01 08:05:59  robertj
- * Fixed yield for straight DOS and QUICKWIN systems.
- *
- * Revision 1.3  1995/03/25 02:09:11  robertj
- * Added check for network login name.
- *
-// Revision 1.2  1995/03/14  13:31:36  robertj
-// Implemented DOS pipe channel.
-//
-// Revision 1.1  1995/03/14  12:45:16  robertj
-// Initial revision
-//
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include "ptlib.h"
@@ -70,7 +42,7 @@
 
 void PDirectory::Construct()
 {
-  PString::operator=(CreateFullPath(*this, TRUE));
+  PString::operator=(CreateFullPath(*this, PTrue));
 }
 
 
@@ -81,25 +53,25 @@ void PDirectory::CopyContents(const PDirectory & dir)
 }
 
 
-BOOL PDirectory::Open(int newScanMask)
+PBoolean PDirectory::Open(int newScanMask)
 {
   scanMask = newScanMask;
 
   if (_dos_findfirst(*this+"*.*", 0xff, &fileinfo) != 0)
-    return FALSE;
+    return PFalse;
 
-  return Filtered() ? Next() : TRUE;
+  return Filtered() ? Next() : PTrue;
 }
 
 
-BOOL PDirectory::Next()
+PBoolean PDirectory::Next()
 {
   do {
     if (_dos_findnext(&fileinfo) != 0)
-      return FALSE;
+      return PFalse;
   } while (Filtered());
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -109,7 +81,7 @@ PCaselessString PDirectory::GetEntryName() const
 }
 
 
-BOOL PDirectory::IsSubDir() const
+PBoolean PDirectory::IsSubDir() const
 {
   return (fileinfo.attrib&_A_SUBDIR) != 0;
 }
@@ -130,7 +102,7 @@ PCaselessString PDirectory::GetVolume() const
 }
 
 
-PString PDirectory::CreateFullPath(const PString & path, BOOL isDirectory)
+PString PDirectory::CreateFullPath(const PString & path, PBoolean isDirectory)
 {
   PString curdir;
   PAssert(getcwd(curdir.GetPointer(P_MAX_PATH),
@@ -200,19 +172,19 @@ PString PChannel::GetErrorText() const
 }
 
 
-BOOL PChannel::ConvertOSError(int error)
+PBoolean PChannel::ConvertOSError(int error)
 {
   if (error >= 0) {
     lastError = NoError;
     osError = 0;
-    return TRUE;
+    return PTrue;
   }
 
   osError = errno;
   switch (osError) {
     case 0 :
       lastError = NoError;
-      return TRUE;
+      return PTrue;
     case ENOENT :
       lastError = NotFound;
       break;
@@ -238,7 +210,7 @@ BOOL PChannel::ConvertOSError(int error)
       lastError = Miscellaneous;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -246,9 +218,9 @@ BOOL PChannel::ConvertOSError(int error)
 // PPipeChannel
 
 void PPipeChannel::Construct(const PString & subProgram,
-                const char * const * arguments, OpenMode mode, BOOL searchPath)
+                const char * const * arguments, OpenMode mode, PBoolean searchPath)
 {
-  hasRun = FALSE;
+  hasRun = PFalse;
 
   if (searchPath || subProgram.FindOneOf(":\\/") != P_MAX_INDEX)
     subProgName = subProgram;
@@ -290,7 +262,7 @@ PPipeChannel::~PPipeChannel()
 }
 
 
-BOOL PPipeChannel::Read(void * buffer, PINDEX amount)
+PBoolean PPipeChannel::Read(void * buffer, PINDEX amount)
 {
   if (!hasRun)
     Execute();
@@ -301,12 +273,12 @@ BOOL PPipeChannel::Read(void * buffer, PINDEX amount)
 }
       
 
-BOOL PPipeChannel::Write(const void * buffer, PINDEX amount)
+PBoolean PPipeChannel::Write(const void * buffer, PINDEX amount)
 {
   if (hasRun) {
     osError = EBADF;
     lastError = NotOpen;
-    return FALSE;
+    return PFalse;
   }
 
   flush();
@@ -315,7 +287,7 @@ BOOL PPipeChannel::Write(const void * buffer, PINDEX amount)
 }
 
 
-BOOL PPipeChannel::Close()
+PBoolean PPipeChannel::Close()
 {
   if (!hasRun)
     Execute();
@@ -325,7 +297,7 @@ BOOL PPipeChannel::Close()
 
   PFile::Remove(toChild);
   PFile::Remove(fromChild);
-  return TRUE;
+  return PTrue;
 }
 
 

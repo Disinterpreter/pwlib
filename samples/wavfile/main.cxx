@@ -25,18 +25,16 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.2  2005/08/18 00:24:50  dereksmithies
- * Tidyup so compiles on linux, tidy up copyright headers, add cvs logging.
- *
- *
- *
+ * $Revision: 26290 $
+ * $Author: rjongbloed $
+ * $Date: 2011-08-08 19:52:09 -0500 (Mon, 08 Aug 2011) $
  */
 
 #include <ptlib.h>
-
 #include <ptclib/pwavfile.h>
 #include <ptclib/dtmf.h>
+#include <ptlib/sound.h>
+#include <ptlib/pprocess.h>
 
 #define SAMPLES 64000  
 
@@ -46,42 +44,79 @@ class WAVFileTest : public PProcess
     WAVFileTest()
     : PProcess() { }
     void Main();
+    void Create(PArgList & args);
+    void Play(PArgList & args);
+    void Record(PArgList & args);
 };
 
 PCREATE_PROCESS(WAVFileTest)
 
+
 void WAVFileTest::Main()
 {
   PArgList & args = GetArguments();
-  args.Parse("p:  c: h. ");
+  args.Parse("hpr:c:F:C:R:d:D:v:");
 
-  if (args.HasOption('h')) {
-    cout << "usage: wavfile [-p device][-c fmt] fn" << endl;
-    return;
-  }
-
-  if (args.HasOption('c')) {
-    PString format = args.GetOptionString('c');
-    PWAVFile file(format, args[0], PFile::WriteOnly);
-    if (!file.IsOpen()) {
-      cout << "error: cannot create file " << args[0] << endl;
+  if (args.GetCount() > 0) {
+    if (args.HasOption('c')) {
+      Create(args);
       return;
     }
 
-    //BYTE buffer[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    //file.Write(buffer, sizeof(buffer));
+    if (args.HasOption('p')) {
+      Play(args);
+      return;
+    }
 
-    PDTMFEncoder toneData;
-    toneData.GenerateDialTone();
-    PINDEX len = toneData.GetSize();
-    file.Write((const BYTE *)toneData, len);
-
-    file.Close();
+    if (args.HasOption('r')) {
+      Record(args);
+      return;
+    }
   }
 
+  cout << "usage: wavfile { -r | -p | -c tones } [ options ] filename\n"
+          "   -p          Play WAV file\n"
+          "   -r time     Record WAV file for number of seconds\n"
+          "   -c tones    Create WAV file from generated tones\n"
+          "\n"
+          "Options:\n"
+          "   -F format   File format, e.g. \"PCM-16\" (create/record only)\n"
+          "   -C channels Number of channels (record only)\n"
+          "   -R rate     Sample rate (record only)\n"
+          "   -d dev      Use device name for sound channel record/playback\n"
+          "   -D drv      Use driver name for sound channel record/playback\n"
+          "   -v vol      Set sound device to vol (0..100)\n"
+       << endl;
+}
+
+
+void WAVFileTest::Create(PArgList & args)
+{
+  PWAVFile file(args[0], PFile::WriteOnly);
+  if (!file.IsOpen()) {
+    cout << "Cannot create wav file " << args[0] << endl;
+    return;
+  }
+
+  if (args.HasOption('F'))
+    file.SetFormat(args.GetOptionString('F'));
+
+  if (args.HasOption('C'))
+    file.SetChannels(args.GetOptionString('C').AsUnsigned());
+
+  if (args.HasOption('R'))
+    file.SetSampleRate(args.GetOptionString('R').AsUnsigned());
+
+  PTones toneData(args.GetOptionString('c'), PTones::MaxVolume, file.GetSampleRate());
+  file.Write((const short *)toneData, toneData.GetSize()*sizeof(short));
+}
+
+
+void WAVFileTest::Play(PArgList & args)
+{
   PWAVFile file(args[0], PFile::ReadOnly, PFile::MustExist, PWAVFile::fmt_NotKnown);
   if (!file.IsOpen()) {
-    cout << "error: cannot open " << args[0] << endl;
+    cout << "Cannot open " << args[0] << endl;
     return;
   }
 
@@ -89,12 +124,11 @@ void WAVFileTest::Main()
   PINDEX hdrLen  = file.GetHeaderLength();
   PINDEX fileLen = file.GetLength();
 
-  cout << "Format:       " << file.wavFmtChunk.format << " (" << file.GetFormatString() << ")" << "\n"
-       << "Channels:     " << file.wavFmtChunk.numChannels << "\n"
-       << "Sample rate:  " << file.wavFmtChunk.sampleRate << "\n"
-       << "Bytes/sec:    " << file.wavFmtChunk.bytesPerSec << "\n"
-       << "Bytes/sample: " << file.wavFmtChunk.bytesPerSample << "\n"
-       << "Bits/sample:  " << file.wavFmtChunk.bitsPerSample << "\n"
+  cout << "Format:       " << file.GetFormat() << " (" << file.GetFormatString() << ")" << "\n"
+       << "Channels:     " << file.GetChannels() << "\n"
+       << "Sample rate:  " << file.GetSampleRate() << "\n"
+       << "Bytes/sec:    " << file.GetBytesPerSecond() << "\n"
+       << "Bits/sample:  " << file.GetSampleSize() << "\n"
        << "\n"
        << "Hdr length :  " << hdrLen << endl
        << "Data length:  " << dataLen << endl
@@ -107,61 +141,77 @@ void WAVFileTest::Main()
     return;
   }
 
-  if (args.HasOption('p')) {
-
-    PString service = args.GetOptionString('p');
-    PString device;
-    if (args.GetCount() > 0)
-      device  = args[0];
-    else if (service != "default") {
-      PStringList deviceList = PSoundChannel::GetDeviceNames(service, PSoundChannel::Player);
-      if (deviceList.GetSize() == 0) {
-        cout << "error: No devices for sound service " << service << endl;
-        return;
-      }
-      device = deviceList[0];
-    }
-    
-    cout << "Using sound service " << service << " with device " << device << endl;
-
-    PSoundChannel * snd;
-    if (service == "default") {
-      snd = new PSoundChannel();
-      device = PSoundChannel::GetDefaultDevice(PSoundChannel::Player);
-    }
-    else {
-      snd = PSoundChannel::CreateChannel(service);
-      if (snd == NULL) {
-        cout << "Failed to create sound service " << service << " with device " << device << endl;
-        return;
-      }
-    }
-
-    cout << "Opening sound service " << service << " with device " << device << endl;
-
-    if (!snd->Open(device, PSoundChannel::Player)) {
-      cout << "Failed to open sound service " << service << " with device " << device << endl;
-      return;
-    }
-
-    if (!snd->IsOpen()) {
-      cout << "Sound device " << device << " not open" << endl;
-      return;
-    }
-
-    if (!snd->SetBuffers(SAMPLES, 2)) {
-      cout << "Failed to set samples to " << SAMPLES << " and 2 buffers. End program now." << endl;
-      return;
-    }
-
-    snd->SetVolume(50);
-
-    if (!snd->Write((const BYTE *)data, data.GetSize())) {
-      cout << "error: write to audio device failed" << endl;
-      return;
-    }
-
-    snd->WaitForPlayCompletion();
-
+  PSoundChannel * sound = PSoundChannel::CreateOpenedChannel(args.GetOptionString('D'),
+                                                             args.GetOptionString('d'),
+                                                             PSoundChannel::Player,
+                                                             file.GetChannels(),
+                                                             file.GetSampleRate(),
+                                                             file.GetSampleSize());
+  if (sound == NULL) {
+    cout << "Failed to create sound channel." << endl;
+    return;
   }
+
+  sound->SetVolume(args.GetOptionString('v', "50").AsUnsigned());
+
+  if (!sound->SetBuffers(SAMPLES, 2)) {
+    cout << "Failed to set samples to " << SAMPLES << " and 2 buffers. End program now." << endl;
+    return;
+  }
+
+  if (!sound->Write((const BYTE *)data, data.GetSize())) {
+    cout << "error: write to audio device failed" << endl;
+    return;
+  }
+
+  sound->WaitForPlayCompletion();
+  delete sound;
+}
+
+
+void WAVFileTest::Record(PArgList & args)
+{
+  PWAVFile file(args[0], PFile::WriteOnly);
+  if (!file.IsOpen()) {
+    cout << "Cannot open " << args[0] << endl;
+    return;
+  }
+
+  if (args.HasOption('F'))
+    file.SetFormat(args.GetOptionString('F'));
+
+  if (args.HasOption('C'))
+    file.SetChannels(args.GetOptionString('C').AsUnsigned());
+
+  if (args.HasOption('R'))
+    file.SetSampleRate(args.GetOptionString('R').AsUnsigned());
+
+  PSoundChannel * sound = PSoundChannel::CreateOpenedChannel(args.GetOptionString('D'),
+                                                             args.GetOptionString('d'),
+                                                             PSoundChannel::Recorder,
+                                                             file.GetChannels(),
+                                                             file.GetSampleRate(),
+                                                             file.GetSampleSize());
+  if (sound == NULL) {
+    cout << "Failed to create sound channel." << endl;
+    return;
+  }
+
+  sound->SetVolume(args.GetOptionString('v', "50").AsUnsigned());
+
+  PSimpleTimer timer(0, args.GetOptionString('r').AsUnsigned());
+  cout << "Recording WAV file for " << timer << " seconds ..." << endl;
+  while (timer.IsRunning()) {
+    BYTE buffer[8192];
+    if (!sound->Read(buffer, sizeof(buffer))) {
+      cout << "Error reading sound channel: " << sound->GetErrorText() << endl;
+      break;
+    }
+    if (!file.Write(buffer, sound->GetLastReadCount())) {
+      cout << "Error writing WAV file: " << file.GetErrorText() << endl;
+      break;
+    }
+  }
+
+  delete sound;
 }

@@ -23,97 +23,9 @@
  *
  * Copyright 2003 Equivalence Pty. Ltd.
  *
- * $Log: pdns.cxx,v $
- * Revision 1.28  2006/04/22 13:35:24  dsandras
- * Fixed wrong behavior with different priorities when building the priorities
- * list. Fixes Ekiga bug #339314.
- *
- * Revision 1.27  2006/04/12 10:38:10  csoutheren
- * Fixed problem with looping in SRV records thanks to Damien Sandras
- *
- * Revision 1.26  2006/02/26 11:51:20  csoutheren
- * Extended DNS test program to include URL based SRV lookups
- * Re-arranged SRV lookup code to allow access to internal routine
- * Reformatted code
- *
- * Revision 1.25  2006/02/26 09:26:17  shorne
- * Added DNS SRV record lookups
- *
- * Revision 1.24  2005/12/04 22:43:30  csoutheren
- * Cleanup patches from Kilian Krause
- *
- * Revision 1.23  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.22  2005/04/27 12:08:11  csoutheren
- * Added support for res_minit for thread-safe resolver access
- * Added mutex when res_minit not available
- *
- * Revision 1.21  2004/11/15 23:47:18  csoutheren
- * Fixed problem with empty SRV names
- *
- * Revision 1.20  2004/11/15 11:33:52  csoutheren
- * Fixed problem in SRV record handling
- *
- * Revision 1.19  2004/06/24 07:36:24  csoutheren
- * Added definitions of T_SRV and T_NAPTR for hosts that do not have these
- *
- * Revision 1.18  2004/06/01 23:30:38  csoutheren
- * Removed warning under Linux
- *
- * Revision 1.17  2004/05/31 23:14:17  csoutheren
- * Fixed warnings under VS.net and fixed problem with SRV records when returning multiple records
- *
- * Revision 1.16  2004/05/31 12:49:48  csoutheren
- * Added handling of unknown DNS types
- *
- * Revision 1.15  2004/05/31 12:14:13  rjongbloed
- * Fixed missing namespace selector on function definition.
- * Opyimised some string processing
- *
- * Revision 1.14  2004/05/28 06:50:45  csoutheren
- * Reorganised DNS functions to use templates, and exposed more internals to allow new DNS lookup types to be added
- *
- * Revision 1.13  2004/04/09 06:52:17  rjongbloed
- * Removed #pargma linker command for /delayload of DLL as documentations sais that
- *   you cannot do this.
- *
- * Revision 1.12  2004/02/23 23:52:19  csoutheren
- * Added pragmas to avoid every Windows application needing to include libs explicitly
- *
- * Revision 1.11  2004/01/03 03:37:53  csoutheren
- * Fixed compile problem on Linux
- *
- * Revision 1.10  2004/01/03 03:10:42  csoutheren
- * Fixed more problems with looking up SRV records, especially on Windows
- *
- * Revision 1.9  2004/01/02 13:22:04  csoutheren
- * Fixed problem with extracting SRV records from DNS
- *
- * Revision 1.8  2003/11/02 15:52:58  shawn
- * added arpa/nameser_compat.h for Mac OS X 10.3 (Panther)
- *
- * Revision 1.7  2003/04/28 23:57:40  robertj
- * Fixed Solaris compatibility
- *
- * Revision 1.6  2003/04/22 23:21:37  craigs
- * Swapped includes at request of Shawn Hsiao for compatiobility with MacOSX
- *
- * Revision 1.5  2003/04/16 14:21:12  craigs
- * Added set of T_SRV for MacOS
- *
- * Revision 1.4  2003/04/16 08:00:19  robertj
- * Windoes psuedo autoconf support
- *
- * Revision 1.3  2003/04/15 08:14:32  craigs
- * Added single string form of GetSRVRecords
- *
- * Revision 1.2  2003/04/15 08:05:19  craigs
- * Added Unix implementation
- *
- * Revision 1.1  2003/04/15 04:06:35  craigs
- * Initial version
- *
+ * $Revision: 28568 $
+ * $Author: rjongbloed $
+ * $Date: 2012-11-22 00:16:50 -0600 (Thu, 22 Nov 2012) $
  */
 
 #ifdef __GNUC__
@@ -125,23 +37,53 @@
 #include <ptclib/url.h>
 #include <ptlib/ipsock.h>
 
+#define new PNEW
+
+#define RESOLVER_CACHE_TIMEOUT  30000
+
 #if P_DNS
+
+#ifdef _WIN32
+  #pragma comment(lib, "DnsAPI.Lib")
+  #pragma message("DNS support enabled")
+#endif
 
 
 /////////////////////////////////////////////////
 
+static PMutex & GetDNSMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
+
+
+struct DNSCacheInfo {
+  DNSCacheInfo() : m_results(NULL), m_status(-1) { }
+  PTime         m_time;
+  PDNS_RECORD   m_results;
+  DNS_STATUS    m_status;
+};
+
+typedef std::map<std::string, DNSCacheInfo> DNSCache;
+
+static PTime g_lastAgeTime(0);
+static DNSCache g_dnsCache;
+
+
+
 #ifdef P_HAS_RESOLVER
 
-static BOOL GetDN(const BYTE * reply, const BYTE * replyEnd, BYTE * & cp, char * buff)
+static PBoolean GetDN(const BYTE * reply, const BYTE * replyEnd, BYTE * & cp, char * buff)
 {
   int len = dn_expand(reply, replyEnd, cp, buff, MAXDNAME);
   if (len < 0)
-    return FALSE;
+    return PFalse;
   cp += len;
-  return TRUE;
+  return PTrue;
 }
 
-static BOOL ProcessDNSRecords(
+static PBoolean ProcessDNSRecords(
         const BYTE * reply,
         const BYTE * replyEnd,
               BYTE * cp,
@@ -165,23 +107,23 @@ static BOOL ProcessDNSRecords(
     else if (i < nsCount)
       section = DnsSectionAuthority;
     else // if (i < arCount)
-      section = DnsSectionAddtional;
+      section = DnsSectionAdditional;
 
     // get the name
     char pName[MAXDNAME];
-    if (!GetDN(reply, replyEnd, cp, pName)) 
-      return FALSE;
+    if (!GetDN(reply, replyEnd, cp, pName))
+      return PFalse;
 
     // get other common parts of the record
     WORD  type;
-    WORD  dnsClass;
-    DWORD ttl;
+    //WORD  dnsClass;
+    //DWORD ttl;
     WORD  dlen;
 
-    GETSHORT(type,     cp);
-    GETSHORT(dnsClass, cp);
-    GETLONG (ttl,      cp);
-    GETSHORT(dlen,     cp);
+    GETSHORT(type, cp);
+    cp += 2; // GETSHORT(dnsClass, cp);
+    cp += 4; // GETLONG (ttl,      cp);
+    GETSHORT(dlen, cp);
 
     BYTE * data = cp;
     cp += dlen;
@@ -203,7 +145,7 @@ static BOOL ProcessDNSRecords(
         GETSHORT(newRecord->Data.SRV.wPort, data);
         if (!GetDN(reply, replyEnd, data, newRecord->Data.SRV.pNameTarget)) {
           free(newRecord);
-          return FALSE;
+          return PFalse;
         }
         break;
 
@@ -213,7 +155,7 @@ static BOOL ProcessDNSRecords(
         GETSHORT(newRecord->Data.MX.wPreference,  data);
         if (!GetDN(reply, replyEnd, data, newRecord->Data.MX.pNameExchange)) {
           free(newRecord);
-          return FALSE;
+          return PFalse;
         }
         break;
 
@@ -223,12 +165,21 @@ static BOOL ProcessDNSRecords(
         GETLONG(newRecord->Data.A.IpAddress, data);
         break;
 
+      case T_AAAA:
+        newRecord = (PDNS_RECORD)malloc(sizeof(DnsRecord)); 
+        memset(newRecord, 0, sizeof(DnsRecord));
+        GETLONG(newRecord->Data.AAAA.Ip6Address[0], data);
+        GETLONG(newRecord->Data.AAAA.Ip6Address[1], data);
+        GETLONG(newRecord->Data.AAAA.Ip6Address[2], data);
+        GETLONG(newRecord->Data.AAAA.Ip6Address[3], data);
+        break;
+
       case T_NS:
         newRecord = (PDNS_RECORD)malloc(sizeof(DnsRecord)); 
         memset(newRecord, 0, sizeof(DnsRecord));
         if (!GetDN(reply, replyEnd, data, newRecord->Data.NS.pNameHost)) {
           delete newRecord;
-          return FALSE;
+          return PFalse;
         }
         break;
     }
@@ -251,27 +202,8 @@ static BOOL ProcessDNSRecords(
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
-
-void DnsRecordListFree(PDNS_RECORD rec, int /* FreeType */)
-{
-  while (rec != NULL) {
-    PDNS_RECORD next = rec->pNext;
-    free(rec);
-    rec = next;
-  }
-}
-
-#if ! P_HAS_RES_NINIT
-
-static PMutex & GetDNSMutex()
-{
-  static PMutex mutex;
-  return mutex;
-}
-
-#endif
 
 DNS_STATUS DnsQuery_A(const char * service,
                               WORD requestType,
@@ -280,13 +212,20 @@ DNS_STATUS DnsQuery_A(const char * service,
                      PDNS_RECORD * results,
                             void *)
 {
+#if defined(P_NETBSD)
+  struct __res_state myRes;
+#endif
   if (results == NULL)
     return -1;
 
   *results = NULL;
 
 #if P_HAS_RES_NINIT
+#if defined(P_NETBSD)
+  res_ninit(&myRes);
+#else
   res_ninit(&_res);
+#endif
 #else
   res_init();
   GetDNSMutex().Wait();
@@ -298,7 +237,13 @@ DNS_STATUS DnsQuery_A(const char * service,
   } reply;
 
 #if P_HAS_RES_NINIT
-  int replyLen = res_nsearch(&_res, service, C_IN, requestType, (BYTE *)&reply, sizeof(reply));
+  int replyLen = res_nsearch(
+#if defined(P_NETBSD)
+      &myRes,
+#else
+      &_res,
+#endif
+      service, C_IN, requestType, (BYTE *)&reply, sizeof(reply));
 #else
   int replyLen = res_search(service, C_IN, requestType, (BYTE *)&reply, sizeof(reply));
   GetDNSMutex().Signal();
@@ -328,7 +273,7 @@ DNS_STATUS DnsQuery_A(const char * service,
        ntohs(reply.hdr.nscount),
        ntohs(reply.hdr.arcount),
        results)) {
-    DnsRecordListFree(*results, 0);
+    DnsRecordListFree(*results, DnsFreeRecordList);
     return -1;
   }
 
@@ -336,7 +281,40 @@ DNS_STATUS DnsQuery_A(const char * service,
 }
 
 
+PDNS_RECORD DnsRecordSetCopy(PDNS_RECORD src)
+{
+  PDNS_RECORD result = NULL;
+  PDNS_RECORD dst = NULL;
+  PDNS_RECORD rec;
+
+  while (src != NULL) {
+    rec = (PDNS_RECORD)malloc(sizeof(DNS_RECORD));
+    memcpy(rec, src, sizeof(DNS_RECORD));
+    if (result == NULL)
+      result = rec;
+    rec->pNext = NULL;
+    if (dst != NULL)
+      dst->pNext = rec;
+    src = src->pNext;
+    dst = rec;
+  }
+
+  return result;
+}
+
+
+void DnsRecordListFree(PDNS_RECORD rec, int /* FreeType */)
+{
+  while (rec != NULL) {
+    PDNS_RECORD next = rec->pNext;
+    free(rec);
+    rec = next;
+  }
+}
+
+
 #endif // P_HAS_RESOLVER
+
 
 PObject::Comparison PDNS::SRVRecord::Compare(const PObject & obj) const
 {
@@ -374,8 +352,13 @@ PDNS::SRVRecord * PDNS::SRVRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PD
   if (
       (dnsRecord->Flags.S.Section == DnsSectionAnswer) && 
       (dnsRecord->wType == DNS_TYPE_SRV) &&
+#ifndef _WIN32_WCE
       (strlen(dnsRecord->Data.SRV.pNameTarget) > 0) &&
       (strcmp(dnsRecord->Data.SRV.pNameTarget, ".") != 0)
+#else
+      (wcslen(dnsRecord->Data.SRV.pNameTarget) > 0) &&
+      (wcscmp(dnsRecord->Data.SRV.pNameTarget, L".") != 0)
+#endif
       ) {
     record = new SRVRecord();
     record->hostName = PString(dnsRecord->Data.SRV.pNameTarget);
@@ -383,17 +366,21 @@ PDNS::SRVRecord * PDNS::SRVRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PD
     record->priority = dnsRecord->Data.SRV.wPriority;
     record->weight   = dnsRecord->Data.SRV.wWeight;
 
-    // see if any A records match this hostname
+    // see if any A or AAAA records match this hostname
     PDNS_RECORD aRecord = results;
     while (aRecord != NULL) {
-      if ((dnsRecord->Flags.S.Section == DnsSectionAddtional) && (dnsRecord->wType == DNS_TYPE_A)) {
+      if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_A)) {
         record->hostAddress = PIPSocket::Address(dnsRecord->Data.A.IpAddress);
+        break;
+      }
+      if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_AAAA)) {
+        record->hostAddress = PIPSocket::Address(16, (BYTE *)&dnsRecord->Data.AAAA.Ip6Address);
         break;
       }
       aRecord = aRecord->pNext;
     }
 
-    // if no A record found, then get address the hard way
+    // if no A or AAAA record found, then get address the hard way
     if (aRecord == NULL)
       PIPSocket::GetHostAddress(record->hostName, record->hostAddress);
   }
@@ -422,9 +409,9 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetFirst()
     priList.SetSize(1);
     WORD lastPri = (*this)[0].priority;
     priList[0] = lastPri;
-    (*this)[0].used = FALSE;
+    (*this)[0].used = PFalse;
     for (i = 1; i < GetSize(); i++) {
-      (*this)[i].used = FALSE;
+      (*this)[i].used = PFalse;
       if ((*this)[i].priority != lastPri) {
         priPos++;
         priList.SetSize(priPos);
@@ -480,7 +467,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetNext()
         if (!(*this)[i].used) {
           totalWeight += (*this)[i].weight;
           if (totalWeight >= targetWeight) {
-            (*this)[i].used = TRUE;
+            (*this)[i].used = PTrue;
             return &(*this)[i];
           }
         }
@@ -488,12 +475,12 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetNext()
     }
 
     // pick a random item at this priority
-    PINDEX j = firstPos + ((count == 0) ? 0 : (PRandom::Number() % count) );
+    PINDEX j = (count <= 1) ? 0 : (PRandom::Number() % count);
     count = 0;
-    for (i = 0; i < GetSize() && ((*this)[i].priority == currentPri); i++) {
+    for (i = firstPos; i < GetSize() && ((*this)[i].priority == currentPri); i++) {
       if (!(*this)[i].used) {
         if (count == j) {
-          (*this)[i].used = TRUE;
+          (*this)[i].used = PTrue;
           return &(*this)[i];
         }
         count++;
@@ -507,7 +494,7 @@ PDNS::SRVRecord * PDNS::SRVRecordList::GetNext()
   return NULL;
 }
 
-BOOL PDNS::GetSRVRecords(
+PBoolean PDNS::GetSRVRecords(
   const PString & _service,
   const PString & type,
   const PString & domain,
@@ -515,7 +502,7 @@ BOOL PDNS::GetSRVRecords(
 )
 {
   if (_service.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   PStringStream service;
   if (_service[0] != '_')
@@ -526,7 +513,7 @@ BOOL PDNS::GetSRVRecords(
   return GetSRVRecords(service, recordList);
 }
 
-BOOL PDNS::LookupSRV(
+PBoolean PDNS::LookupSRV(
            const PURL & url,
         const PString & service,
           PStringList & returnList)
@@ -535,8 +522,8 @@ BOOL PDNS::LookupSRV(
   PIPSocketAddressAndPortVector info;
 
   if (!LookupSRV(url.GetHostName(), service, defaultPort, info)) {
-    PTRACE(6,"DNS\tSRV Lookup Fail no domain " << url );
-    return FALSE;
+    PTRACE(2,"DNS\tSRV Lookup Fail no domain " << url );
+    return PFalse;
   }
 
   PString user = url.GetUserName();
@@ -544,45 +531,52 @@ BOOL PDNS::LookupSRV(
     user = user + "@";
 
   PIPSocketAddressAndPortVector::const_iterator r;
-  for (r = info.begin(); r != info.end(); ++r) 
-    returnList.AppendString(user + r->address.AsString() + ":" + PString(PString::Unsigned, r->port));
+  for (r = info.begin(); r != info.end(); ++r) {
+    if (r->GetAddress().GetVersion() == 6)
+      returnList.AppendString(user + "[" + r->GetAddress().AsString() + "]:" + PString(r->GetPort()));
+    else
+      returnList.AppendString(user + r->AsString(':'));
+  }
 
   return returnList.GetSize() != 0;;
 }
 
-BOOL PDNS::LookupSRV(
+PBoolean PDNS::LookupSRV(
          const PString & domain,            ///< domain to lookup
          const PString & service,           ///< service to use
                     WORD defaultPort,       ///< default port to use
          PIPSocketAddressAndPortVector & addrList  ///< list of sockets and ports
 )
 {
-  if (domain.GetLength() == 0) {
-    PTRACE(6,"DNS\tSRV lookup failed - cannot resolve hostname " << domain);
-    return FALSE;
+  if (domain.IsEmpty()) {
+    PTRACE(1,"DNS\tSRV lookup failed - no domain specified");
+    return PFalse;
   }
 
-  PTRACE(6,"DNS\tSRV Lookup " << domain << " service " << service);
-
-  PDNS::SRVRecordList srvRecords;
   PString srvLookupStr = service;
   if (srvLookupStr.Right(1) != ".")
     srvLookupStr += ".";
   srvLookupStr += domain;
-  BOOL found = PDNS::GetRecords(srvLookupStr, srvRecords);
+  
+  PTRACE(4,"DNS\tSRV Lookup \"" << srvLookupStr << '"');
+  return LookupSRV(srvLookupStr, defaultPort, addrList);
+}
+
+PBoolean PDNS::LookupSRV(
+              const PString & srvLookupStr,
+              WORD defaultPort,
+              PIPSocketAddressAndPortVector & addrList
+)
+{
+
+  PDNS::SRVRecordList srvRecords;
+  PBoolean found = PDNS::GetRecords(srvLookupStr, srvRecords);
   if (found) {
-    PTRACE(6,"DNS\tSRV Record found " << domain << " service " << service);
+    PTRACE(5,"DNS\tSRV Record found \"" << srvLookupStr << '"');
     PDNS::SRVRecord * recPtr = srvRecords.GetFirst();
     while (recPtr != NULL) {
       PIPSocketAddressAndPort addrAndPort;
-
-      addrAndPort.address = recPtr->hostAddress;
-
-      if (recPtr->port > 0)
-        addrAndPort.port = recPtr->port;
-      else
-        addrAndPort.port = defaultPort;
-
+      addrAndPort.SetAddress(recPtr->hostAddress, recPtr->port > 0 ? recPtr->port : defaultPort);
       addrList.push_back(addrAndPort);
 
       recPtr = srvRecords.GetNext();
@@ -623,7 +617,11 @@ PDNS::MXRecord * PDNS::MXRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PDNS
   if (
       (dnsRecord->Flags.S.Section == DnsSectionAnswer) &&
       (dnsRecord->wType == DNS_TYPE_MX) &&
+#ifndef _WIN32_WCE
       (strlen(dnsRecord->Data.MX.pNameExchange) > 0)
+#else
+      (wcslen(dnsRecord->Data.MX.pNameExchange) > 0)
+#endif
      ) {
     record = new MXRecord();
     record->hostName   = PString(dnsRecord->Data.MX.pNameExchange);
@@ -632,8 +630,12 @@ PDNS::MXRecord * PDNS::MXRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PDNS
     // see if any A records match this hostname
     PDNS_RECORD aRecord = results;
     while (aRecord != NULL) {
-      if ((dnsRecord->Flags.S.Section == DnsSectionAddtional) && (dnsRecord->wType == DNS_TYPE_A)) {
+      if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_A)) {
         record->hostAddress = PIPSocket::Address(dnsRecord->Data.A.IpAddress);
+        break;
+      }
+      if ((dnsRecord->Flags.S.Section == DnsSectionAdditional) && (dnsRecord->wType == DNS_TYPE_AAAA)) {
+        record->hostAddress = PIPSocket::Address(16, (BYTE *)&dnsRecord->Data.AAAA.Ip6Address);
         break;
       }
       aRecord = aRecord->pNext;
@@ -658,7 +660,7 @@ PDNS::MXRecord * PDNS::MXRecordList::GetFirst()
 {
   PINDEX i;
   for (i = 0; i < GetSize(); i++) 
-    (*this)[i].used = FALSE;
+    (*this)[i].used = PFalse;
 
   lastIndex = 0;
 
@@ -675,6 +677,85 @@ PDNS::MXRecord * PDNS::MXRecordList::GetNext()
 
   return (PDNS::MXRecord *)GetAt(lastIndex++);
 }
+
+/////////////////////////////////////////////////////////////////
+
+DNS_STATUS PDNS::Cached_DnsQuery(
+    const char * name,
+    WORD       type,
+    DWORD      options,
+    void *     ,
+    PDNS_RECORD * queryResults,
+    void * )
+{
+  PTime now;
+  PWaitAndSignal m(GetDNSMutex());
+
+  DNSCache::iterator r;
+
+  // age entries in cache
+  if ((now - g_lastAgeTime) > RESOLVER_CACHE_TIMEOUT) {
+    g_lastAgeTime = now;
+
+    r = g_dnsCache.begin();
+    while (r != g_dnsCache.end()) {
+      if ((now - r->second.m_time) < RESOLVER_CACHE_TIMEOUT)
+        ++r;
+      else {
+        PTRACE(5, "DNS\tQuery aged \"" << r->first << '"');
+        DnsRecordListFree(r->second.m_results, DnsFreeRecordList);
+        g_dnsCache.erase(r++);
+      }
+    }
+  }
+
+  // see if cache contains the entry we need
+  string key;
+  {
+    std::stringstream strm;
+    strm << name << '\t' << type << '\t' << options;
+    key = strm.str();
+  }
+
+  r = g_dnsCache.find(key);
+  if (r == g_dnsCache.end()) {
+    PTRACE(5, "DNS\tSRV physical lookup \"" << key << '"');
+
+    // else do the lookup and put it into the cache
+    DNSCacheInfo info;
+    info.m_status = DnsQuery_A((const char *)name, 
+                               type,
+                               DNS_QUERY_STANDARD, 
+                               NULL, 
+                               &info.m_results, 
+                               NULL);
+#if PTRACING
+    if (info.m_status != 0)
+      PTRACE(3, "DNS\tQuery failed: error=" << info.m_status);
+    else {
+      PTRACE(6, "DNS\tQuery success: " << info.m_results);
+      for (PDNS_RECORD rec = info.m_results; rec != NULL; rec = rec->pNext)
+        PTRACE(6, "DNS\tQuery: name=\"" << PString(rec->pName)
+               << "\", type=" << rec->wType << ", len=" << rec->wDataLength);
+      PTRACE(6, "DNS\tQuery done");
+    }
+#endif
+
+    r = g_dnsCache.insert(DNSCache::value_type(key, info)).first;
+  }
+
+  *queryResults = DnsRecordSetCopy(r->second.m_results);
+  return r->second.m_status;
+}
+
+
+/////////////////////////////////////////////////////////////////
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("DNS support DISABLED")
+  #endif
 
 #endif // P_DNS
 

@@ -23,61 +23,30 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pxml.h,v $
- * Revision 1.26  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.25  2005/08/04 20:10:24  csoutheren
- * Apply patch #1217596
- * Fixed problems with MacOSX Tiger
- * Thanks to Hannes Friederich
- *
- * Revision 1.24  2004/10/12 23:28:07  csoutheren
- * Fixed problem with bogus DOCTYPE being output
- *
- * Revision 1.23  2004/04/21 00:35:02  csoutheren
- * Added a stream parser for protocols like XMPP where each child of the root is to be considered a separate document/message.
- * Thanks to Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.22  2003/04/27 23:54:13  craigs
- * Removed deprecated options
- *
- * Revision 1.21  2003/03/31 07:41:50  craigs
- * Fixed problem with accidental introduced dependency on expat.h
- *
- * Revision 1.20  2003/03/31 06:21:19  craigs
- * Split the expat wrapper from the XML file handling to allow reuse of the parser
- *
- * Revision 1.19  2003/01/13 02:14:02  robertj
- * Improved error logging for auto-loaded XML
- *
- * Revision 1.18  2002/12/16 06:38:24  robertj
- * Added ability to specify certain elemets (by name) that are exempt from
- *   the indent formatting. Useful for XML/RPC where leading white space is
- *   not ignored by all servers.
- *
- * Revision 1.17  2002/11/26 05:53:57  craigs
- * Added ability to auto-reload from URL
- *
- * Revision 1.16  2002/11/21 08:09:04  craigs
- * Changed to not overwrite XML data if load fails
- *
- * Revision 1.15  2002/11/19 07:37:38  craigs
- * Added locking functions and LoadURL function
- *
- * Revision 1.14  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
+ * $Revision: 28994 $
+ * $Author: rjongbloed $
+ * $Date: 2013-01-25 02:06:35 -0600 (Fri, 25 Jan 2013) $
  */
 
-#ifndef _PXML_H
-#define _PXML_H
+#ifndef PTLIB_PXML_H
+#define PTLIB_PXML_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <ptlib.h>
+
+#include <ptbuildopts.h>
+
+#ifndef P_EXPAT
+
+namespace PXML {
+extern PString EscapeSpecialChars(const PString & str);
+};
+
+#else
+
 #include <ptclib/http.h>
 
 ////////////////////////////////////////////////////////////
@@ -85,51 +54,6 @@
 class PXMLElement;
 class PXMLData;
 
-class PXMLParser : public PObject
-{
-  PCLASSINFO(PXMLParser, PObject);
-  public:
-    enum Options {
-      Indent              = 1,
-      NewLineAfterElement = 2,
-      NoIgnoreWhiteSpace  = 4,   ///< ignored
-      CloseExtended       = 8,   ///< ignored
-      WithNS              = 16,
-    };
-
-    PXMLParser(int options = -1);
-    ~PXMLParser();
-    BOOL Parse(const char * data, int dataLen, BOOL final);
-    void GetErrorInfo(PString & errorString, PINDEX & errorCol, PINDEX & errorLine);
-
-    virtual void StartElement(const char * name, const char **attrs);
-    virtual void EndElement(const char * name);
-    virtual void AddCharacterData(const char * data, int len);
-    virtual void XmlDecl(const char * version, const char * encoding, int standAlone);
-    virtual void StartDocTypeDecl(const char * docTypeName,
-                                  const char * sysid,
-                                  const char * pubid,
-                                  int hasInternalSubSet);
-    virtual void EndDocTypeDecl();
-    virtual void StartNamespaceDeclHandler(const char * prefix, const char * uri);
-    virtual void EndNamespaceDeclHandler(const char * prefix);
-
-    PString GetVersion() const  { return version; }
-    PString GetEncoding() const { return encoding; }
-    BOOL GetStandAlone() const  { return standAlone; }
-
-    PXMLElement * GetXMLTree() const;
-    PXMLElement * SetXMLTree(PXMLElement * newRoot);
-
-  protected:
-    int options;
-    void * expat;
-    PXMLElement * rootElement;
-    PXMLElement * currentElement;
-    PXMLData * lastElement;
-    PString version, encoding;
-    int standAlone;
-};
 
 class PXMLObject;
 class PXMLElement;
@@ -140,38 +64,64 @@ class PXMLData;
 class PXMLBase : public PObject
 {
   public:
-    PXMLBase(int _options = -1)
-      : options(_options) { if (options < 0) options = 0; }
+    enum {
+      DEFAULT_MAX_ENTITY_LENGTH = 4096
+    };
 
-    void SetOptions(int _options)
-      { options = _options; }
+    enum Options {
+      NoOptions           = 0x0000,
+      Indent              = 0x0001,
+      NewLineAfterElement = 0x0002,
+      NoIgnoreWhiteSpace  = 0x0004,   ///< ignored
+      CloseExtended       = 0x0008,   ///< ignored
+      WithNS              = 0x0010,
+      FragmentOnly        = 0x0020,   ///< XML fragment, not complete document.
+      AllOptions          = 0xffff
+    };
+    __inline friend Options operator|(Options o1, Options o2) { return (Options)(((unsigned)o1) | ((unsigned)o2)); }
+    __inline friend Options operator&(Options o1, Options o2) { return (Options)(((unsigned)o1) & ((unsigned)o2)); }
 
-    int GetOptions() const { return options; }
+    enum StandAloneType {
+      UninitialisedStandAlone = -2,
+      UnknownStandAlone = -1,
+      NotStandAlone,
+      IsStandAlone
+    };
 
-    virtual BOOL IsNoIndentElement(
+    PXMLBase(int opts = NoOptions);
+
+    void SetOptions(int opts)
+      { m_options = opts; }
+
+    int GetOptions() const { return m_options; }
+
+    virtual PBoolean IsNoIndentElement(
       const PString & /*elementName*/
     ) const
     {
-      return FALSE;
+      return false;
     }
 
+    void SetMaxEntityLength(unsigned len) { m_maxEntityLength = len; }
+    unsigned GetMaxEntityLength() const { return m_maxEntityLength; }
+
   protected:
-    int options;
+    int m_options;
+    unsigned m_maxEntityLength;
 };
 
 
 class PXML : public PXMLBase
 {
-  PCLASSINFO(PXML, PObject);
+    PCLASSINFO(PXML, PObject);
   public:
-
     PXML(
-      int options = -1,
+      int options = NoOptions,
       const char * noIndentElements = NULL
     );
     PXML(
       const PString & data,
-      int options = -1,
+      int options = NoOptions,
       const char * noIndentElements = NULL
     );
 
@@ -179,58 +129,100 @@ class PXML : public PXMLBase
 
     ~PXML();
 
-    BOOL IsDirty() const;
+    bool IsLoaded() const { return rootElement != NULL; }
+    bool IsDirty() const;
 
-    BOOL Load(const PString & data, int options = -1);
-
-    BOOL StartAutoReloadURL(const PURL & url, 
-                            const PTimeInterval & timeout, 
-                            const PTimeInterval & refreshTime,
-                            int _options = -1);
-    BOOL StopAutoReloadURL();
-    PString GetAutoReloadStatus() { PWaitAndSignal m(autoLoadMutex); PString str = autoLoadError; return str; }
-    BOOL AutoLoadURL();
-    virtual void OnAutoLoad(BOOL ok);
-
-    BOOL LoadURL(const PURL & url);
-    BOOL LoadURL(const PURL & url, const PTimeInterval & timeout, int _options = -1);
-    BOOL LoadFile(const PFilePath & fn, int options = -1);
+    bool Load(const PString & data, Options options = NoOptions);
+    bool LoadFile(const PFilePath & fn, Options options = NoOptions);
 
     virtual void OnLoaded() { }
 
-    BOOL Save(int options = -1);
-    BOOL Save(PString & data, int options = -1);
-    BOOL SaveFile(const PFilePath & fn, int options = -1);
+    bool Save(Options options = NoOptions);
+    bool Save(PString & data, Options options = NoOptions);
+    bool SaveFile(const PFilePath & fn, Options options = NoOptions);
 
     void RemoveAll();
 
-    BOOL IsNoIndentElement(
+    PBoolean IsNoIndentElement(
       const PString & elementName
     ) const;
 
+    PString AsString() const;
     void PrintOn(ostream & strm) const;
+    void ReadFrom(istream & strm);
 
+
+    PXMLElement * GetElement(const PCaselessString & name, const PCaselessString & attr, const PString & attrval) const;
     PXMLElement * GetElement(const PCaselessString & name, PINDEX idx = 0) const;
     PXMLElement * GetElement(PINDEX idx) const;
     PINDEX        GetNumElements() const; 
     PXMLElement * GetRootElement() const { return rootElement; }
     PXMLElement * SetRootElement(PXMLElement * p);
     PXMLElement * SetRootElement(const PString & documentType);
-    BOOL          RemoveElement(PINDEX idx);
+    bool          RemoveElement(PINDEX idx);
 
     PCaselessString GetDocumentType() const;
 
-    PString GetErrorString() const { return errorString; }
-    PINDEX  GetErrorColumn() const { return errorCol; }
-    PINDEX  GetErrorLine() const   { return errorLine; }
+
+    enum ValidationOp {
+      EndOfValidationList,
+      DocType,
+      ElementName,
+      RequiredAttribute,
+      RequiredNonEmptyAttribute,
+      RequiredAttributeWithValue,
+      RequiredElement,
+      Subtree,
+      RequiredAttributeWithValueMatching,
+      RequiredElementWithBodyMatching,
+      OptionalElement,
+      OptionalAttribute,
+      OptionalNonEmptyAttribute,
+      OptionalAttributeWithValue,
+      OptionalAttributeWithValueMatching,
+      OptionalElementWithBodyMatching,
+      SetDefaultNamespace,
+      SetNamespace,
+
+      RequiredAttributeWithValueMatchingEx = RequiredAttributeWithValueMatching + 0x8000,
+      OptionalAttributeWithValueMatchingEx = OptionalAttributeWithValueMatching + 0x8000,
+      RequiredElementWithBodyMatchingEx    = RequiredElementWithBodyMatching    + 0x8000,
+      OptionalElementWithBodyMatchingEx    = OptionalElementWithBodyMatching    + 0x8000
+    };
+
+    struct ValidationContext {
+      PString m_defaultNameSpace;
+      PStringToString m_nameSpaces;
+    };
+
+    struct ValidationInfo {
+      ValidationOp m_op;
+      const char * m_name;
+
+      union {
+        const void     * m_placeHolder;
+        const char     * m_attributeValues;
+        ValidationInfo * m_subElement;
+        const char     * m_namespace;
+      };
+
+      PINDEX m_minCount;
+      PINDEX m_maxCount;
+    };
+
+    bool Validate(const ValidationInfo * validator);
+    bool ValidateElements(ValidationContext & context, PXMLElement * baseElement, const ValidationInfo * elements);
+    bool ValidateElement(ValidationContext & context, PXMLElement * element, const ValidationInfo * elements);
+    bool LoadAndValidate(const PString & body, const PXML::ValidationInfo * validator, PString & error, int options = NoOptions);
+
+    PString  GetErrorString() const { return m_errorString; }
+    unsigned GetErrorColumn() const { return m_errorColumn; }
+    unsigned GetErrorLine() const   { return m_errorLine; }
 
     PString GetDocType() const         { return docType; }
     void SetDocType(const PString & v) { docType = v; }
 
     PMutex & GetMutex() { return rootMutex; }
-
-    PDECLARE_NOTIFIER(PTimer,  PXML, AutoReloadTimeout);
-    PDECLARE_NOTIFIER(PThread, PXML, AutoReloadThread);
 
     // static methods to create XML tags
     static PString CreateStartTag (const PString & text);
@@ -238,30 +230,64 @@ class PXML : public PXMLBase
     static PString CreateTagNoData (const PString & text);
     static PString CreateTag (const PString & text, const PString & data);
 
+    static PString EscapeSpecialChars(const PString & string);
+
   protected:
     void Construct(int options, const char * noIndentElements);
     PXMLElement * rootElement;
     PMutex rootMutex;
 
-    BOOL loadFromFile;
+    bool loadFromFile;
     PFilePath loadFilename;
     PString version, encoding;
-    int standAlone;
+    StandAloneType m_standAlone;
+
+    PStringStream m_errorString;
+    unsigned      m_errorLine;
+    unsigned      m_errorColumn;
+
+    PSortedStringList noIndentElements;
+
+    PString docType;
+    PString m_defaultNameSpace;
+};
+
+
+#if P_HTTP
+class PXML_HTTP : public PXML
+{
+    PCLASSINFO(PXML_HTTP, PXML);
+  public:
+    PXML_HTTP(
+      int options = NoOptions,
+      const char * noIndentElements = NULL
+    );
+
+    bool StartAutoReloadURL(
+      const PURL & url, 
+      const PTimeInterval & timeout, 
+      const PTimeInterval & refreshTime,
+      Options options = NoOptions
+    );
+    bool StopAutoReloadURL();
+    PString GetAutoReloadStatus() { PWaitAndSignal m(autoLoadMutex); PString str = autoLoadError; return str; }
+    bool AutoLoadURL();
+    virtual void OnAutoLoad(PBoolean ok);
+
+    bool LoadURL(const PURL & url);
+    bool LoadURL(const PURL & url, const PTimeInterval & timeout, Options options = NoOptions);
+
+  protected:
+    PDECLARE_NOTIFIER(PTimer,  PXML_HTTP, AutoReloadTimeout);
+    PDECLARE_NOTIFIER(PThread, PXML_HTTP, AutoReloadThread);
 
     PTimer autoLoadTimer;
     PURL autoloadURL;
     PTimeInterval autoLoadWaitTime;
     PMutex autoLoadMutex;
     PString autoLoadError;
-
-    PString errorString;
-    PINDEX errorCol;
-    PINDEX errorLine;
-
-    PSortedStringList noIndentElements;
-
-    PString docType;
 };
+#endif // P_HTTP
 
 ////////////////////////////////////////////////////////////
 
@@ -270,13 +296,13 @@ PARRAY(PXMLObjectArray, PXMLObject);
 class PXMLObject : public PObject {
   PCLASSINFO(PXMLObject, PObject);
   public:
-    PXMLObject(PXMLElement * _parent)
-      : parent(_parent) { dirty = FALSE; }
+    PXMLObject(PXMLElement * par)
+      : parent(par) { dirty = false; }
 
-    PXMLElement * GetParent()
+    PXMLElement * GetParent() const
       { return parent; }
 
-    PXMLObject * GetNextObject();
+    PXMLObject * GetNextObject() const;
 
     void SetParent(PXMLElement * newParent)
     { 
@@ -284,18 +310,20 @@ class PXMLObject : public PObject {
       parent = newParent;
     }
 
+    PString AsString() const;
+
     virtual void Output(ostream & strm, const PXMLBase & xml, int indent) const = 0;
 
-    virtual BOOL IsElement() const = 0;
+    virtual PBoolean IsElement() const = 0;
 
     void SetDirty();
-    BOOL IsDirty() const { return dirty; }
+    bool IsDirty() const { return dirty; }
 
     virtual PXMLObject * Clone(PXMLElement * parent) const = 0;
 
   protected:
     PXMLElement * parent;
-    BOOL dirty;
+    bool dirty;
 };
 
 ////////////////////////////////////////////////////////////
@@ -303,12 +331,12 @@ class PXMLObject : public PObject {
 class PXMLData : public PXMLObject {
   PCLASSINFO(PXMLData, PXMLObject);
   public:
-    PXMLData(PXMLElement * _parent, const PString & data);
-    PXMLData(PXMLElement * _parent, const char * data, int len);
+    PXMLData(PXMLElement * parent, const PString & data);
+    PXMLData(PXMLElement * parent, const char * data, int len);
 
-    BOOL IsElement() const    { return FALSE; }
+    PBoolean IsElement() const    { return false; }
 
-    void SetString(const PString & str, BOOL dirty = TRUE);
+    void SetString(const PString & str, bool dirty = true);
 
     PString GetString() const           { return value; }
 
@@ -325,10 +353,10 @@ class PXMLData : public PXMLObject {
 class PXMLElement : public PXMLObject {
   PCLASSINFO(PXMLElement, PXMLObject);
   public:
-    PXMLElement(PXMLElement * _parent, const char * name = NULL);
-    PXMLElement(PXMLElement * _parent, const PString & name, const PString & data);
+    PXMLElement(PXMLElement * parent, const char * name = NULL);
+    PXMLElement(PXMLElement * parent, const PString & name, const PString & data);
 
-    BOOL IsElement() const { return TRUE; }
+    PBoolean IsElement() const { return true; }
 
     void PrintOn(ostream & strm) const;
     void Output(ostream & strm, const PXMLBase & xml, int indent) const;
@@ -336,49 +364,80 @@ class PXMLElement : public PXMLObject {
     PCaselessString GetName() const
       { return name; }
 
+    /**
+        Get the completely qualified name for the element inside the
+        XML tree, for example "root:trunk:branch:subbranch:leaf".
+     */
+    PCaselessString GetPathName() const;
+
     void SetName(const PString & v)
-      { name = v; }
+    { name = v; }
 
     PINDEX GetSize() const
       { return subObjects.GetSize(); }
 
-    PXMLObject  * AddSubObject(PXMLObject * elem, BOOL dirty = TRUE);
+    PXMLObject  * AddSubObject(PXMLObject * elem, bool dirty = true);
 
-    PXMLElement * AddChild    (PXMLElement * elem, BOOL dirty = TRUE);
-    PXMLData    * AddChild    (PXMLData    * elem, BOOL dirty = TRUE);
+    PXMLElement * AddChild    (PXMLElement * elem, bool dirty = true);
+    PXMLData    * AddChild    (PXMLData    * elem, bool dirty = true);
+
+    PXMLElement * AddElement(const char * name);
+    PXMLElement * AddElement(const PString & name, const PString & data);
+    PXMLElement * AddElement(const PString & name, const PString & attrName, const PString & attrVal);
 
     void SetAttribute(const PCaselessString & key,
                       const PString & value,
-                      BOOL setDirty = TRUE);
+                      bool setDirty = true);
 
     PString GetAttribute(const PCaselessString & key) const;
     PString GetKeyAttribute(PINDEX idx) const;
     PString GetDataAttribute(PINDEX idx) const;
-    BOOL HasAttribute(const PCaselessString & key);
-    BOOL HasAttributes() const      { return attributes.GetSize() > 0; }
+    bool HasAttribute(const PCaselessString & key) const;
+    bool HasAttributes() const      { return attributes.GetSize() > 0; }
     PINDEX GetNumAttributes() const { return attributes.GetSize(); }
 
+    PXMLElement * GetElement(const PCaselessString & name, const PCaselessString & attr, const PString & attrval) const;
     PXMLElement * GetElement(const PCaselessString & name, PINDEX idx = 0) const;
     PXMLObject  * GetElement(PINDEX idx = 0) const;
-    BOOL          RemoveElement(PINDEX idx);
+    bool          RemoveElement(PINDEX idx);
 
-    PINDEX FindObject(PXMLObject * ptr) const;
+    PINDEX FindObject(const PXMLObject * ptr) const;
 
-    BOOL HasSubObjects() const
+    bool HasSubObjects() const
       { return subObjects.GetSize() != 0; }
 
     PXMLObjectArray  GetSubObjects() const
       { return subObjects; }
 
+    PXMLObject  * GetSubObject(PINDEX idx = 0) const
+      { return GetElement(idx); }
+
     PString GetData() const;
+    void SetData(const PString & data);
+    void AddData(const PString & data);
 
     PXMLObject * Clone(PXMLElement * parent) const;
+
+    void GetFilePosition(unsigned & col, unsigned & line) const { col = column; line = lineNumber; }
+    void SetFilePosition(unsigned col,   unsigned line)         { column = col; lineNumber = line; }
+
+    void AddNamespace(const PString & prefix, const PString & uri);
+    void RemoveNamespace(const PString & prefix);
+
+    bool GetDefaultNamespace(PCaselessString & str) const;
+    bool GetNamespace(const PCaselessString & prefix, PCaselessString & str) const;
+    PCaselessString PrependNamespace(const PCaselessString & name) const;
+    bool GetURIForNamespace(const PCaselessString & prefix, PCaselessString & uri);
 
   protected:
     PCaselessString name;
     PStringToString attributes;
     PXMLObjectArray subObjects;
-    BOOL dirty;
+    bool dirty;
+    unsigned column;
+    unsigned lineNumber;
+    PStringToString m_nameSpaces;
+    PCaselessString m_defaultNamespace;
 };
 
 ////////////////////////////////////////////////////////////
@@ -389,23 +448,66 @@ class PXMLSettings : public PXML
 {
   PCLASSINFO(PXMLSettings, PXML);
   public:
-    PXMLSettings(int options = PXMLParser::NewLineAfterElement);
-    PXMLSettings(const PString & data, int options = PXMLParser::NewLineAfterElement);
-    PXMLSettings(const PConfig & data, int options = PXMLParser::NewLineAfterElement);
+    PXMLSettings(Options options = NewLineAfterElement);
+    PXMLSettings(const PString & data, Options options = NewLineAfterElement);
+    PXMLSettings(const PConfig & data, Options options = NewLineAfterElement);
 
-    BOOL Load(const PString & data);
-    BOOL LoadFile(const PFilePath & fn);
+    bool Load(const PString & data);
+    bool LoadFile(const PFilePath & fn);
 
-    BOOL Save();
-    BOOL Save(PString & data);
-    BOOL SaveFile(const PFilePath & fn);
+    bool Save();
+    bool Save(PString & data);
+    bool SaveFile(const PFilePath & fn);
 
     void SetAttribute(const PCaselessString & section, const PString & key, const PString & value);
 
     PString GetAttribute(const PCaselessString & section, const PString & key) const;
-    BOOL    HasAttribute(const PCaselessString & section, const PString & key) const;
+    bool    HasAttribute(const PCaselessString & section, const PString & key) const;
 
     void ToConfig(PConfig & cfg) const;
+};
+
+
+////////////////////////////////////////////////////////////
+
+class PXMLParser : public PXMLBase
+{
+  PCLASSINFO(PXMLParser, PXMLBase);
+  public:
+    PXMLParser(int options = NoOptions);
+    ~PXMLParser();
+    bool Parse(const char * data, int dataLen, bool final);
+    void GetErrorInfo(PString & errorString, unsigned & errorCol, unsigned & errorLine);
+
+    virtual void StartElement(const char * name, const char **attrs);
+    virtual void EndElement(const char * name);
+    virtual void AddCharacterData(const char * data, int len);
+    virtual void XmlDecl(const char * version, const char * encoding, int standAlone);
+    virtual void StartDocTypeDecl(const char * docTypeName,
+                                  const char * sysid,
+                                  const char * pubid,
+                                  int hasInternalSubSet);
+    virtual void EndDocTypeDecl();
+    virtual void StartNamespaceDeclHandler(const char * prefix, const char * uri);
+    virtual void EndNamespaceDeclHandler(const char * prefix);
+
+    PString GetVersion() const  { return version; }
+    PString GetEncoding() const { return encoding; }
+
+    StandAloneType GetStandAlone() const { return m_standAlone; }
+
+    PXMLElement * GetXMLTree() const;
+    PXMLElement * SetXMLTree(PXMLElement * newRoot);
+
+  protected:
+    void * expat;
+    PXMLElement * rootElement;
+    bool rootOpen;
+    PXMLElement * currentElement;
+    PXMLData * lastElement;
+    PString version, encoding;
+    StandAloneType m_standAlone;
+    PStringToString m_tempNamespaceList;
 };
 
 ////////////////////////////////////////////////////////////
@@ -420,8 +522,13 @@ class PXMLStreamParser : public PXMLParser
     virtual PXML * Read(PChannel * channel);
 
   protected:
-    BOOL rootOpen;
     PQueue<PXML> messages;
 };
 
-#endif
+
+#endif // P_EXPAT
+
+#endif // PTLIB_PXML_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

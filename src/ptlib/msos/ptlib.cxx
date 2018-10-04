@@ -26,287 +26,25 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ptlib.cxx,v $
- * Revision 1.80  2006/04/09 11:03:59  csoutheren
- * Remove warnings on VS.net 2005
- *
- * Revision 1.79  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.78  2005/09/24 09:11:42  dominance
- * use unix-style slashes to not confuse mingw on win32
- *
- * Revision 1.77  2005/09/23 15:30:46  dominance
- * more progress to make mingw compile nicely. Thanks goes to Julien Puydt for pointing out to me how to do it properly. ;)
- *
- * Revision 1.76  2005/08/05 20:41:42  csoutheren
- * Added unix support for scattered read/write
- *
- * Revision 1.75  2005/08/05 19:42:09  csoutheren
- * Added support for scattered read/write
- *
- * Revision 1.74  2004/12/08 00:49:37  csoutheren
- * Fixed weird problem with not returning correct filetype when filename has multiple
- *  "." and slashes
- *
- * Revision 1.73  2004/10/23 10:51:40  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.72  2004/06/22 11:07:23  rjongbloed
- * Fixed incorrect test for error on _sopen return value, thanks Brian Coverstone
- *
- * Revision 1.71  2004/04/03 06:54:30  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.70  2003/09/26 13:46:18  rjongbloed
- * Fixed problem in Win32 NTFS security support, crashes if file has no security at all.
- *
- * Revision 1.69  2003/09/17 05:45:10  csoutheren
- * Removed recursive includes
- *
- * Revision 1.68  2003/06/29 01:40:50  ykiryanov
- * Added include <ptlib/wince/time.h> as in PPC2003 we have also another time.h now
- *
- * Revision 1.67  2003/06/23 16:31:03  ykiryanov
- * Excluded PFile::SetPermissions function from WinCE build
- *
- * Revision 1.66  2003/03/31 08:38:07  robertj
- * Added cygwin compatible usage of NT secureity access control lists in
- *   getting and setting "unix like" file permissions.
- *
- * Revision 1.65  2002/12/18 05:31:06  robertj
- * Moved PTimeInterval::GetInterval() to common code.
- *
- * Revision 1.64  2002/12/18 05:10:53  robertj
- * Fixed problem with returning DWORD time interval when PTimeInterval is
- *   out of range, especially when negative!
- *
- * Revision 1.63  2002/11/19 12:07:02  robertj
- * Added function to get root directory.
- *
- * Revision 1.62  2002/11/19 10:35:16  robertj
- * Added function to extract a path as an array of directories components.
- *
- * Revision 1.61  2002/11/08 06:02:53  robertj
- * Fixed problem wth getting file title if directory has a dot but the
- *   filename doesn't, thanks Peter 'Luna' Runestig
- *
- * Revision 1.60  2002/10/17 07:17:43  robertj
- * Added ability to increase maximum file handles on a process.
- *
- * Revision 1.59  2002/07/25 08:42:33  robertj
- * Fixed conversion of string to 64 bit integer(s), thanks Jose Luis Urien
- *
- * Revision 1.58  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.57  2001/06/04 10:15:01  robertj
- * Fixed bug if tried to get file info on empty file path.
- *
- * Revision 1.56  2001/03/19 05:49:44  robertj
- * Redid int64 stream input to use library conversion function and
- *   set fail bit if no valid integer was found in the input stream.
- *
- * Revision 1.55  2001/03/15 23:49:42  robertj
- * Added missing operators for reading 64 bit integers from streams.
- *
- * Revision 1.54  2001/02/13 04:39:08  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.53  2001/01/24 06:38:29  yurik
- * Windows CE port-related changes
- *
- * Revision 1.52  2000/07/09 14:05:46  robertj
- * Added file share options.
- *
- * Revision 1.51  2000/04/29 06:44:17  robertj
- * Added some stuff to make sure symbols included in library.
- *
- * Revision 1.50  2000/02/19 23:46:09  robertj
- * Fixed incorrect values for PFile::Access() function, thanks Stefan Ditscheid.
- *
- * Revision 1.49  1999/08/17 03:46:40  robertj
- * Fixed usage of inlines in optimised version.
- *
- * Revision 1.48  1999/06/14 07:59:38  robertj
- * Enhanced tracing again to add options to trace output (timestamps etc).
- *
- * Revision 1.47  1999/06/13 13:54:07  robertj
- * Added PConsoleChannel class for access to stdin/stdout/stderr.
- *
- * Revision 1.46  1999/06/09 02:05:20  robertj
- * Added ability to open file as standard input, output and error streams.
- *
- * Revision 1.45  1999/05/06 06:11:50  robertj
- * Fixed date to be forgiving of rubbish at end of date string.
- * Fixed PTime::GetHour() etc to not crash on time=-1.
- *
- * Revision 1.44  1998/11/30 07:30:31  robertj
- * Fixed problems with PFilePath parsing functions.
- *
- * Revision 1.43  1998/11/26 10:34:19  robertj
- * Fixed problem with PFileInfo::GetVolume() on UNC paths.
- *
- * Revision 1.42  1998/11/14 23:37:08  robertj
- * Fixed file path directory extraction, not able to return root directory
- *
- * Revision 1.41  1998/10/19 00:20:38  robertj
- * Moved error and trace stream functions to common code.
- *
- * Revision 1.40  1998/10/18 14:27:10  robertj
- * Improved tracing functions.
- *
- * Revision 1.39  1998/10/13 14:13:17  robertj
- * Complete rewrite of memory leak detection code.
- *
- * Revision 1.38  1998/09/24 03:30:53  robertj
- * Added open software license.
- *
- * Revision 1.37  1998/09/14 12:55:06  robertj
- * Changed memory debug to dump leaks not including static globals.
- *
- * Revision 1.36  1998/05/26 01:29:53  robertj
- * Removed assert as this Close() function is now called all the time for Unix reasons.
- *
- * Revision 1.35  1998/05/21 04:27:31  robertj
- * Compensated for MSC run time library bug.
- *
- * Revision 1.34  1998/04/01 01:54:45  robertj
- * Added memory leak checking to debug version.
- *
- * Revision 1.33  1998/03/29 06:16:51  robertj
- * Rearranged initialisation sequence so PProcess descendent constructors can do "things".
- *
- * Revision 1.32  1998/03/20 03:20:16  robertj
- * Added MSVC RT debug support.
- *
- * Revision 1.31  1998/01/26 00:54:15  robertj
- * 64 bit integer string conversions.
- *
- * Revision 1.30  1998/01/05 10:38:25  robertj
- * Unix pthreads compatibility, added threadsafe time functions.
- *
- * Revision 1.29  1997/12/11 10:40:29  robertj
- * Fixed bug in SetType() function of FilePath.
- *
- * Revision 1.28  1997/08/28 12:49:51  robertj
- * Fixed bug where could not change directory to UNC.
- *
- * Revision 1.27  1997/04/27 05:50:26  robertj
- * DLL support.
- *
- * Revision 1.26  1997/01/12 04:23:43  robertj
- * Fixed PDirectory::IsRoot() so works with UNC's
- *
- * Revision 1.25  1996/08/17 10:00:37  robertj
- * Changes for Windows DLL support.
- *
- * Revision 1.24  1996/08/08 10:09:23  robertj
- * Directory structure changes for common files.
- *
- * Revision 1.23  1996/01/28 02:56:16  robertj
- * Fixed bug in PFilePath functions for if path ends in a directory separator.
- *
- * Revision 1.22  1996/01/23 13:23:51  robertj
- * Fixed bug in PFileInfo for if path ends in directory separator.
- *
- * Revision 1.21  1996/01/02 12:56:49  robertj
- * Fixed copy of directories.
- *
- * Revision 1.20  1995/12/10 11:59:33  robertj
- * Changes to main() startup mechanism to support Mac.
- * Fixed bug in time interfval constant variable initialisation. Not guarenteed to work.
- * Moved error code for specific WIN32 and MS-DOS versions.
- *
- * Revision 1.19  1995/10/14 15:12:29  robertj
- * Added function to get parent directory.
- *
- * Revision 1.18  1995/07/31 12:18:11  robertj
- * Removed PContainer from PChannel ancestor.
- *
- * Revision 1.17  1995/06/04 13:10:19  robertj
- * Fixed rename bug.
- *
- * Revision 1.16  1995/06/04 12:48:06  robertj
- * Changed unknown error string to hex.
- * Added missing GetInfo function for directory entries
- *
- * Revision 1.15  1995/04/25 11:33:35  robertj
- * Changes for DLL support.
- *
- * Revision 1.14  1995/04/22 00:53:49  robertj
- * Added Move() function to PFile.
- * Changed semantics of Rename() function in PFile.
- * Changed file path string to use PFilePath object.
- *
- * Revision 1.13  1995/03/12 05:00:08  robertj
- * Re-organisation of DOS/WIN16 and WIN32 platforms to maximise common code.
- * Used built-in equate for WIN32 API (_WIN32).
- *
- * Revision 1.12  1995/02/27  10:37:06  robertj
- * Added GetUserNmae().
- * Removed superfluous Read() and Write() for text files.
- *
- * Revision 1.11  1995/01/06  10:41:43  robertj
- * Moved identifiers into different scope.
- * Changed file size to 64 bit integer.
- *
- * Revision 1.10  1994/12/21  11:36:07  robertj
- * Fixed caseless string for file paths.
- *
- * Revision 1.9  1994/10/30  11:26:54  robertj
- * Fixed set current directory function.
- * Changed PFilePath to be case insignificant according to platform.
- *
- * Revision 1.8  1994/10/23  05:42:39  robertj
- * PipeChannel headers.
- * ConvertOSError function added.
- * Numerous implementation enhancements.
- *
- * Revision 1.7  1994/08/04  13:24:27  robertj
- * Added debug stream.
- *
- * Revision 1.6  1994/07/27  06:00:10  robertj
- * Backup
- *
- * Revision 1.5  1994/07/21  12:35:18  robertj
- * *** empty log message ***
- *
- * Revision 1.4  1994/07/17  11:01:04  robertj
- * Ehancements, implementation, bug fixes etc.
- *
- * Revision 1.3  1994/07/02  03:18:09  robertj
- * Multi-threading implementation.
- *
- * Revision 1.2  1994/06/25  12:13:01  robertj
- * Synchronisation.
- *
-// Revision 1.1  1994/04/01  14:39:35  robertj
-// Initial revision
-//
+ * $Revision: 24460 $
+ * $Author: shorne $
+ * $Date: 2010-06-06 09:03:09 -0500 (Sun, 06 Jun 2010) $
  */
 
 #include <ptlib.h>
 
-#include <errno.h>
-#include <fcntl.h>
-#include <share.h>
-#include <sys/stat.h>
-#ifdef _MSC_VER
-#include <crtdbg.h>
-#endif
+#include <ptlib/pprocess.h>
 
 #if !P_USE_INLINES
 #include <ptlib/osutil.inl>
 #include <ptlib/msos/ptlib/ptlib.inl>
 #endif
 
-#ifdef _WIN32_WCE
-#include <ptlib/wince/time.h>
+#ifndef _WIN32_WCE
+#include <signal.h>
+#include <share.h>
 #endif
+
 
 ostream & operator<<(ostream & s, PInt64 v)
 {
@@ -336,7 +74,7 @@ ostream & operator<<(ostream & s, PUInt64 v)
 
 const int MaxDigits = (64+2)/3+1; // Maximum is 22 digit octal number, plus sign
 
-static void GetDigits(BOOL sign, istream & s, char * buffer)
+static void GetDigits(PBoolean sign, istream & s, char * buffer)
 {
   PINDEX count = 0;
 
@@ -373,7 +111,7 @@ static void GetDigits(BOOL sign, istream & s, char * buffer)
 istream & operator>>(istream & s, PInt64 & v)
 {
   char b[MaxDigits+1];
-  GetDigits(TRUE, s, b);
+  GetDigits(PTrue, s, b);
   v = _atoi64(b);
   return s;
 }
@@ -382,7 +120,7 @@ istream & operator>>(istream & s, PInt64 & v)
 istream & operator>>(istream & s, PUInt64 & v)
 {
   char b[MaxDigits+1];
-  GetDigits(FALSE, s, b);
+  GetDigits(PFalse, s, b);
   v = _atoi64(b);
   return s;
 }
@@ -401,7 +139,7 @@ PInt64 PString::AsInt64(unsigned base) const
   while (isspace(*ptr))
     ptr++;
 
-  BOOL negative = *ptr == '-';
+  PBoolean negative = *ptr == '-';
   if (*ptr == '-' || *ptr == '+')
     ptr++;
 
@@ -498,23 +236,27 @@ PString PChannel::GetName() const
 }
 
 
-BOOL PChannel::Read(void *, PINDEX)
+PBoolean PChannel::Read(void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PChannel::Write(const void *, PINDEX)
+PBoolean PChannel::Write(const void *, PINDEX)
 {
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 }
 
-
-BOOL PChannel::Close()
+PBoolean PChannel::Write(const void * buf, PINDEX len, const void * /*mark*/)
 {
-  return FALSE;
+  return Write(buf,len);
+}
+
+PBoolean PChannel::Close()
+{
+  return PFalse;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -529,36 +271,31 @@ PDirectory PDirectory::GetParent() const
 }
 
 
-BOOL PDirectory::Change(const PString & p)
+PBoolean PDirectory::Change(const PString & p)
 {
   PDirectory d = p;
 
   if (d[0] != '\\')
     if (_chdrive(toupper(d[0])-'A'+1) != 0)
-      return FALSE;
+      return PFalse;
 
   return _chdir(d + ".") == 0;
 }
 
 
-BOOL PDirectory::Filtered()
+PBoolean PDirectory::Filtered()
 {
-#if defined(_WIN32)
-#ifdef _WIN32_WCE
-  USES_CONVERSION;
-  char * name = T2A(fileinfo.cFileName);
+#ifdef UNICODE
+  PString name(fileinfo.cFileName);
 #else
   char * name = fileinfo.cFileName;
-#endif // _WIN32_WCE
-#else
-  char * name = fileinfo.name;
-#endif
+#endif // UNICODE
   if (strcmp(name, ".") == 0)
-    return TRUE;
+    return PTrue;
   if (strcmp(name, "..") == 0)
-    return TRUE;
+    return PTrue;
   if (scanMask == PFileInfo::AllPermissions)
-    return FALSE;
+    return PFalse;
 
   PFileInfo inf;
   PAssert(PFile::GetInfo(*this+name, inf), POperatingSystemError);
@@ -566,7 +303,7 @@ BOOL PDirectory::Filtered()
 }
 
 
-BOOL PDirectory::IsRoot() const
+PBoolean PDirectory::IsRoot() const
 {
   if ((*this)[1] == ':')
     return GetLength() == 3;
@@ -593,9 +330,9 @@ PStringArray PDirectory::GetPath() const
     return path;
 
   if ((*this)[1] == ':')
-    path = Tokenise("/\\", FALSE);
+    path = Tokenise("/\\", PFalse);
   else {
-    path = Mid(2).Tokenise("/\\", FALSE);
+    path = Mid(2).Tokenise("/\\", PFalse);
     path[0].Splice("\\\\", 0);
   }
 
@@ -607,7 +344,7 @@ PStringArray PDirectory::GetPath() const
 }
 
 
-BOOL PDirectory::GetInfo(PFileInfo & info) const
+PBoolean PDirectory::GetInfo(PFileInfo & info) const
 {
   return PFile::GetInfo(*this + GetEntryName(), info);
 }
@@ -617,13 +354,13 @@ BOOL PDirectory::GetInfo(PFileInfo & info) const
 // File Path
 
 PFilePath::PFilePath(const PString & str)
-  : PCaselessString(PDirectory::CreateFullPath(str, FALSE))
+  : PCaselessString(PDirectory::CreateFullPath(str, PFalse))
 {
 }
 
 
 PFilePath::PFilePath(const char * cstr)
-  : PCaselessString(PDirectory::CreateFullPath(cstr, FALSE))
+  : PCaselessString(PDirectory::CreateFullPath(cstr, PFalse))
 {
 }
 
@@ -635,12 +372,11 @@ PFilePath::PFilePath(const char * prefix, const char * dir)
     operator=(tmpdir);
   }
   else {
-    PConfig cfg(PConfig::Environment);
-    PString path = cfg.GetString("TMPDIR");
+    PString path = getenv("TMPDIR");
     if (path.IsEmpty()) {
-      path = cfg.GetString("TMP");
+      path = getenv("TMP");
       if (path.IsEmpty())
-        path = cfg.GetString("TEMP");
+        path = getenv("TEMP");
     }
     if (path.IsEmpty() || path[path.GetLength()-1] != '\\')
       path += '\\';
@@ -658,7 +394,7 @@ PFilePath::PFilePath(const char * prefix, const char * dir)
 void PFilePath::AssignContents(const PContainer & cont)
 {
   PCaselessString::AssignContents(cont);
-  PCaselessString::AssignContents(PDirectory::CreateFullPath(*this, FALSE));
+  PCaselessString::AssignContents(PDirectory::CreateFullPath(*this, PFalse));
 }
 
 
@@ -766,7 +502,7 @@ void PFile::SetFilePath(const PString & newName)
 }
 
 
-BOOL PFile::Access(const PFilePath & name, OpenMode mode)
+PBoolean PFile::Access(const PFilePath & name, OpenMode mode)
 {
   int accmode;
 
@@ -793,19 +529,19 @@ BOOL PFile::Access(const PFilePath & name, OpenMode mode)
 }
 
 
-BOOL PFile::Remove(const PFilePath & name, BOOL force)
+PBoolean PFile::Remove(const PString & name, PBoolean force)
 {
   if (remove(name) == 0)
-    return TRUE;
+    return PTrue;
   if (!force || errno != EACCES)
-    return FALSE;
+    return PFalse;
   if (_chmod(name, _S_IWRITE) != 0)
-    return FALSE;
+    return PFalse;
   return remove(name) == 0;
 }
 
 
-BOOL PFile::Rename(const PFilePath & oldname, const PString & newname, BOOL force)
+PBoolean PFile::Rename(const PFilePath & oldname, const PString & newname, PBoolean force)
 {
   if (newname.FindOneOf(":\\/") != P_MAX_INDEX) {
 #ifdef _WIN32_WCE
@@ -813,48 +549,48 @@ BOOL PFile::Rename(const PFilePath & oldname, const PString & newname, BOOL forc
 #else
     errno = EINVAL;
 #endif // _WIN32_WCE
-    return FALSE;
+    return PFalse;
   }
   PString fullname = oldname.GetDirectory() + newname;
   if (rename(oldname, fullname) == 0)
-    return TRUE;
+    return PTrue;
   if (!force || errno == ENOENT || !Exists(fullname))
-    return FALSE;
-  if (!Remove(fullname, TRUE))
-    return FALSE;
+    return PFalse;
+  if (!Remove(fullname, PTrue))
+    return PFalse;
   return rename(oldname, fullname) == 0;
 }
 
 
-BOOL PFile::Move(const PFilePath & oldname, const PFilePath & newname, BOOL force)
+PBoolean PFile::Move(const PFilePath & oldname, const PFilePath & newname, PBoolean force)
 {
   if (rename(oldname, newname) == 0)
-    return TRUE;
+    return PTrue;
   if (errno == ENOENT)
-    return FALSE;
+    return PFalse;
   if (force && Exists(newname)) {
-    if (!Remove(newname, TRUE))
-      return FALSE;
+    if (!Remove(newname, PTrue))
+      return PFalse;
     if (rename(oldname, newname) == 0)
-      return TRUE;
+      return PTrue;
   }
   return Copy(oldname, newname, force) && Remove(oldname);
 }
 
 
 #ifdef _WIN32_WCE
+time_t	FileTimeToTime(const FILETIME FileTime);
+time_t	SystemTimeToTime(const LPSYSTEMTIME pSystemTime);
 
-BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & info)
+PBoolean PFile::GetInfo(const PFilePath & name, PFileInfo & info)
 {
-  USES_CONVERSION;
-  
   PString fn = name;
   PINDEX pos = fn.GetLength()-1;
   while (PDirectory::IsSeparator(fn[pos]))
     pos--;
   fn.Delete(pos+1, P_MAX_INDEX);
   
-  HANDLE hFile = CreateFile(A2T((const char*)fn),0,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
+  HANDLE hFile = CreateFile(fn.AsUCS2(),0,FILE_SHARE_READ,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL,NULL);
   if (hFile==INVALID_HANDLE_VALUE) 
     return false;
   
@@ -869,7 +605,7 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & info)
     
     info.permissions = PFileInfo::UserRead|PFileInfo::GroupRead|PFileInfo::WorldRead;
     
-    if (FInfo.dwFileAttributes & FILE_ATTRIBUTE_READONLY==0)
+    if ((FInfo.dwFileAttributes & FILE_ATTRIBUTE_READONLY)==0)
       info.permissions |= PFileInfo::UserWrite|PFileInfo::GroupWrite|PFileInfo::WorldWrite;
     
     if (FInfo.dwFileAttributes&FILE_ATTRIBUTE_DIRECTORY)
@@ -1011,10 +747,10 @@ static int FileSecurityPermissions(const PFilePath & filename, int newPermission
 #endif
 
 
-BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & info)
+PBoolean PFile::GetInfo(const PFilePath & name, PFileInfo & info)
 {
   if (name.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   PString fn = name;
   PINDEX pos = fn.GetLength()-1;
@@ -1024,7 +760,7 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & info)
 
   struct stat s;
   if (stat(fn, &s) != 0)
-    return FALSE;
+    return PFalse;
 
   info.created =  (s.st_ctime < 0) ? 0 : s.st_ctime;
   info.modified = (s.st_mtime < 0) ? 0 : s.st_mtime;
@@ -1067,12 +803,12 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & info)
   info.hidden = (attr & _A_HIDDEN) != 0;
 #endif
 
-  return TRUE;
+  return PTrue;
 }
 
 #endif // _WIN32_WCE
 
-BOOL PFile::SetPermissions(const PFilePath & name, int permissions)
+PBoolean PFile::SetPermissions(const PFilePath & name, int permissions)
 {
 #if defined(_WIN32) && !defined(_WIN32_WCE)
   FileSecurityPermissions(name, permissions);
@@ -1082,13 +818,13 @@ BOOL PFile::SetPermissions(const PFilePath & name, int permissions)
 }
 
 
-BOOL PFile::IsTextFile() const
+PBoolean PFile::IsTextFile() const
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PFile::Open(OpenMode mode, int opts)
+PBoolean PFile::Open(OpenMode mode, int opts)
 {
   Close();
   clear();
@@ -1128,7 +864,7 @@ BOOL PFile::Open(OpenMode mode, int opts)
     oflags |= O_TRUNC;
 
   if ((opts&Temporary) != 0)
-    removeOnClose = TRUE;
+    removeOnClose = PTrue;
 
   int sflags = _SH_DENYNO;
   if ((opts&DenySharedRead) == DenySharedRead)
@@ -1146,7 +882,7 @@ BOOL PFile::Open(OpenMode mode, int opts)
 }
 
 
-BOOL PFile::SetLength(off_t len)
+PBoolean PFile::SetLength(off_t len)
 {
   return ConvertOSError(_chsize(GetHandle(), len));
 }
@@ -1155,13 +891,13 @@ BOOL PFile::SetLength(off_t len)
 ///////////////////////////////////////////////////////////////////////////////
 // PTextFile
 
-BOOL PTextFile::IsTextFile() const
+PBoolean PTextFile::IsTextFile() const
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PTextFile::ReadLine(PString & str)
+PBoolean PTextFile::ReadLine(PString & str)
 {
   char * ptr = str.GetPointer(100);
   PINDEX len = 0;
@@ -1177,7 +913,7 @@ BOOL PTextFile::ReadLine(PString & str)
 }
 
 
-BOOL PTextFile::WriteLine(const PString & str)
+PBoolean PTextFile::WriteLine(const PString & str)
 {
   return WriteString(str) && WriteChar('\n');
 }
@@ -1187,33 +923,41 @@ BOOL PTextFile::WriteLine(const PString & str)
 // PConsoleChannel
 
 PConsoleChannel::PConsoleChannel()
+  : m_hConsole(INVALID_HANDLE_VALUE)
 {
 }
 
 
 PConsoleChannel::PConsoleChannel(ConsoleType type)
+  : m_hConsole(INVALID_HANDLE_VALUE)
 {
   Open(type);
 }
 
 
-BOOL PConsoleChannel::Open(ConsoleType type)
+PConsoleChannel::~PConsoleChannel()
 {
-  switch (type) {
-    case StandardInput :
-      os_handle = 0;
-      return TRUE;
+  Close();
+}
 
-    case StandardOutput :
-      os_handle = 1;
-      return TRUE;
 
-    case StandardError :
-      os_handle = 2;
-      return TRUE;
-  }
+PBoolean PConsoleChannel::Open(ConsoleType type)
+{
+  if (!PAssert(type >= StandardInput && type <= StandardError, PInvalidParameter))
+    return false;
 
-  return FALSE;
+#ifdef _WIN32_WCE
+  return false;
+#else
+  static DWORD HandleNames[] = { STD_INPUT_HANDLE, STD_OUTPUT_HANDLE, STD_ERROR_HANDLE };
+  if (!DuplicateHandle(GetCurrentProcess(), GetStdHandle(HandleNames[type]),
+                       GetCurrentProcess(), &m_hConsole,
+                       NULL, FALSE, DUPLICATE_SAME_ACCESS))
+    return ConvertOSError(-2);
+
+  os_handle = type;
+  return true;
+#endif
 }
 
 
@@ -1223,31 +967,97 @@ PString PConsoleChannel::GetName() const
 }
 
 
-BOOL PConsoleChannel::Read(void * buffer, PINDEX length)
+PBoolean PConsoleChannel::Read(void * buffer, PINDEX length)
 {
+  if (m_hConsole == INVALID_HANDLE_VALUE)
+    return ConvertOSError(-2, LastReadError);
+
   flush();
-  lastReadCount = _read(os_handle, buffer, length);
-  return ConvertOSError(lastReadCount, LastReadError) && lastReadCount > 0;
+
+  DWORD readBytes;
+  if (ReadFile(m_hConsole, buffer, length, &readBytes, NULL)) {
+    lastReadCount = readBytes;
+    return lastReadCount > 0;
+  }
+
+  return ConvertOSError(-2, LastWriteError);
 }
 
 
-BOOL PConsoleChannel::Write(const void * buffer, PINDEX length)
+PBoolean PConsoleChannel::Write(const void * buffer, PINDEX length)
 {
+  if (m_hConsole == INVALID_HANDLE_VALUE)
+    return ConvertOSError(-2, LastReadError);
+
   flush();
-  lastWriteCount = _write(os_handle, buffer, length);
-  return ConvertOSError(lastWriteCount, LastWriteError) && lastWriteCount >= length;
+
+  DWORD written;
+  if (WriteFile(m_hConsole, buffer, length, &written, NULL)) {
+    lastWriteCount = written;
+    return lastWriteCount >= length;
+  }
+
+  return ConvertOSError(-2, LastWriteError);
 }
 
 
-BOOL PConsoleChannel::Close()
+PBoolean PConsoleChannel::Close()
 {
+  if (m_hConsole == INVALID_HANDLE_VALUE)
+    return false;
+
+  CloseHandle(m_hConsole);
+  m_hConsole = INVALID_HANDLE_VALUE;
   os_handle = -1;
-  return TRUE;
+  return true;
 }
+
+
+#ifdef _WIN32_WCE
+bool PConsoleChannel::SetLocalEcho(bool)
+{
+  return false;
+}
+#else
+bool PConsoleChannel::SetLocalEcho(bool localEcho)
+{
+  if (m_hConsole == INVALID_HANDLE_VALUE)
+    return ConvertOSError(-2, LastReadError);
+
+  DWORD mode;
+  if (!GetConsoleMode(m_hConsole, &mode))
+    return false;
+
+  if (localEcho)
+    mode |= ENABLE_ECHO_INPUT;
+  else
+    mode &= ~ENABLE_ECHO_INPUT;
+
+  return SetConsoleMode(m_hConsole, mode);
+}
+#endif
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // PProcess
+
+static void (__cdecl * PreviousSigIntHandler)(int);
+static void (__cdecl * PreviousSigTermHandler)(int);
+
+#ifndef _WIN32_WCE 
+void SignalHandler(int sig)
+{
+  if (PProcess::Current().OnInterrupt(sig == SIGTERM))
+    return;
+
+  void (__cdecl * previous)(int) = (sig == SIGTERM ? PreviousSigTermHandler : PreviousSigIntHandler);
+ 
+  if (previous == SIG_DFL)
+    raise(sig);
+  else if (previous != SIG_IGN)
+    previous(sig);
+}
+#endif
 
 void PProcess::Construct()
 {
@@ -1262,13 +1072,18 @@ void PProcess::Construct()
 #endif
 
   houseKeeper = NULL;
+
+#ifndef _WIN32_WCE 
+  PreviousSigIntHandler = signal(SIGINT, SignalHandler);
+  PreviousSigTermHandler = signal(SIGTERM, SignalHandler);
+#endif
 }
 
 
-BOOL PProcess::SetMaxHandles(int /*newLimit*/)
+PBoolean PProcess::SetMaxHandles(int /*newLimit*/)
 {
   // Not applicable
-  return TRUE;
+  return PTrue;
 }
 
 

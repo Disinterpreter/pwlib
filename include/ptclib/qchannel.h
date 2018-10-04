@@ -23,31 +23,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: qchannel.h,v $
- * Revision 1.4  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.3  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.2  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.1  2001/07/10 03:07:07  robertj
- * Added queue channel and delay channel classes to ptclib.
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _QCHANNEL_H
-#define _QCHANNEL_H
+#ifndef PTLIB_QCHANNEL_H
+#define PTLIB_QCHANNEL_H
 
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
 
 /** Class for implementing a serial queue channel in memory.
     This implements a simple memory based First In First Out queue. Data
@@ -87,13 +75,13 @@ class PQueueChannel : public PChannel
        of bytes read.
 
        The GetErrorCode() function should be consulted after Read() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE indicates that at least one character was read from the channel.
-       FALSE means no bytes were read due to timeout or some other I/O error.
+       true indicates that at least one character was read from the channel.
+       false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -103,19 +91,19 @@ class PQueueChannel : public PChannel
        of bytes written.
 
        The GetErrorCode() function should be consulted after Write() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
-       @return TRUE if at least len bytes were written to the channel.
+       @return true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
 
     /** Close the file channel.
-        @return TRUE if close was OK.
+        @return true if close was OK.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
   //@}
 
 
@@ -123,7 +111,7 @@ class PQueueChannel : public PChannel
   //@{
     /**Open a queue, allocating the queueSize bytes.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       PINDEX queueSize   ///< Queue size
     );
 
@@ -143,7 +131,7 @@ class PQueueChannel : public PChannel
 };
 
 
-#endif // _QCHANNEL_H
+#endif // PTLIB_QCHANNEL_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -5,17 +5,15 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.h,v $
- * Revision 1.1  2002/03/26 07:05:28  craigs
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _XMLRPCApp_MAIN_H
 #define _XMLRPCApp_MAIN_H
 
-
-
+#include <ptlib/pprocess.h>
 
 class XMLRPCApp : public PProcess
 {

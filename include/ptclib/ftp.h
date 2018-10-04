@@ -24,69 +24,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ftp.h,v $
- * Revision 1.18  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.17  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.16  2003/09/17 05:43:49  csoutheren
- * Removed recursive includes
- *
- * Revision 1.15  2002/11/06 22:47:23  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.14  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.13  2001/09/10 00:28:21  robertj
- * Fixed extra CR in comments.
- *
- * Revision 1.12  2000/06/21 01:01:21  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.11  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.10  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.9  1998/11/30 02:50:45  robertj
- * New directory structure
- *
- * Revision 1.8  1998/09/23 06:19:26  robertj
- * Added open source copyright license.
- *
- * Revision 1.7  1996/10/26 01:39:41  robertj
- * Added check for security breach using 3 way FTP transfer or use of privileged PORT.
- *
- * Revision 1.6  1996/09/14 13:09:08  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.5  1996/05/23 09:56:24  robertj
- * Changed FTP so can do passive/active mode on all data transfers.
- *
- * Revision 1.4  1996/03/31 08:45:57  robertj
- * Added QUIT command sent on FTP socket close.
- *
- * Revision 1.3  1996/03/26 00:50:28  robertj
- * FTP Client Implementation.
- *
- * Revision 1.2  1996/03/18 13:33:10  robertj
- * Fixed incompatibilities to GNU compiler where PINDEX != int.
- *
- * Revision 1.1  1996/03/04 12:14:18  robertj
- * Initial revision
- *
+ * $Revision: 25012 $
+ * $Author: rjongbloed $
+ * $Date: 2011-01-06 01:01:23 -0600 (Thu, 06 Jan 2011) $
  */
 
-#ifndef _PFTPSOCKET
-#define _PFTPSOCKET
+#ifndef PTLIB_FTP_H
+#define PTLIB_FTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -94,6 +38,9 @@
 
 #include <ptclib/inetprot.h>
 #include <ptlib/sockets.h>
+
+
+class PURL;
 
 
 /**
@@ -130,10 +77,14 @@ class PFTP : public PInternetProtocol
       DetailedNames
     };
 
+    enum {
+      DefaultPort = 21
+    };
+
     /** Send the PORT command for a transfer.
      @return Boolean indicated PORT command was successful
     */
-    BOOL SendPORT(
+    PBoolean SendPORT(
       const PIPSocket::Address & addr, ///< Address for PORT connection. IP address to connect back to
       WORD port                        ///< Port number for PORT connection.
     );
@@ -164,20 +115,27 @@ class PFTPClient : public PFTP
     /** Close the socket, and if connected as a client, QUITs from server.
 
        @return
-       TRUE if the channel was closed and the QUIT accepted by the server.
+       true if the channel was closed and the QUIT accepted by the server.
      */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
   //@}
 
   /**@name New functions for class */
   //@{
+    /**Open host using TCP
+     */
+    bool OpenHost(
+      const PString & host,
+      WORD port = DefaultPort
+    );
+
     /** Log in to the remote host for FTP.
 
        @return
-       TRUE if the log in was successfull.
+       true if the log in was successfull.
      */
-    BOOL LogIn(
+    PBoolean LogIn(
       const PString & username,   ///< User name for FTP log in.
       const PString & password    ///< Password for the specified user name.
     );
@@ -192,18 +150,18 @@ class PFTPClient : public PFTP
     /** Set the transfer type.
 
        @return
-       TRUE if transfer type set.
+       true if transfer type set.
      */
-    BOOL SetType(
+    PBoolean SetType(
       RepresentationType type   ///< RepresentationTypeof file to transfer
     );
 
     /** Change the current directory on the remote FTP host.
 
        @return
-       TRUE if the log in was successfull.
+       true if the log in was successfull.
      */
-    BOOL ChangeDirectory(
+    PBoolean ChangeDirectory(
       const PString & dirPath     ///< New directory
     );
 
@@ -236,6 +194,15 @@ class PFTPClient : public PFTP
       DataChannelType channel = Passive   ///< Data channel type.
     );
 
+    /** Create a directory on the remote FTP host.
+
+       @return
+       true if the directory was created successfully.
+     */
+    PBoolean CreateDirectory(
+      const PString & path                ///< Name of the directory to create.
+    );
+
     /** Get status information for the file path specified.
 
        @return
@@ -255,8 +222,8 @@ class PFTPClient : public PFTP
        Socket to read data from, or NULL if an error occurred.
      */
     PTCPSocket * GetFile(
-      const PString & filename,            ///< Name of file to get
-      DataChannelType channel = NormalPort ///< Data channel type.
+      const PString & filename,         ///< Name of file to get
+      DataChannelType channel = Passive ///< Data channel type.
     );
 
     /**Begin storing a file to the remote FTP server. The second parameter
@@ -268,15 +235,29 @@ class PFTPClient : public PFTP
        Socket to write data to, or NULL if an error occurred.
      */
     PTCPSocket * PutFile(
-      const PString & filename,   ///< Name of file to get
-      DataChannelType channel = NormalPort ///< Data channel type.
+      const PString & filename,         ///< Name of file to get
+      DataChannelType channel = Passive ///< Data channel type.
+    );
+
+    /**Begin retreiving a file from the remote FTP server. The second
+       parameter indicates that the transfer is on a normal or passive data
+       channel. In short, a normal transfer the server connects to the
+       client and in passive mode the client connects to the server.
+
+       @return
+       Socket to read data from, or NULL if an error occurred.
+     */
+    PTCPSocket * GetURL(
+      const PURL & url,                 ///< URL of file to get
+      RepresentationType type,          ///< Type of transfer (text/binary)
+      DataChannelType channel = Passive ///< Data channel type.
     );
 
   //@}
 
   protected:
     /// Call back to verify open succeeded in an PInternetProtocol class
-    virtual BOOL OnOpen();
+    virtual PBoolean OnOpen();
 
     PTCPSocket * NormalClientTransfer(
       Commands cmd,
@@ -325,28 +306,28 @@ class PFTPServer : public PFTP
     virtual PString GetSystemTypeString() const;
 
     /// return the thirdPartyPort flag, allowing 3 host put and get.
-    BOOL GetAllowThirdPartyPort() const { return thirdPartyPort; }
+    PBoolean GetAllowThirdPartyPort() const { return thirdPartyPort; }
 
     /// Set the thirdPartyPort flag.
-    void SetAllowThirdPartyPort(BOOL state) { thirdPartyPort = state; }
+    void SetAllowThirdPartyPort(PBoolean state) { thirdPartyPort = state; }
 
     /** Process commands, dispatching to the appropriate virtual function. This
        is used when the socket is acting as a server.
 
        @return
-       TRUE if more processing may be done, FALSE if the QUIT command was
-       received or the #OnUnknown()# function returns FALSE.
+       true if more processing may be done, false if the QUIT command was
+       received or the <code>OnUnknown()</code> function returns false.
      */
-    BOOL ProcessCommand();
+    PBoolean ProcessCommand();
 
     /** Dispatching to the appropriate virtual function. This is used when the
        socket is acting as a server.
 
        @return
-       TRUE if more processing may be done, FALSE if the QUIT command was
-       received or the #OnUnknown()# function returns FALSE.
+       true if more processing may be done, false if the QUIT command was
+       received or the <code>OnUnknown()</code> function returns false.
      */
-    virtual BOOL DispatchCommand(
+    virtual PBoolean DispatchCommand(
       PINDEX code,          ///< Parsed command code.
       const PString & args  ///< Arguments to command.
     );
@@ -356,41 +337,41 @@ class PFTPServer : public PFTP
        it may be processed.
 
        @return
-       TRUE if the command required the user to be logged in.
+       true if the command required the user to be logged in.
      */
-    virtual BOOL CheckLoginRequired(
+    virtual PBoolean CheckLoginRequired(
       PINDEX cmd    ///< Command to check if log in required.
     );
 
     /** Validate the user name and password for access. After three invalid
-       attempts, the socket will close and FALSE is returned.
+       attempts, the socket will close and false is returned.
 
-       Default implementation returns TRUE for all strings.
+       Default implementation returns true for all strings.
 
        @return
-       TRUE if user can access, otherwise FALSE
+       true if user can access, otherwise false
      */
-    virtual BOOL AuthoriseUser(
+    virtual PBoolean AuthoriseUser(
       const PString & user,     ///< User name to authorise.
       const PString & password, ///< Password supplied for the user.
-      BOOL & replied            ///< Indication that a reply was sent to client.
+      PBoolean & replied            ///< Indication that a reply was sent to client.
     );
 
     /** Handle an unknown command.
 
        @return
-       TRUE if more processing may be done, FALSE if the
-       #ProcessCommand()# function is to return FALSE.
+       true if more processing may be done, false if the
+       <code>ProcessCommand()</code> function is to return false.
      */
-    virtual BOOL OnUnknown(
+    virtual PBoolean OnUnknown(
       const PCaselessString & command  ///< Complete command line received.
     );
 
     /** Handle an error in command.
 
        @return
-       TRUE if more processing may be done, FALSE if the
-       #ProcessCommand()# function is to return FALSE.
+       true if more processing may be done, false if the
+       <code>ProcessCommand()</code> function is to return false.
      */
     virtual void OnError(
       PINDEX errorCode, ///< Error code to use
@@ -416,48 +397,48 @@ class PFTPServer : public PFTP
 
     // the following commands must be implemented by all servers
     // and can be performed without logging in
-    virtual BOOL OnUSER(const PCaselessString & args);
-    virtual BOOL OnPASS(const PCaselessString & args);  // officially optional, but should be done
-    virtual BOOL OnQUIT(const PCaselessString & args);
-    virtual BOOL OnPORT(const PCaselessString & args);
-    virtual BOOL OnSTRU(const PCaselessString & args);
-    virtual BOOL OnMODE(const PCaselessString & args);
-    virtual BOOL OnTYPE(const PCaselessString & args);
-    virtual BOOL OnNOOP(const PCaselessString & args);
-    virtual BOOL OnSYST(const PCaselessString & args);
-    virtual BOOL OnSTAT(const PCaselessString & args);
+    virtual PBoolean OnUSER(const PCaselessString & args);
+    virtual PBoolean OnPASS(const PCaselessString & args);  // officially optional, but should be done
+    virtual PBoolean OnQUIT(const PCaselessString & args);
+    virtual PBoolean OnPORT(const PCaselessString & args);
+    virtual PBoolean OnSTRU(const PCaselessString & args);
+    virtual PBoolean OnMODE(const PCaselessString & args);
+    virtual PBoolean OnTYPE(const PCaselessString & args);
+    virtual PBoolean OnNOOP(const PCaselessString & args);
+    virtual PBoolean OnSYST(const PCaselessString & args);
+    virtual PBoolean OnSTAT(const PCaselessString & args);
 
     // the following commands must be implemented by all servers
     // and cannot be performed without logging in
-    virtual BOOL OnRETR(const PCaselessString & args);
-    virtual BOOL OnSTOR(const PCaselessString & args);
-    virtual BOOL OnACCT(const PCaselessString & args);
-    virtual BOOL OnAPPE(const PCaselessString & args);
-    virtual BOOL OnRNFR(const PCaselessString & args);
-    virtual BOOL OnRNTO(const PCaselessString & args);
-    virtual BOOL OnDELE(const PCaselessString & args);
-    virtual BOOL OnCWD(const PCaselessString & args);
-    virtual BOOL OnCDUP(const PCaselessString & args);
-    virtual BOOL OnRMD(const PCaselessString & args);
-    virtual BOOL OnMKD(const PCaselessString & args);
-    virtual BOOL OnPWD(const PCaselessString & args);
-    virtual BOOL OnLIST(const PCaselessString & args);
-    virtual BOOL OnNLST(const PCaselessString & args);
-    virtual BOOL OnPASV(const PCaselessString & args);
+    virtual PBoolean OnRETR(const PCaselessString & args);
+    virtual PBoolean OnSTOR(const PCaselessString & args);
+    virtual PBoolean OnACCT(const PCaselessString & args);
+    virtual PBoolean OnAPPE(const PCaselessString & args);
+    virtual PBoolean OnRNFR(const PCaselessString & args);
+    virtual PBoolean OnRNTO(const PCaselessString & args);
+    virtual PBoolean OnDELE(const PCaselessString & args);
+    virtual PBoolean OnCWD(const PCaselessString & args);
+    virtual PBoolean OnCDUP(const PCaselessString & args);
+    virtual PBoolean OnRMD(const PCaselessString & args);
+    virtual PBoolean OnMKD(const PCaselessString & args);
+    virtual PBoolean OnPWD(const PCaselessString & args);
+    virtual PBoolean OnLIST(const PCaselessString & args);
+    virtual PBoolean OnNLST(const PCaselessString & args);
+    virtual PBoolean OnPASV(const PCaselessString & args);
 
     // the following commands are optional and can be performed without
     // logging in
-    virtual BOOL OnHELP(const PCaselessString & args);
-    virtual BOOL OnSITE(const PCaselessString & args);
-    virtual BOOL OnABOR(const PCaselessString & args);
+    virtual PBoolean OnHELP(const PCaselessString & args);
+    virtual PBoolean OnSITE(const PCaselessString & args);
+    virtual PBoolean OnABOR(const PCaselessString & args);
 
     // the following commands are optional and cannot be performed
     // without logging in
-    virtual BOOL OnSMNT(const PCaselessString & args);
-    virtual BOOL OnREIN(const PCaselessString & args);
-    virtual BOOL OnSTOU(const PCaselessString & args);
-    virtual BOOL OnALLO(const PCaselessString & args);
-    virtual BOOL OnREST(const PCaselessString & args);
+    virtual PBoolean OnSMNT(const PCaselessString & args);
+    virtual PBoolean OnREIN(const PCaselessString & args);
+    virtual PBoolean OnSTOU(const PCaselessString & args);
+    virtual PBoolean OnALLO(const PCaselessString & args);
+    virtual PBoolean OnREST(const PCaselessString & args);
 
 
     /// Send the specified file to the client.
@@ -468,11 +449,11 @@ class PFTPServer : public PFTP
 
   protected:
     /// Call back to verify open succeeded in an PInternetProtocol class
-    BOOL OnOpen();
+    PBoolean OnOpen();
     void Construct();
 
     PString readyString;
-    BOOL    thirdPartyPort;
+    PBoolean    thirdPartyPort;
 
     enum {
       NotConnected,
@@ -495,7 +476,10 @@ class PFTPServer : public PFTP
 };
 
 
-#endif
+PFACTORY_LOAD(PURL_FtpLoader);
+
+
+#endif // PTLIB_FTP_H
 
 
 // End of File ///////////////////////////////////////////////////////////////

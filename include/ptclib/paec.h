@@ -24,17 +24,13 @@
  *
  * Contributor(s): Miguel Rodriguez Perez
  *
- * $Log: paec.h,v $
- * Revision 1.2  2006/02/26 09:27:49  shorne
- * Renamed AEC class name, moved to seperate library
- *
- * Revision 1.1  2006/01/26 08:05:03  shorne
- * Added AEC support
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef __OPAL_ECHOCANCEL_H
-#define __OPAL_ECHOCANCEL_H
+#ifndef PTLIB_PAEC_H
+#define PTLIB_PAEC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -49,6 +45,7 @@
   * prior to sending to the enooder..
   */
 
+PQUEUE(ReceiveTimeQueue, PTimeInterval);
 
 struct SpeexEchoState;
 struct SpeexPreprocessState;
@@ -61,7 +58,7 @@ public:
   //@{
   /**Create a new canceler.
    */
-     PAec();
+     PAec(int _clock = 8000, int _sampletime = 30);
      ~PAec();
   //@}
 
@@ -77,17 +74,25 @@ public:
   //@}
 
 protected:
-
+  PMutex readwritemute;
   PQueueChannel *echo_chan;
   SpeexEchoState *echoState;
   SpeexPreprocessState *preprocessState;
-  short *ref_buf;
-  short *echo_buf;
-  short *e_buf;
-  float *noise;
+  int clockrate;                      // Frame Rate default 8000hz for narrowband audio
+  int bufferTime;                     // Time between receiving and Transmitting   
+  PInt64 minbuffer;                   // minbuffer (in milliseconds)
+  PInt64 maxbuffer;                   // maxbuffer (in milliseconds)
+  int sampleTime;                     // Length of each sample
+  ReceiveTimeQueue rectime;           // Queue of timestamps for ensure read/write in sync
+  PTimeInterval lastTimeStamp;        // LastTimeStamp of recieved data
+  PBoolean receiveReady;
+  void *ref_buf;
+  void *echo_buf;
+  void *e_buf;
+  void *noise;
 
 };
 
-#endif // __OPAL_ECHOCANCEL_H
+#endif // PTLIB_PAEC_H
 
-/////////////////////////////////////////////////////////////////////////////
+// End Of File ///////////////////////////////////////////////////////////////

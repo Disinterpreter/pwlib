@@ -26,22 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: conchan.h,v $
- * Revision 1.4  2003/09/17 01:18:03  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.3  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.2  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.1  1999/06/14 08:39:57  robertj
- * Added PConsoleChannel class for access to stdin/stdout/stderr
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifdef P_USE_PRAGMA
@@ -50,6 +37,6 @@
 
   public:
     PString GetName() const;
-    BOOL Close();
+    PBoolean Close();
 
 // End Of File ////////////////////////////////////////////////////////////////

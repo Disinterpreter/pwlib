@@ -28,23 +28,9 @@
  * Yuri Kiryanov, ykiryanov at users.sourceforge.net
  * Bits by Jac Goudsmit
  *
- * $Log: beaudio.h,v $
- * Revision 1.5  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.4  2004/10/26 18:07:36  ykiryanov
- * Added ifdef for Zeta build
- *
- * Revision 1.3  2004/06/16 01:57:57  ykiryanov
- * Working capture code
- *
- * Revision 1.2  2004/05/30 04:55:57  ykiryanov
- * Added include files
- *
- * Revision 1.1  2004/05/14 08:36:44  ykiryanov
- * BeOS sound class declarations collected in separate file
- *
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
 #include <ptlib.h>
@@ -103,38 +89,40 @@ class PSoundChannelBeOS: public PSoundChannel
     ~PSoundChannelBeOS();
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
     static PString GetDefaultDevice(PSoundChannel::Directions);
-    BOOL Open(const PString & _device,
-              Directions _dir,
-              unsigned _numChannels,
-              unsigned _sampleRate,
-              unsigned _bitsPerSample);
-    BOOL Setup();
-    BOOL Close();
-    BOOL IsOpen() const;
-    BOOL Write(const void * buf, PINDEX len);
-    BOOL Read(void * buf, PINDEX len);
-    BOOL SetFormat(unsigned numChannels,
+    PBoolean Open(
+      const PString & device,
+      Directions dir,
+      unsigned numChannels,
+      unsigned sampleRate,
+      unsigned bitsPerSample
+    );
+    PBoolean Setup();
+    PBoolean Close();
+    PBoolean IsOpen() const;
+    PBoolean Write(const void * buf, PINDEX len);
+    PBoolean Read(void * buf, PINDEX len);
+    PBoolean SetFormat(unsigned numChannels,
                    unsigned sampleRate,
                    unsigned bitsPerSample);
     unsigned GetChannels() const;
     unsigned GetSampleRate() const;
     unsigned GetSampleSize() const;
-    BOOL SetBuffers(PINDEX size, PINDEX count);
-    BOOL GetBuffers(PINDEX & size, PINDEX & count);
-    BOOL PlaySound(const PSound & sound, BOOL wait);
-    BOOL PlayFile(const PFilePath & filename, BOOL wait);
-    BOOL HasPlayCompleted();
-    BOOL WaitForPlayCompletion();
-    BOOL RecordSound(PSound & sound);
-    BOOL RecordFile(const PFilePath & filename);
-    BOOL StartRecording();
-    BOOL IsRecordBufferFull();
-    BOOL AreAllRecordBuffersFull();
-    BOOL WaitForRecordBufferFull();
-    BOOL WaitForAllRecordBuffersFull();
-    BOOL Abort();
-    BOOL SetVolume(unsigned newVal);
-    BOOL GetVolume(unsigned &devVol);
+    PBoolean SetBuffers(PINDEX size, PINDEX count);
+    PBoolean GetBuffers(PINDEX & size, PINDEX & count);
+    PBoolean PlaySound(const PSound & sound, PBoolean wait);
+    PBoolean PlayFile(const PFilePath & filename, PBoolean wait);
+    PBoolean HasPlayCompleted();
+    PBoolean WaitForPlayCompletion();
+    PBoolean RecordSound(PSound & sound);
+    PBoolean RecordFile(const PFilePath & filename);
+    PBoolean StartRecording();
+    PBoolean IsRecordBufferFull();
+    PBoolean AreAllRecordBuffersFull();
+    PBoolean WaitForRecordBufferFull();
+    PBoolean WaitForAllRecordBuffersFull();
+    PBoolean Abort();
+    PBoolean SetVolume(unsigned newVal);
+    PBoolean GetVolume(unsigned &devVol);
 
   public:
     // Overrides from class PChannel
@@ -164,14 +152,14 @@ class PSoundChannelBeOS: public PSoundChannel
     PINDEX mNumBuffers;       // for reference only!
 
     // Just some helpers so that the Open function doesn't get too big
-    BOOL OpenPlayer(void);
-    BOOL OpenRecorder(const PString &dev);
+    PBoolean OpenPlayer(void);
+    PBoolean OpenRecorder(const PString &dev);
 
     // internal buffer setting function so we can disable the SetBuffers
     // function for debug purposes
     // size is the total size, threshold is the fill/drain threshold on
     // the buffer
-    BOOL InternalSetBuffers(PINDEX size, PINDEX threshold);
+    PBoolean InternalSetBuffers(PINDEX size, PINDEX threshold);
 
     // Input resampler
     Resampler *mResampler;

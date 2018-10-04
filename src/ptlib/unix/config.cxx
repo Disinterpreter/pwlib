@@ -26,75 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: config.cxx,v $
- * Revision 1.36  2004/04/03 23:55:59  csoutheren
- * Added fix for PConfig environment variables under Linux
- *   Thanks to Michal Zygmuntowicz
- *
- * Revision 1.35  2003/03/17 08:10:59  robertj
- * Fixed bug with parsing lines with no equal sign
- *
- * Revision 1.34  2003/01/30 23:46:05  dereks
- * Fix compile error on gcc 3.2
- *
- * Revision 1.33  2003/01/26 03:57:12  robertj
- * Fixed problem with last change so can still operate if do not have write
- *   access to the directory config file is in.
- * Improved error reporting.
- *
- * Revision 1.32  2003/01/24 12:12:20  robertj
- * Changed so that a crash in some other thread can no longer cause the
- *   config file to be truncated to zero bytes.
- *
- * Revision 1.31  2001/09/14 07:36:27  robertj
- * Fixed bug where fails to read last line of config file if not ended with '\n'.
- *
- * Revision 1.30  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.29  2001/05/24 00:56:38  robertj
- * Fixed problem with config file being written every time on exit. Now is
- *   only written if it the config was modified by the application.
- *
- * Revision 1.28  2001/03/10 04:15:29  robertj
- * Incorrect case for .ini extension
- *
- * Revision 1.27  2001/03/09 06:31:22  robertj
- * Added ability to set default PConfig file or path to find it.
- *
- * Revision 1.26  2000/10/19 04:17:04  craigs
- * Changed to allow writing of config files whilst config file is open
- *
- * Revision 1.25  2000/10/02 20:58:06  robertj
- * Fixed bug where subsequent config file opening uses first opened filename.
- *
- * Revision 1.24  2000/08/30 04:45:02  craigs
- * Added ability to have multiple lines with the same key
- *
- * Revision 1.23  2000/08/16 04:21:27  robertj
- * Fixed subtle difference between UNix and Win32 section names (ignore trailing backslash)
- *
- * Revision 1.22  2000/05/25 12:10:06  robertj
- * Added PConfig::HasKey() function to determine if value actually set.
- *
- * Revision 1.21  2000/05/02 08:30:26  craigs
- * Removed "memory leaks" caused by brain-dead GNU linker
- *
- * Revision 1.20  1998/12/16 12:40:41  robertj
- * Fixed bug where .ini file is not written when service run as a daemon.
- *
- * Revision 1.19  1998/12/16 09:57:37  robertj
- * Fixed bug in writing .ini file, not truncating file when shrinking.
- *
- * Revision 1.18  1998/11/30 21:51:41  robertj
- * New directory structure.
- *
- * Revision 1.17  1998/11/03 02:30:38  robertj
- * Fixed emeory leak of environment.
- *
- * Revision 1.16  1998/09/24 04:12:11  robertj
- * Added open software license.
- *
+ * $Revision: 25444 $
+ * $Author: rjongbloed $
+ * $Date: 2011-03-29 17:17:31 -0500 (Tue, 29 Mar 2011) $
  */
 
 #define _CONFIG_CXX
@@ -102,7 +36,7 @@
 #pragma implementation "config.h"
 
 #include <ptlib.h>
-
+#include <ptlib/pprocess.h>
 
 #include "../common/pconfig.cxx"
 
@@ -115,10 +49,18 @@
 #define	EXTENSION		".ini"
 #define	ENVIRONMENT_CONFIG_STR	"/\~~environment~~\/"
 
+#if defined(P_MACOSX) || defined(P_SOLARIS) || defined(P_FREEBSD)
+#define environ (NULL)
+#endif
+
+#if defined(P_NETBSD) || defined(P_OPENBSD)
+extern char **environ;
+#endif
+
 //
 //  a single key/value pair
 //
-PDECLARE_CLASS (PXConfigValue, PCaselessString)
+PDECLARE_CLASS(PXConfigValue, PCaselessString)
   public:
     PXConfigValue(const PString & theKey, const PString & theValue = "") 
       : PCaselessString(theKey), value(theValue) { }
@@ -132,7 +74,7 @@ PDECLARE_CLASS (PXConfigValue, PCaselessString)
 //
 //  a list of key/value pairs
 //
-PLIST (PXConfigSectionList, PXConfigValue);
+PLIST(PXConfigSectionList, PXConfigValue);
 
 //
 //  a list of key value pairs, with a section name
@@ -152,39 +94,56 @@ PDECLARE_CLASS(PXConfigSection, PCaselessString)
 // a list of sections
 //
 
-PDECLARE_LIST(PXConfig, PXConfigSection)
+class PXConfig : public PList<PXConfigSection>
+{
+    PCLASSINFO(PXConfig, PList<PXConfigSection>);
   public:
-    PXConfig(int i = 0);
+    PXConfig();
+    ~PXConfig();
 
     void Wait()   { mutex.Wait(); }
     void Signal() { mutex.Signal(); }
 
-    BOOL ReadFromFile (const PFilePath & filename);
+    PBoolean ReadFromFile (const PFilePath & filename);
     void ReadFromEnvironment (char **envp);
 
-    BOOL WriteToFile(const PFilePath & filename);
-    BOOL Flush(const PFilePath & filename);
+    PBoolean WriteToFile(const PFilePath & filename);
+    PBoolean Flush(const PFilePath & filename);
 
-    void SetDirty()   { dirty = TRUE; }
+    void SetDirty()
+    {
+      PTRACE_IF(4, !dirty, "PTLib\tSetting PXConfig dirty.");
+      dirty = PTrue;
+    }
 
-    BOOL      AddInstance();
-    BOOL      RemoveInstance(const PFilePath & filename);
+    PBoolean      AddInstance();
+    PBoolean      RemoveInstance(const PFilePath & filename);
 
     PINDEX    GetSectionsIndex(const PString & theSection) const;
 
   protected:
     int       instanceCount;
     PMutex    mutex;
-    BOOL      dirty;
-    BOOL      canSave;
+    PBoolean      dirty;
+    PBoolean      canSave;
 };
+
+
+static PBoolean IsComment(const PString& str)
+{
+  return str.GetLength() && strchr(";#", str[0]);
+}
+
 
 //
 // a dictionary of configurations, keyed by filename
 //
-PDECLARE_DICTIONARY(PXConfigDictionary, PFilePath, PXConfig)
+typedef PDictionary<PFilePath, PXConfig> PXConfigDictionaryBase;
+class PXConfigDictionary : public PXConfigDictionaryBase
+{
+    PCLASSINFO(PXConfigDictionary, PXConfigDictionaryBase)
   public:
-    PXConfigDictionary(int dummy);
+    PXConfigDictionary();
     ~PXConfigDictionary();
     PXConfig * GetFileConfigInstance(const PFilePath & key, const PFilePath & readKey);
     PXConfig * GetEnvironmentInstance();
@@ -217,7 +176,7 @@ PXConfigDictionary * configDict;
 
 void PProcess::CreateConfigFilesDictionary()
 {
-  configFiles = new PXConfigDictionary(0);
+  configFiles = new PXConfigDictionary;
 }
 
 
@@ -234,7 +193,8 @@ PXConfigWriteThread::~PXConfigWriteThread()
 
 void PXConfigWriteThread::Main()
 {
-  while (!stop.Wait(30000))  // if stop.Wait() returns TRUE, we are shutting down
+  PTRACE(4, "PTLib\tConfig file cache write back thread started.");
+  while (!stop.Wait(30000))  // if stop.Wait() returns PTrue, we are shutting down
     configDict->WriteChangedInstances();   // check dictionary for items that need writing
 
   configDict->WriteChangedInstances();
@@ -244,7 +204,7 @@ void PXConfigWriteThread::Main()
 
 
 
-PXConfig::PXConfig(int)
+PXConfig::PXConfig()
 {
   // make sure content gets removed
   AllowDeleteObjects();
@@ -253,43 +213,51 @@ PXConfig::PXConfig(int)
   instanceCount = 0;
 
   // we start off clean
-  dirty = FALSE;
+  dirty = PFalse;
 
   // normally save on exit (except for environment configs)
-  canSave = TRUE;
+  canSave = PTrue;
+
+  PTRACE(4, "PTLib\tCreated PXConfig " << this);
 }
 
-BOOL PXConfig::AddInstance()
+PXConfig::~PXConfig()
+{
+  PTRACE(4, "PTLib\tDestroyed PXConfig " << this);
+}
+
+
+PBoolean PXConfig::AddInstance()
 {
   mutex.Wait();
-  BOOL stat = instanceCount++ == 0;
+  PBoolean stat = instanceCount++ == 0;
   mutex.Signal();
 
   return stat;
 }
 
-BOOL PXConfig::RemoveInstance(const PFilePath & /*filename*/)
+PBoolean PXConfig::RemoveInstance(const PFilePath & /*filename*/)
 {
   mutex.Wait();
 
   PAssert(instanceCount != 0, "PConfig instance count dec past zero");
 
-  BOOL stat = --instanceCount == 0;
+  PBoolean stat = --instanceCount == 0;
 
   mutex.Signal();
 
   return stat;
 }
 
-BOOL PXConfig::Flush(const PFilePath & filename)
+PBoolean PXConfig::Flush(const PFilePath & filename)
 {
   mutex.Wait();
 
-  BOOL stat = instanceCount == 0;
+  PBoolean stat = instanceCount == 0;
 
   if (canSave && dirty) {
     WriteToFile(filename);
-    dirty = FALSE;
+    dirty = PFalse;
   }
 
   mutex.Signal();
@@ -297,7 +265,7 @@ BOOL PXConfig::Flush(const PFilePath & filename)
   return stat;
 }
 
-BOOL PXConfig::WriteToFile(const PFilePath & filename)
+PBoolean PXConfig::WriteToFile(const PFilePath & filename)
 {
   // make sure the directory that the file is to be written into exists
   PDirectory dir = filename.GetDirectory();
@@ -306,7 +274,7 @@ BOOL PXConfig::WriteToFile(const PFilePath & filename)
                                    PFileInfo::UserWrite |
                                    PFileInfo::UserRead)) {
     PProcess::PXShowSystemWarning(2000, "Cannot create PWLIB config directory");
-    return FALSE;
+    return PFalse;
   }
 
   PTextFile file;
@@ -315,18 +283,29 @@ BOOL PXConfig::WriteToFile(const PFilePath & filename)
 
   if (!file.IsOpen()) {
     PProcess::PXShowSystemWarning(2001, "Cannot create PWLIB config file: " + file.GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   for (PINDEX i = 0; i < GetSize(); i++) {
     PXConfigSectionList & section = (*this)[i].GetList();
+
+    // If the line is a comment, output it as is
+    if (IsComment((*this)[i])) {
+      file << (*this)[i] << endl;
+      continue;
+    }
+
     file << "[" << (*this)[i] << "]" << endl;
     for (PINDEX j = 0; j < section.GetSize(); j++) {
       PXConfigValue & value = section[j];
-      PStringArray lines = value.GetValue().Tokenise('\n', TRUE);
-      PINDEX k;
-      for (k = 0; k < lines.GetSize(); k++) 
-        file << value << "=" << lines[k] << endl;
+      PStringArray lines = value.GetValue().Tokenise('\n', PTrue);
+      // Preserve name/value pairs with no value, i.e. of the form "name="
+      if (lines.IsEmpty())
+	    file << value << "=" << endl;
+      else {
+        for (PINDEX k = 0; k < lines.GetSize(); k++) 
+          file << value << "=" << lines[k] << endl;
+      }
     }
     file << endl;
   }
@@ -336,28 +315,30 @@ BOOL PXConfig::WriteToFile(const PFilePath & filename)
   file.Close();
 
   if (file.GetFilePath() != filename) {
-    if (!file.Rename(file.GetFilePath(), filename.GetFileName(), TRUE)) {
+    if (!file.Rename(file.GetFilePath(), filename.GetFileName(), PTrue)) {
       PProcess::PXShowSystemWarning(2001, "Cannot rename config file: " + file.GetErrorText());
-      return FALSE;
+      return PFalse;
     }
   }
 
-  PTRACE(4, "PWLib\tSaved config file: " << filename);
-  return TRUE;
+  PTRACE(4, "PTLib\tSaved config file: " << filename);
+  return PTrue;
 }
 
 
-BOOL PXConfig::ReadFromFile(const PFilePath & filename)
+PBoolean PXConfig::ReadFromFile(const PFilePath & filename)
 {
   PINDEX len;
 
   // clear out all information
   RemoveAll();
 
+  PTRACE(4, "PTLib\tReading config file: " << filename);
+
   // attempt to open file
   PTextFile file;
   if (!file.Open(filename, PFile::ReadOnly))
-    return FALSE;
+    return PFalse;
 
   PXConfigSection * currentSection = NULL;
 
@@ -367,11 +348,11 @@ BOOL PXConfig::ReadFromFile(const PFilePath & filename)
     file >> line;
     line = line.Trim();
     if ((len = line.GetLength()) > 0) {
-
-      // ignore comments and blank lines 
-      char ch = line[0];
-      if ((len > 0) && (ch != ';') && (ch != '#')) {
-        if (ch == '[') {
+      // Preserve comments
+      if (IsComment(line))
+        Append(new PXConfigSection(line));
+      else {
+        if (line[0] == '[') {
           PCaselessString sectionName = (line.Mid(1,len-(line[len-1]==']'?2:1))).Trim();
           PINDEX  index;
           if ((index = GetValuesIndex(sectionName)) != P_MAX_INDEX)
@@ -402,7 +383,7 @@ BOOL PXConfig::ReadFromFile(const PFilePath & filename)
   
   // close the file and return
   file.Close();
-  return TRUE;
+  return PTrue;
 }
 
 void PXConfig::ReadFromEnvironment (char **envp)
@@ -413,6 +394,12 @@ void PXConfig::ReadFromEnvironment (char **envp)
   PXConfigSection * currentSection = new PXConfigSection("Options");
   Append(currentSection);
 
+  // can't save environment configs
+  canSave = PFalse;
+
+  if (envp == NULL)
+    return;
+
   while (*envp != NULL && **envp != '\0') {
     PString line(*envp);
     PINDEX equals = line.Find('=');
@@ -422,9 +409,6 @@ void PXConfig::ReadFromEnvironment (char **envp)
     }
     envp++;
   }
-
-  // can't save environment configs
-  canSave = FALSE;
 }
 
 PINDEX PXConfig::GetSectionsIndex(const PString & theSection) const
@@ -437,14 +421,14 @@ PINDEX PXConfig::GetSectionsIndex(const PString & theSection) const
 }
 
 
-static BOOL LocateFile(const PString & baseName,
+static PBoolean LocateFile(const PString & baseName,
                        PFilePath & readFilename,
                        PFilePath & filename)
 {
   // check the user's home directory first
   filename = readFilename = PProcess::Current().GetConfigurationFile();
   if (PFile::Exists(filename))
-    return TRUE;
+    return PTrue;
 
   // otherwise check the system directory for a file to read,
   // and then create 
@@ -482,7 +466,7 @@ PString PProcess::GetConfigurationFile()
 // PXConfigDictionary
 //
 
-PXConfigDictionary::PXConfigDictionary(int)
+PXConfigDictionary::PXConfigDictionary()
 {
   environmentInstance = NULL;
   writeThread = NULL;
@@ -505,8 +489,8 @@ PXConfig * PXConfigDictionary::GetEnvironmentInstance()
 {
   mutex.Wait();
   if (environmentInstance == NULL) {
-    environmentInstance = new PXConfig(0);
-    environmentInstance->ReadFromEnvironment(PProcess::Current().PXGetEnvp());
+    environmentInstance = new PXConfig;
+    environmentInstance->ReadFromEnvironment(environ);
   }
   mutex.Signal();
   return environmentInstance;
@@ -525,7 +509,7 @@ PXConfig * PXConfigDictionary::GetFileConfigInstance(const PFilePath & key, cons
   if (config != NULL) 
     config->AddInstance();
   else {
-    config = new PXConfig(0);
+    config = new PXConfig;
     config->ReadFromFile(readKey);
     config->AddInstance();
     SetAt(key, config);
@@ -543,9 +527,12 @@ void PXConfigDictionary::RemoveInstance(PXConfig * instance)
     PINDEX index = GetObjectsIndex(instance);
     PAssert(index != P_MAX_INDEX, "Cannot find PXConfig instance to remove");
 
-    // decrement the instance count, but don't remove it yet
+    // decrement the instance count and remove it if this was the last instance
     PFilePath key = GetKeyAt(index);
-    instance->RemoveInstance(key);
+    if (instance->RemoveInstance(key)) {
+      instance->Flush(key);
+      RemoveAt(key);
+    }
   }
 
   mutex.Signal();
@@ -603,17 +590,18 @@ PConfig::PConfig(int, const PString & name)
   config = configDict->GetFileConfigInstance(filename, readFilename);
 }
 
-void PConfig::Construct(const PFilePath & theFilename)
 
+void PConfig::Construct(const PFilePath & theFilename)
 {
   config = configDict->GetFileConfigInstance(theFilename, theFilename);
 }
 
-PConfig::~PConfig()
 
+PConfig::~PConfig()
 {
   configDict->RemoveInstance(config);
 }
+
 
 ////////////////////////////////////////////////////////////
 //
@@ -623,19 +611,20 @@ PConfig::~PConfig()
 //
 ////////////////////////////////////////////////////////////
 
-PStringList PConfig::GetSections() const
+PStringArray PConfig::GetSections() const
 {
   PAssert(config != NULL, "config instance not set");
   config->Wait();
 
-  PStringList list;
+  PINDEX sz = config->GetSize();
+  PStringArray sections(sz);
 
-  for (PINDEX i = 0; i < (*config).GetSize(); i++)
-    list.AppendString((*config)[i]);
+  for (PINDEX i = 0; i < sz; i++)
+    sections[i] = (*config)[i];
 
   config->Signal();
 
-  return list;
+  return sections;
 }
 
 
@@ -648,22 +637,23 @@ PStringList PConfig::GetSections() const
 //
 ////////////////////////////////////////////////////////////
 
-PStringList PConfig::GetKeys(const PString & theSection) const
+PStringArray PConfig::GetKeys(const PString & theSection) const
 {
   PAssert(config != NULL, "config instance not set");
   config->Wait();
 
   PINDEX index;
-  PStringList list;
+  PStringArray keys;
 
   if ((index = config->GetSectionsIndex(theSection)) != P_MAX_INDEX) {
     PXConfigSectionList & section = (*config)[index].GetList();
+    keys.SetSize(section.GetSize());
     for (PINDEX i = 0; i < section.GetSize(); i++)
-      list.AppendString(section[i]);
+      keys[i] = section[i];
   }
 
   config->Signal();
-  return list;
+  return keys;
 }
 
 
@@ -678,12 +668,9 @@ PStringList PConfig::GetKeys(const PString & theSection) const
 ////////////////////////////////////////////////////////////
 
 void PConfig::DeleteSection(const PString & theSection)
-
 {
   PAssert(config != NULL, "config instance not set");
   config->Wait();
-
-  PStringList list;
 
   PINDEX index;
   if ((index = config->GetSectionsIndex(theSection)) != P_MAX_INDEX) {
@@ -731,12 +718,12 @@ void PConfig::DeleteKey(const PString & theSection, const PString & theKey)
 //
 ////////////////////////////////////////////////////////////
 
-BOOL PConfig::HasKey(const PString & theSection, const PString & theKey) const
+PBoolean PConfig::HasKey(const PString & theSection, const PString & theKey) const
 {
   PAssert(config != NULL, "config instance not set");
   config->Wait();
 
-  BOOL present = FALSE;
+  PBoolean present = PFalse;
   PINDEX index;
   if ((index = config->GetSectionsIndex(theSection)) != P_MAX_INDEX) {
     PXConfigSectionList & section = (*config)[index].GetList();

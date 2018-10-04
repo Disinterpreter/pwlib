@@ -26,64 +26,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mail.h,v $
- * Revision 1.14  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.13  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.12  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.11  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.10  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.9  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.8  1999/02/16 08:12:00  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.7  1999/02/10 13:20:53  robertj
- * Added ability to have attachments in mail messages.
- *
- * Revision 1.6  1998/09/23 06:20:51  robertj
- * Added open source copyright license.
- *
- * Revision 1.5  1997/05/16 12:14:08  robertj
- * Added BCC capability to send mail.
- *
- * Revision 1.4  1995/07/02 01:19:46  robertj
- * Change GetMessageBidy to return BOOL and have body string as
- *   parameter, due to slight change in semantics for large bodies.
- *
- * Revision 1.3  1995/06/17 00:42:22  robertj
- * Added mail reading interface.
- * Changed name to simply PMail
- *
- * Revision 1.2  1995/04/01 08:27:57  robertj
- * Added GUI support.
- *
- * Revision 1.1  1995/03/14  12:44:11  robertj
- * Initial revision
- *
+ * $Revision: 24461 $
+ * $Author: shorne $
+ * $Date: 2010-06-06 09:06:37 -0500 (Sun, 06 Jun 2010) $
  */
 
-#ifndef _PMAIL
-#define _PMAIL
+#ifndef PTLIB_MAIL_H
+#define PTLIB_MAIL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_WIN64)
 
 #  ifndef P_HAS_MAPI
 #  define P_HAS_MAPI 1
@@ -149,9 +104,9 @@ class PMail : public PObject
     /**Attempt to log on to the mail system using the parameters provided.
 
        @return
-       TRUE if successfully logged on.
+       true if successfully logged on.
      */
-    BOOL LogOn(
+    PBoolean LogOn(
       const PString & username,  ///< User withing mail system to use.
       const PString & password   ///< Password for user in mail system.
     );
@@ -159,9 +114,9 @@ class PMail : public PObject
     /**Attempt to log on to the mail system using the parameters provided.
 
        @return
-       TRUE if successfully logged on.
+       true if successfully logged on.
      */
-    BOOL LogOn(
+    PBoolean LogOn(
       const PString & username,  ///< User withing mail system to use.
       const PString & password,  ///< Password for user in mail system.
       const PString & service
@@ -174,16 +129,16 @@ class PMail : public PObject
     /**Log off from the mail system.
 
        @return
-       TRUE if successfully logged off.
+       true if successfully logged off.
      */
-    virtual BOOL LogOff();
+    virtual PBoolean LogOff();
 
     /**Determine if the mail session is active and logged into the mail system.
 
        @return
-       TRUE if logged into the mail system.
+       true if logged into the mail system.
      */
-    BOOL IsLoggedOn() const;
+    PBoolean IsLoggedOn() const;
   //@}
 
   /**@name Send message functions */
@@ -191,10 +146,10 @@ class PMail : public PObject
     /**Send a new simple mail message.
 
        @return
-       TRUE if the mail message was successfully queued. Note that this does
-       {\bf not} mean that it has been delivered.
+       true if the mail message was successfully queued. Note that this does
+       {\b not} mean that it has been delivered.
      */
-    BOOL SendNote(
+    PBoolean SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PString & subject,    ///< Subject name for the mail message.
       const char * body           ///< Text body of the mail message.
@@ -203,10 +158,10 @@ class PMail : public PObject
     /**Send a new simple mail message.
 
        @return
-       TRUE if the mail message was successfully queued. Note that this does
-       {\bf not} mean that it has been delivered.
+       true if the mail message was successfully queued. Note that this does
+       {\b not} mean that it has been delivered.
      */
-    BOOL SendNote(
+    PBoolean SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PString & subject,    ///< Subject name for the mail message.
       const char * body,          ///< Text body of the mail message.
@@ -217,10 +172,10 @@ class PMail : public PObject
     /**Send a new simple mail message.
 
        @return
-       TRUE if the mail message was successfully queued. Note that this does
-       {\bf not} mean that it has been delivered.
+       true if the mail message was successfully queued. Note that this does
+       {\b not} mean that it has been delivered.
      */
-    BOOL SendNote(
+    PBoolean SendNote(
       const PString & recipient,  ///< Name of recipient of the mail message.
       const PStringList & carbonCopies, ///< Name of CC recipients.
       const PStringList & blindCarbons, ///< Name of BCC recipients.
@@ -239,7 +194,7 @@ class PMail : public PObject
        An array of ID strings.
      */
     PStringArray GetMessageIDs(
-      BOOL unreadOnly = TRUE    ///< Only get the IDs for unread messages.
+      PBoolean unreadOnly = true    ///< Only get the IDs for unread messages.
     );
 
     /// Message header for each mail item.
@@ -257,69 +212,69 @@ class PMail : public PObject
     /**Get the header information for a message.
 
        @return
-       TRUE if header information was successfully obtained.
+       true if header information was successfully obtained.
      */
-    BOOL GetMessageHeader(
+    PBoolean GetMessageHeader(
       const PString & id,      ///< Identifier of message to get header.
       Header & hdrInfo         ///< Header info for the message.
     );
 
-    /**Get the body text for a message into the #body# string
+    /**Get the body text for a message into the <code>body</code> string
        parameter.
 
        Note that if the body text for the mail message is very large, the
-       function will return FALSE. To tell between an error getting the message
-       body and having a large message body the #GetErrorCode()# function
+       function will return false. To tell between an error getting the message
+       body and having a large message body the <code>GetErrorCode()</code> function
        must be used.
 
-       To get a large message body, the #GetMessageAttachments()# should
-       be used with the #includeBody# parameter set to TRUE so that
+       To get a large message body, the <code>GetMessageAttachments()</code> should
+       be used with the <code>includeBody</code> parameter set to true so that
        the message body is placed into a disk file.
 
        @return
-       TRUE if the body text was retrieved, FALSE if the body was too large or
+       true if the body text was retrieved, false if the body was too large or
        some other error occurred.
      */
-    BOOL GetMessageBody(
+    PBoolean GetMessageBody(
       const PString & id,      ///< Identifier of message to get body.
       PString & body,          ///< Body text of mail message.
-      BOOL markAsRead = FALSE  ///< Mark the message as read.
+      PBoolean markAsRead = false  ///< Mark the message as read.
     );
 
     /**Get all of the attachments for a message as disk files.
 
        @return
-       TRUE if attachments were successfully obtained.
+       true if attachments were successfully obtained.
      */
-    BOOL GetMessageAttachments(
+    PBoolean GetMessageAttachments(
       const PString & id,       ///< Identifier of message to get attachments.
       PStringArray & filenames, ///< File names for each attachment.
-      BOOL includeBody = FALSE, ///< Include the message body as first attachment
-      BOOL markAsRead = FALSE   ///< Mark the message as read
+      PBoolean includeBody = false, ///< Include the message body as first attachment
+      PBoolean markAsRead = false   ///< Mark the message as read
     );
 
     /**Mark the message as read.
 
        @return
-       TRUE if message was successfully marked as read.
+       true if message was successfully marked as read.
      */
-    BOOL MarkMessageRead(
+    PBoolean MarkMessageRead(
       const PString & id      ///< Identifier of message to get header.
     );
 
     /**Delete the message from the system.
 
        @return
-       TRUE if message was successfully deleted.
+       true if message was successfully deleted.
      */
-    BOOL DeleteMessage(
+    PBoolean DeleteMessage(
       const PString & id      ///< Identifier of message to get header.
     );
   //@}
 
   /**@name User look up functions */
   //@{
-    /// Result of a lookup operation with the #LookUp()# function.
+    /// Result of a lookup operation with the <code>LookUp()</code> function.
     enum LookUpResult {
       /// User name is unknown in mail system.
       UnknownUser,    
@@ -340,8 +295,8 @@ class PMail : public PObject
     LookUpResult LookUp(
       const PString & name,  ///< Name to look up.
       PString * fullName = NULL
-      /**String to receive full name of user passed in #name#. If
-         NULL then the full name is {\bf not} returned.
+      /**<String to receive full name of user passed in <code>name</code>. If
+         NULL then the full name is <b>not</b> returned.
        */
     );
   //@}
@@ -371,7 +326,7 @@ class PMail : public PObject
     // Common construction code.
 
     /// Flag indicating the session is active.
-    BOOL loggedOn;
+    PBoolean loggedOn;
 
 
 // Include platform dependent part of class
@@ -382,6 +337,8 @@ class PMail : public PObject
 #endif
 };
 
-#endif
+
+#endif // PTLIB_MAIL_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

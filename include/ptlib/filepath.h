@@ -26,84 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: filepath.h,v $
- * Revision 1.22  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.21  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.20  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.19  2002/11/19 10:32:26  robertj
- * Changed PFilePath so can be empty string, indicating illegal path.
- *
- * Revision 1.18  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.17  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.16  2001/02/13 04:39:08  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.15  1999/03/09 02:59:49  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.14  1999/02/16 08:07:11  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.13  1998/11/30 08:57:16  robertj
- * Fixed problem where if += is used on PFilePath, it no longer may be normalised.
- *
- * Revision 1.12  1998/09/23 06:20:37  robertj
- * Added open source copyright license.
- *
- * Revision 1.11  1998/02/16 00:14:57  robertj
- * Added functions to validate characters in a filename.
- *
- * Revision 1.10  1995/07/31 12:03:37  robertj
- * Added copy constructor and assignment operator for right types.
- *
- * Revision 1.9  1995/04/22 00:43:43  robertj
- * Added Move() function and changed semantics of Rename().
- * Changed all file name strings to PFilePath objects.
- *
- * Revision 1.8  1995/03/14 12:41:25  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.7  1994/12/21  11:52:57  robertj
- * Documentation and variable normalisation.
- *
- * Revision 1.6  1994/10/24  00:06:58  robertj
- * Changed PFilePath and PDirectory so descends from either PString or
- *     PCaselessString depending on the platform.
- *
- * Revision 1.5  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.4  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.3  1994/08/21  23:43:02  robertj
- * Changed parameter before variable argument list to NOT be a reference.
- *
- * Revision 1.2  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.1  1994/04/20  12:17:44  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PFILEPATH
-#define _PFILEPATH
+#ifndef PTLIB_FILEPATH_H
+#define PTLIB_FILEPATH_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -113,8 +42,8 @@
 #ifdef DOC_PLUS_PLUS
 /** Base string type for a file path.
     For platforms where filenames are case significant (eg Unix) this class
-    is a synonym for #PString#. If it is for a platform where case is not
-    significant (eg Win32, Mac) then this is a synonym for #PCaselessString#.
+    is a synonym for <code>PString</code>. If it is for a platform where case is not
+    significant (eg Win32, Mac) then this is a synonym for <code>PCaselessString</code>.
  */
 class PFilePathString : public PString { };
 #endif
@@ -130,8 +59,8 @@ class PFilePathString : public PString { };
    An empty string for a PFilePath indicates an illegal path.
 
    The ancestor class is dependent on the platform. For file systems that are
-   case sensitive, eg Unix, the ancestor is #PString#. For other
-   platforms, the ancestor class is #PCaselessString#.
+   case sensitive, eg Unix, the ancestor is <code>PString</code>. For other
+   platforms, the ancestor class is <code>PCaselessString</code>.
  */
 class PFilePath : public PFilePathString
 {
@@ -233,10 +162,10 @@ class PFilePath : public PFilePathString
     );
 
     /**Concatenate a C string to a path, modifiying that path. The
-       #cstr# parameter is typically a literal string, eg:
-\begin{verbatim}
+       <code>cstr</code> parameter is typically a literal string, eg:
+<pre><code>
         myStr += "fred";
-\end{verbatim}
+</code></pre>
 
        @return
        reference to string that was concatenated to.
@@ -245,11 +174,11 @@ class PFilePath : public PFilePathString
       const char * cstr  ///< C string to concatenate.
     );
 
-    /**Concatenate a single character to a path. The #ch#
+    /**Concatenate a single character to a path. The <code>ch</code>
        parameter is typically a literal, eg:
-\begin{verbatim}
+<pre><code>
         myStr += '!';
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
@@ -304,7 +233,7 @@ class PFilePath : public PFilePathString
 
     /**Get the actual directory entry name component of the full file
        specification. This may be identical to
-       #GetTitle() + GetType()# or simply #GetTitle()#
+       <code>GetTitle() + GetType()</code> or simply <code>GetTitle()</code>
        depending on the platform. eg for DOS file "C:\SRC\PWLIB\FRED.TXT" this
        would be "FRED.TXT".
 
@@ -314,13 +243,13 @@ class PFilePath : public PFilePathString
     PFilePathString GetFileName() const;
 
     /**Get the the directory that the file is contained in.  This may be 
-       identical to #GetVolume() + GetPath()# depending on the 
+       identical to <code>GetVolume() + GetPath()</code> depending on the 
        platform. eg for DOS file "C:\SRC\PWLIB\FRED.TXT" this would be 
        "C:\SRC\PWLIB\".
 
-       Note that for Unix platforms, this returns the {\bf physical} path
+       Note that for Unix platforms, this returns the {\b physical} path
        of the directory. That is all symlinks are resolved. Thus the directory
-       returned may not be the same as the value of #GetPath()#.
+       returned may not be the same as the value of <code>GetPath()</code>.
 
        @return
        Directory that the file is contained in.
@@ -340,19 +269,25 @@ class PFilePath : public PFilePathString
     /**Test if the character is valid in a filename.
 
        @return
-       TRUE if the character is valid for a filename.
+       true if the character is valid for a filename.
      */
-    static BOOL IsValid(
+    static PBoolean IsValid(
       char c    ///< Character to test for validity.
     );
 
     /**Test if all the characters are valid in a filename.
 
        @return
-       TRUE if the character is valid for a filename.
+       true if the character is valid for a filename.
      */
-    static BOOL IsValid(
+    static PBoolean IsValid(
       const PString & str   ///< String to test for validity.
+    );
+
+    /**Test if path is an absolute path or relative path.
+      */
+    static bool IsAbsolutePath(
+      const PString & path   ///< path name
     );
   //@}
 
@@ -369,6 +304,8 @@ class PFilePath : public PFilePathString
 #endif
 };
 
-#endif
+
+#endif // PTLIB_FILEPATH_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

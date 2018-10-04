@@ -19,7 +19,7 @@
  *
  * The Original Code is Portable Windows Library.
  *
- * The Initial Developer of the Original ALSA Code is 
+ * The Initial Developer of the Original ALSA Code is
  * Damien Sandras <dsandras@seconix.com>
  *
  * Portions are Copyright (C) 1993 Free Software Foundation, Inc.
@@ -27,136 +27,61 @@
  *
  * Contributor(s): /
  *
- * $Log: sound_alsa.cxx,v $
- * Revision 1.30  2006/05/17 18:40:55  dsandras
- * Do not explicitely free the cache as it could create some weird race conditions.
- *
- * Revision 1.29  2006/03/09 20:28:35  dsandras
- * Added fallback mechanism to find an existing mixer for playing/recording.
- *
- * Revision 1.28  2006/02/06 22:16:38  dsandras
- * Fixed leak.
- *
- * Revision 1.27  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.26  2004/12/05 20:45:06  dsandras
- * Added back some of the former code to fix probems with PWavFile.
- *
- * Revision 1.25  2004/12/02 01:19:48  dereksmithies
- * Ensure ALSA is initialised to a default of 2 stored buffers.
- * Improve reporting of errors.
- * Thanks to various people who have been patiently reporting errors.
- *
- * Revision 1.24  2004/11/07 20:23:00  dsandras
- * Removed erroneous update of lastReadCount in previous commit.
- *
- * Revision 1.23  2004/11/07 20:01:32  dsandras
- * Make sure lastWriteCount is updated.
- *
- * Revision 1.22  2004/11/06 16:31:12  dsandras
- * Removed dictionnary copy.
- *
- * Revision 1.21  2004/10/18 11:43:39  dsandras
- * Use Capture instead of Mic when changing the volume. Use the correct mixer when using the Default device.
- *
- * Revision 1.20  2004/10/14 19:30:16  dsandras
- * Removed DMIX and DSNOOP plugins and added support for DEFAULT as it is the correcti way to do things.
- *
- * Revision 1.19  2004/08/30 21:09:41  dsandras
- * Added DSNOOP plugin support.
- *
- * Revision 1.18  2004/05/14 10:15:26  dominance
- * Fixes direct opening of sound output devices. The list of devices does no longer return NULL in that case. 
- * Patch provided by Julien Puydt <julien.puydt@laposte.net>.
- *
- * Revision 1.17  2004/04/03 10:33:45  dsandras
- * Use PStringToOrdinal to store the detected devices, that fixes problems if there is a discontinuity in the 
- * succession of soundcard ID's. For example the user has card ID 1 and 3, but not 2.
- *
- * Revision 1.16  2004/03/13 12:36:14  dsandras
- * Added support for DMIX plugin output.
- *
- * Revision 1.15  2004/03/04 13:36:13  dsandras
- * Added check so that ALSA doesn't assert on broken installations.
- *
- * Revision 1.14  2004/02/12 09:07:57  csoutheren
- * Fixed typo in ALSA driver, thanks to Julien Puydt
- *
- * Revision 1.13  2004/01/04 20:59:30  dsandras
- * Use set_rate_near instead of set_rate.
- *
- * Revision 1.12  2003/12/28 15:10:35  dsandras
- * Updated to the new PCM API.
- *
- * Revision 1.11  2003/12/18 11:16:41  dominance
- * Removed the ALSA Abort completely upon Damien's request ;)
- *
- * Revision 1.10  2003/12/18 10:38:55  dominance
- * Removed ALSA Abort as it segfaults in various circumstances.
- * Fix proposed by Damien Sandras <dsandras@seconix.com>.
- *
- * Revision 1.9  2003/12/09 22:47:10  dsandras
- * Use less aggressive Abort.
- *
- * Revision 1.8  2003/12/03 21:48:21  dsandras
- * Better handling of buffer sizes. Removed unuseful code.
- *
- * Revision 1.7  2003/11/25 20:13:48  dsandras
- * Added #pragma.
- *
- * Revision 1.6  2003/11/25 09:58:01  dsandras
- * Removed Abort call from PlaySound ().
- *
- * Revision 1.5  2003/11/25 09:52:07  dsandras
- * Modified WaitForPlayCompletion so that it uses snd_pcm_drain instead of active waiting.
- *
- * Revision 1.4  2003/11/23 22:09:57  dsandras
- * Removed unuseful stuff and added implementation for functions permitting to play a file or a PSound.
- *
- * Revision 1.3  2003/11/14 05:28:47  csoutheren
- * Updated for new plugin code thanks to Damien and Snark
- *
+ * $Revision: 28821 $
+ * $Author: ededu $
+ * $Date: 2013-01-09 04:43:50 -0600 (Wed, 09 Jan 2013) $
  */
 
 #pragma implementation "sound_alsa.h"
 
 #include "sound_alsa.h"
-
+#include <ptclib/pwavfile.h>
 
 PCREATE_SOUND_PLUGIN(ALSA, PSoundChannelALSA)
 
 
 static PStringToOrdinal playback_devices;
 static PStringToOrdinal capture_devices;
+PMutex dictionaryMutex;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 PSoundChannelALSA::PSoundChannelALSA()
 {
-  PSoundChannelALSA::Construct();
+  card_nr = 0;
+  os_handle = NULL;
 }
 
 
-PSoundChannelALSA::PSoundChannelALSA (const PString &device,
+PSoundChannelALSA::PSoundChannelALSA(const PString & device,
                                           Directions dir,
                                             unsigned numChannels,
                                             unsigned sampleRate,
                                             unsigned bitsPerSample)
 {
-  Construct();
-  Open (device, dir, numChannels, sampleRate, bitsPerSample);
+  card_nr = 0;
+  os_handle = NULL;
+  Open(device, dir, numChannels, sampleRate, bitsPerSample);
 }
 
 
 void PSoundChannelALSA::Construct()
 {
-  frameBytes = 480;
-  storedPeriods = 2;
-  storedSize = storedPeriods * frameBytes;
+//  enum _snd_pcm_format val;
+//
+//#if PBYTE_ORDER == PLITTLE_ENDIAN
+//  val = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U8;
+//#else
+//  val = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_U8;
+//#endif
+//
+  frameBytes = 2;
+  m_bufferSize = 320; // 20 ms worth of 8kHz data
+  m_bufferCount = 2;  // double buffering
 
   card_nr = 0;
   os_handle = NULL;
+  isInitialised = false;
 }
 
 
@@ -166,419 +91,390 @@ PSoundChannelALSA::~PSoundChannelALSA()
 }
 
 
-void PSoundChannelALSA::UpdateDictionary (Directions dir)
+void PSoundChannelALSA::UpdateDictionary(Directions dir)
 {
-  int card = -1, dev = -1;
-  
-  snd_ctl_t *handle = NULL;
-  snd_ctl_card_info_t *info = NULL;
-  snd_pcm_info_t *pcminfo = NULL;
-  snd_pcm_stream_t stream;
+  PWaitAndSignal mutex(dictionaryMutex);
 
-  char *name = NULL;
-  char card_id [32];
+  PStringToOrdinal & devices = dir == Recorder ? capture_devices : playback_devices;
+  devices.RemoveAll();
 
-  if (dir == Recorder) {
+  int cardNum = -1;
+  if (snd_card_next(&cardNum) < 0 || cardNum < 0)
+    return;  // No sound card found
 
-    stream = SND_PCM_STREAM_CAPTURE;
-    capture_devices = PStringToOrdinal ();
-  }
-  else {
+  snd_ctl_card_info_t * info = NULL;
+  snd_ctl_card_info_alloca(&info);
 
-    stream = SND_PCM_STREAM_PLAYBACK;
-    playback_devices = PStringToOrdinal ();
-  }
+  snd_pcm_info_t * pcminfo = NULL;
+  snd_pcm_info_alloca(&pcminfo);
 
-  snd_ctl_card_info_alloca (&info);
-  snd_pcm_info_alloca (&pcminfo);
+  do {
+    char card_id[32];
+    snprintf(card_id, sizeof(card_id), "hw:%d", cardNum);
 
-  /* No sound card found */
-  if (snd_card_next (&card) < 0 || card < 0) {
+    snd_ctl_t * handle = NULL;
+    if (snd_ctl_open(&handle, card_id, 0) == 0) {
+      snd_ctl_card_info(handle, info);
 
-    return;
-  }
-
-  while (card >= 0) {
-
-    snprintf (card_id, 32, "hw:%d", card);
-    
-    if (snd_ctl_open (&handle, card_id, 0) == 0) {
-
-      snd_ctl_card_info (handle, info);
-
-      while (1) {
-
-        snd_ctl_pcm_next_device (handle, &dev);
-
+      int dev = -1;
+      for (;;) {
+        snd_ctl_pcm_next_device(handle, &dev);
         if (dev < 0)
           break;
 
-        snd_pcm_info_set_device (pcminfo, dev);
-        snd_pcm_info_set_subdevice (pcminfo, 0);
-        snd_pcm_info_set_stream (pcminfo, stream);
+        snd_pcm_info_set_device(pcminfo, dev);
+        snd_pcm_info_set_subdevice(pcminfo, 0);
+        snd_pcm_info_set_stream(pcminfo, dir == Recorder ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK);
 
-        if (snd_ctl_pcm_info (handle, pcminfo) >= 0) {
+        if (snd_ctl_pcm_info(handle, pcminfo) >= 0) {
+          char * rawName = NULL;
+          snd_card_get_name(cardNum, &rawName);
+          if (rawName != NULL) {
+            int disambiguator = 1;
+            PString uniqueName = rawName;
+            uniqueName = uniqueName + " [" + snd_pcm_info_get_name (pcminfo) + "]";
+            PString save = uniqueName;
+            while (devices.Contains(uniqueName)) {
+              uniqueName = save;
+              uniqueName.sprintf(" (%d)", disambiguator++);
+            }
 
-          snd_card_get_name (card, &name);
-          if (dir == Recorder) 
-            capture_devices.SetAt (name, card);
-          else 
-            playback_devices.SetAt (name, card);
-          free (name);
+            devices.SetAt(uniqueName, cardNum);
+            free(rawName);
+          }
         }
       }
+      snd_ctl_close(handle);
     }
 
-    snd_ctl_close(handle);
-    snd_card_next (&card);
-  }
+    snd_card_next(&cardNum);
+  } while (cardNum >= 0);
 }
 
 
-PStringArray PSoundChannelALSA::GetDeviceNames (Directions dir)
+PStringArray PSoundChannelALSA::GetDeviceNames(Directions dir)
 {
   PStringArray devices;
- 
-  UpdateDictionary (dir);
-  
+
+  UpdateDictionary(dir);
+
   if (dir == Recorder) {
-    
-    for (PINDEX j = 0 ; j < capture_devices.GetSize () ; j++) 
-      devices += capture_devices.GetKeyAt (j);
+    if (capture_devices.GetSize() > 0)
+      devices += "Default";
+    for (PINDEX i = 0 ; i < capture_devices.GetSize() ; i++)
+      devices += capture_devices.GetKeyAt(i);
   }
   else {
-
-    for (PINDEX j = 0 ; j < playback_devices.GetSize () ; j++) 
-      devices += playback_devices.GetKeyAt (j);
+    if (playback_devices.GetSize() > 0)
+      devices += "Default";
+    for (PINDEX i = 0 ; i < playback_devices.GetSize() ; i++)
+      devices += playback_devices.GetKeyAt(i);
   }
 
-
-  if (devices.GetSize () > 0)
-    devices += "Default";
-  
   return devices;
 }
 
 
 PString PSoundChannelALSA::GetDefaultDevice(Directions dir)
 {
-  PStringArray devicenames;
-  devicenames = PSoundChannelALSA::GetDeviceNames (dir);
-
+  PStringArray devicenames = PSoundChannelALSA::GetDeviceNames(dir);
+  if (devicenames.IsEmpty())
+    return PString::Empty();
   return devicenames[0];
 }
 
 
-BOOL PSoundChannelALSA::Open (const PString & _device,
-                                   Directions _dir,
-                                     unsigned _numChannels,
-                                     unsigned _sampleRate,
-                                     unsigned _bitsPerSample)
+PBoolean PSoundChannelALSA::Open(const PString & devName,
+                                      Directions dir,
+                                        unsigned numChannels,
+                                        unsigned sampleRate,
+                                        unsigned bitsPerSample)
 {
-  PString real_device_name;
-  POrdinalKey *i = NULL;
-  snd_pcm_stream_t stream;
-
   Close();
 
-  direction = _dir;
-  mNumChannels = _numChannels;
-  mSampleRate = _sampleRate;
-  mBitsPerSample = _bitsPerSample;
-  isInitialised = FALSE;
+  direction = dir;
+  mNumChannels = numChannels;
+  mSampleRate = sampleRate;
+  mBitsPerSample = bitsPerSample;
 
-  os_handle = NULL;
+  Construct();
 
-  if (_dir == Recorder)
-    stream = SND_PCM_STREAM_CAPTURE;
-  else
-    stream = SND_PCM_STREAM_PLAYBACK;
+  PWaitAndSignal m(device_mutex);
 
-  /* Open in NONBLOCK mode */
-  if (_device == "Default") {
-
+  PString real_device_name;
+  if (devName == "Default") {
     real_device_name = "default";
     card_nr = -2;
   }
   else {
+    PStringToOrdinal & devices = dir == Recorder ? capture_devices : playback_devices;
+    if (devices.IsEmpty())
+      UpdateDictionary(dir);
 
-  if ((_dir == Recorder && capture_devices.IsEmpty ())
-      || (_dir == Player && playback_devices.IsEmpty ()))
-    UpdateDictionary (_dir);
-
-    i = (_dir == Recorder) ? capture_devices.GetAt (_device) : playback_devices.GetAt (_device);
-
-    if (i) {
-
-      real_device_name = "plughw:" + PString (*i);
-      card_nr = *i;
+    POrdinalKey * index = devices.GetAt(devName);
+    if (index == NULL) {
+      PTRACE(1, "ALSA\tDevice not found");
+      return false;
     }
-    else {
 
-      PTRACE (1, "ALSA\tDevice not found");
-      return FALSE;
-    }
+    real_device_name = "plughw:" + PString(*index);
+    card_nr = *index;
   }
-    
-  if (snd_pcm_open (&os_handle, real_device_name, stream, SND_PCM_NONBLOCK) < 0) {
 
-    PTRACE (1, "ALSA\tOpen Failed");
-    return FALSE;
+  /* Open in NONBLOCK mode */
+  if (snd_pcm_open(&os_handle,
+                   real_device_name,
+                   dir == Recorder ? SND_PCM_STREAM_CAPTURE : SND_PCM_STREAM_PLAYBACK,
+                   SND_PCM_NONBLOCK) < 0) {
+    PTRACE(1, "ALSA\tOpen Failed");
+    return false;
   }
-  else 
-    snd_pcm_nonblock (os_handle, 0);
-   
+
+  snd_pcm_nonblock(os_handle, 0);
+
   /* save internal parameters */
-
   device = real_device_name;
 
+  Setup();
+  PTRACE(3, "ALSA\tDevice " << device << " Opened");
 
-  PTRACE (1, "ALSA\tDevice " << real_device_name << " Opened");
-
-  return TRUE;
+  return true;
 }
 
-
-BOOL PSoundChannelALSA::Setup(int nBytes)
+bool PSoundChannelALSA::SetHardwareParams()
 {
-  snd_pcm_hw_params_t *hw_params = NULL;
-  PStringStream msg;
+  PTRACE(4,"ALSA\tSetHardwareParams " << ((direction == Player) ? "Player" : "Recorder") << " channels=" << mNumChannels
+	   << " sample rate=" << mSampleRate);
 
-  int err = 0;
-  enum _snd_pcm_format val = SND_PCM_FORMAT_UNKNOWN;
-  BOOL no_error = TRUE;
+  if (!os_handle)
+    return SetErrorValues(NotOpen, EBADF);
+
+  enum _snd_pcm_format sndFormat;
+#if PBYTE_ORDER == PLITTLE_ENDIAN
+  sndFormat = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U8;
+#else
+  sndFormat = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_U8;
+#endif
+
+  frameBytes = (mNumChannels * (snd_pcm_format_width(sndFormat) / 8));
+
+  if (frameBytes == 0)
+    frameBytes = 2;
+  int err;
+
+  // Finally set the hardware parameters
+  for (unsigned retry = 0; retry < 100; ++retry) {
+    snd_pcm_hw_params_t *hw_params = NULL;
+    snd_pcm_hw_params_alloca(&hw_params);
+
+    if ((err = snd_pcm_hw_params_any(os_handle, hw_params)) < 0) {
+      PTRACE(1, "ALSA\tCannot initialize hardware parameter structure: " << snd_strerror(err));
+      return false;
+    }
 
 
+    if ((err = snd_pcm_hw_params_set_access(os_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+      PTRACE(1, "ALSA\tCannot set access type: " <<  snd_strerror(err));
+      return false;
+    }
+
+
+    if ((err = snd_pcm_hw_params_set_format(os_handle, hw_params, sndFormat)) < 0) {
+      PTRACE(1, "ALSA\tCannot set sample format: " << snd_strerror(err));
+      return false;
+    }
+
+
+    if ((err = snd_pcm_hw_params_set_channels(os_handle, hw_params, mNumChannels)) < 0) {
+      PTRACE(1, "ALSA\tCannot set channel count: " << snd_strerror(err));
+      return false;
+    }
+
+    if ((err = snd_pcm_hw_params_set_rate_near(os_handle, hw_params, &mSampleRate, NULL)) < 0) {
+      PTRACE(1, "ALSA\tCannot set sample rate: " << snd_strerror(err));
+      return false;
+    }
+
+    int dir = 0;
+    int totalBufferSize = m_bufferSize*m_bufferCount;
+    snd_pcm_uframes_t desiredPeriodSize = m_bufferSize/frameBytes;
+
+    /* use of get function (ie. snd_pcm_hw_params_get_period_size) and the check as done before was, in my opinion, was pretty unuseful
+       because actually the set function (ie.snd_pcm_hw_params_set_period_size_near) returns the real set value
+       in the argument passed (ie. desiredPeriodSize) */
+
+    if ((err = snd_pcm_hw_params_set_period_size_near(os_handle, hw_params, &desiredPeriodSize, &dir)) < 0) {
+       PTRACE(1, "ALSA\tCannot set period size: " << snd_strerror(err));
+    }
+    else {
+       PTRACE(4, "ALSA\tSuccessfully set period size to " << desiredPeriodSize);
+    }
+
+    /* i experimented (3 different sound cards) that is better to rounds value to the nearest integer to avoid buffer underrun/overrun */
+    unsigned desiredPeriods = (unsigned)(((float)totalBufferSize / (float)(desiredPeriodSize*frameBytes))+0.5);
+
+    if (desiredPeriods < 2) desiredPeriods = 2;
+
+    if ((err = (int) snd_pcm_hw_params_set_periods_near(os_handle, hw_params, &desiredPeriods, &dir)) < 0) {
+      PTRACE(1, "ALSA\tCannot set periods to: " << snd_strerror(err));
+    }
+    else {
+      PTRACE(4, "ALSA\tSuccessfully set periods to " << desiredPeriods);
+    }
+
+    if ((err = snd_pcm_hw_params(os_handle, hw_params)) >= 0) {
+      PTRACE(4, "ALSA\tparameters set ok");
+      isInitialised = true;
+      return true;
+    }
+
+    if (err != -EAGAIN && err != -EBADFD)
+      break;
+
+    PTRACE(4, "ALSA\tRetrying after temporary error: " << snd_strerror(err));
+    usleep(1000);
+  }
+
+  PTRACE(1, "ALSA\tCannot set parameters: " << snd_strerror(err));
+  return false;
+}
+
+PBoolean PSoundChannelALSA::Setup()
+{
   if (os_handle == NULL) {
-
     PTRACE(6, "ALSA\tSkipping setup of " << device << " as not open");
-    return FALSE;
+    return false;
   }
 
   if (isInitialised) {
-
     PTRACE(6, "ALSA\tSkipping setup of " << device << " as instance already initialised");
-    return TRUE;
+    return true;
   }
 
-
-#if PBYTE_ORDER == PLITTLE_ENDIAN
-  val = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_LE : SND_PCM_FORMAT_U8;
-#else
-  val = (mBitsPerSample == 16) ? SND_PCM_FORMAT_S16_BE : SND_PCM_FORMAT_U8;
-#endif
-
-  frameBytes = (mNumChannels * (snd_pcm_format_width (val) / 8));
-
-  snd_pcm_hw_params_alloca (&hw_params);
-
-  if ((err = snd_pcm_hw_params_any (os_handle, hw_params)) < 0) {
-    msg << "Cannot initialize hardware parameter structure " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-    no_error = FALSE;
-  }
-
-
-  if ((err = snd_pcm_hw_params_set_access (os_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-    msg << "Cannot set access type " <<  snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-    no_error = FALSE;
-  }
-
-
-  if ((err = snd_pcm_hw_params_set_format (os_handle, hw_params, val)) < 0) {
-    msg << "Cannot set sample format " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    no_error = FALSE;
-  }
-
-
-  if ((err = snd_pcm_hw_params_set_channels (os_handle, hw_params, mNumChannels)) < 0) {
-    msg << "Cannot set channel count " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-    no_error = FALSE;
-  }
-
-  if ((err = snd_pcm_hw_params_set_rate_near (os_handle, hw_params, &mSampleRate, NULL)) < 0) {
-    msg << "Cannot set sample rate " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    no_error = FALSE;
-  }
-  
-  snd_pcm_uframes_t period_size = storedSize / (frameBytes ? frameBytes : 2);
-  if ((err = snd_pcm_hw_params_set_period_size_near (os_handle, hw_params, &period_size, 0)) < 0) { 
-    msg << "Cannot set period size " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg); 
-    cerr << msg << endl;
-  }
-  
-  if ((err = (int) snd_pcm_hw_params_set_periods_near (os_handle, hw_params, (unsigned int *) &storedPeriods, 0)) < 0) {
-    msg << "Cannot set periods to " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg); 
-    cerr << msg << endl;
-  }
-
- /*****The buffer time is TWICE  the period time.
-       bufferTime is the time to play the stored data.
-       periodTime is the duration played in micro seconds.
-       For GSM, period time is 20 milliseconds.
-       For most other codecs, period time is 30 milliseconds.
-  ******/
-  unsigned int period_time = nBytes * 1000 * 1000 / (2 * mSampleRate);
-  unsigned int buffer_time = period_time * storedPeriods;
-  PTRACE(3, "Alsa\tBuffer time is " << buffer_time);
-  PTRACE(3, "Alsa\tPeriod time is " << period_time);
-
-
-  // Ignore errors here 
-  if ((err = snd_pcm_hw_params_set_buffer_time_near (os_handle, hw_params, &buffer_time, NULL)) < 0) {
-    msg << "Cannot set buffer_time to  " << (buffer_time / 1000) << " ms " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-  }
-
-  if ((err = snd_pcm_hw_params_set_period_time_near (os_handle, hw_params, &period_time, 0)) < 0) {
-    msg << "Cannot set period_time to " << (period_time / 1000) << " ms   " << snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-  }
-        
-  if ((err = snd_pcm_hw_params (os_handle, hw_params)) < 0) {
-    msg << "Cannot set parameters " <<      snd_strerror (err);
-    PTRACE (1, "ALSA\t" << msg);
-    cerr << msg << endl;
-    no_error = FALSE;
-  }
-  
-  isInitialised = TRUE;
-
-  return no_error;
+  return SetHardwareParams();
 }
 
 
-BOOL PSoundChannelALSA::Close()
+PBoolean PSoundChannelALSA::Close()
 {
   PWaitAndSignal m(device_mutex);
 
   /* if the channel isn't open, do nothing */
   if (!os_handle)
-    return FALSE;
+    return false;
 
-  snd_pcm_close (os_handle);
+  PTRACE(3, "ALSA\tClosing " << device);
+  snd_pcm_close(os_handle);
   os_handle = NULL;
+  isInitialised = false;
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::Write (const void *buf, PINDEX len)
+PBoolean PSoundChannelALSA::Write(const void *buf, PINDEX len)
 {
-  long r = 0;
-  char *buf2 = (char *) buf;
-  int pos = 0, max_try = 0;
- 
   lastWriteCount = 0;
+
   PWaitAndSignal m(device_mutex);
 
-  if (!isInitialised && !Setup(len) || !len || !os_handle)
-    return FALSE;
+  if ((!isInitialised && !Setup()) || !len || !os_handle)
+    return false;
 
+  int pos = 0, max_try = 0;
+  const char * buf2 = (const char *)buf;
   do {
+    /* the number of frames to read is the buffer length
+    divided by the size of one frame */
+    long r = snd_pcm_writei(os_handle, (char *) &buf2 [pos], len / frameBytes);
 
-      
-    /* the number of frames to read is the buffer length 
-       divided by the size of one frame */
-    r = snd_pcm_writei (os_handle, (char *) &buf2 [pos], len / frameBytes);
-
-    if (r > 0) {
+    if (r >= 0) {
       pos += r * frameBytes;
       len -= r * frameBytes;
       lastWriteCount += r * frameBytes;
     }
     else {
+      PTRACE(5, "ALSA\tBuffer underrun detected. Recovering... ");
       if (r == -EPIPE) {    /* under-run */
-        r = snd_pcm_prepare (os_handle);
-        if (r < 0)
-          PTRACE (1, "ALSA\tCould not prepare device: " << snd_strerror (r));
-      } else if (r == -ESTRPIPE) {
-
-        while ((r = snd_pcm_resume (os_handle)) == -EAGAIN)
+        r = snd_pcm_prepare(os_handle);
+        PTRACE_IF(1, r < 0, "ALSA\tCould not prepare device: " << snd_strerror(r));
+      }
+      else if (r == -ESTRPIPE) {
+        PTRACE(5, "ALSA\tOutput suspended. Resuming... ");
+        while ((r = snd_pcm_resume(os_handle)) == -EAGAIN)
           sleep(1);       /* wait until the suspend flag is released */
-      
-        if (r < 0) 
-          snd_pcm_prepare (os_handle);
+
+        if (r < 0) {
+          r = snd_pcm_prepare(os_handle);
+          PTRACE_IF(1, r < 0, "ALSA\tCould not prepare device: " << snd_strerror(r));
+        }
+      }
+      else {
+        PTRACE(1, "ALSA\tCould not write " << max_try << " " << len << " " << snd_strerror(r));
       }
 
-      PTRACE (1, "ALSA\tCould not write " << max_try << " " << len << " " << r);
       max_try++;
-    }  
-  } while (len > 0 && max_try < 5);
+      if (max_try > 5)
+        return false;
+    }
+  } while (len > 0);
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::Read (void * buf, PINDEX len)
+PBoolean PSoundChannelALSA::Read(void * buf, PINDEX len)
 {
-  long r = 0;
-
-  char *buf2 = (char *) buf;
-  int pos = 0, max_try = 0;
-
   lastReadCount = 0;
+
   PWaitAndSignal m(device_mutex);
 
-  if (!isInitialised && !Setup(len) || !len || !os_handle)
-    return FALSE;
+  if ((!isInitialised && !Setup()) || !len || !os_handle)
+    return false;
 
-  memset ((char *) buf, 0, len);
-  
+  memset((char *) buf, 0, len);
+
+  int pos = 0, max_try = 0;
+  char * buf2 = (char *)buf;
+
   do {
+    /* the number of frames to read is the buffer length
+    divided by the size of one frame */
+    long r = snd_pcm_readi(os_handle, &buf2[pos],len/frameBytes);
 
-    /* the number of frames to read is the buffer length 
-       divided by the size of one frame */
-    r = snd_pcm_readi (os_handle, (char *) &buf2 [pos], len / frameBytes);
-    if (r > 0) {
+    if (r >= 0) {
       pos += r * frameBytes;
       len -= r * frameBytes;
       lastReadCount += r * frameBytes;
     }
     else {
       if (r == -EPIPE) {    /* under-run */
-        snd_pcm_prepare (os_handle);
-      } 
+	  snd_pcm_prepare(os_handle);
+      }
       else if (r == -ESTRPIPE) {
-        while ((r = snd_pcm_resume (os_handle)) == -EAGAIN)
+        while ((r = snd_pcm_resume(os_handle)) == -EAGAIN)
           sleep(1);       /* wait until the suspend flag is released */
-        if (r < 0) 
-          snd_pcm_prepare (os_handle);
+
+        if (r < 0)
+          snd_pcm_prepare(os_handle);
       }
 
-      PTRACE (1, "ALSA\tCould not read");
+      PTRACE(1, "ALSA\tCould not read " << max_try << " " << len << " " << snd_strerror(r));
+
       max_try++;
+
+      if (max_try > 5)
+        return false;
     }
-  } while (len > 0 && max_try < 5);
+  } while (len > 0);
 
- 
-  if (len != 0) {
-
-    memset ((char *) &buf2 [pos], 0, len);
-    lastReadCount += len;
-
-    PTRACE (1, "ALSA\tRead Error, filling with zeros");
-  }
-  
-  
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::SetFormat (unsigned numChannels,
-                                   unsigned sampleRate,
-                                   unsigned bitsPerSample)
+PBoolean PSoundChannelALSA::SetFormat(unsigned numChannels,
+                                      unsigned sampleRate,
+                                      unsigned bitsPerSample)
 {
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
@@ -590,15 +486,15 @@ BOOL PSoundChannelALSA::SetFormat (unsigned numChannels,
   mNumChannels   = numChannels;
   mSampleRate    = sampleRate;
   mBitsPerSample = bitsPerSample;
- 
-  /* mark this channel as uninitialised */
-  isInitialised = FALSE;
 
-  return TRUE;
+  /* mark this channel as uninitialised */
+  isInitialised = false;
+
+  return true;
 }
 
 
-unsigned PSoundChannelALSA::GetChannels()   const
+unsigned PSoundChannelALSA::GetChannels() const
 {
   return mNumChannels;
 }
@@ -616,60 +512,67 @@ unsigned PSoundChannelALSA::GetSampleSize() const
 }
 
 
-BOOL PSoundChannelALSA::SetBuffers (PINDEX size, PINDEX count)
+PBoolean PSoundChannelALSA::SetBuffers(PINDEX size, PINDEX count)
 {
-  storedPeriods = count;
+  PTRACE(4,"ALSA\tSetBuffers direction=" <<
+	         ((direction == Player) ? "Player" : "Recorder") << " size=" << size << " count=" << count);
 
-  storedSize = size;
+  m_bufferSize = size;
+  m_bufferCount = count;
 
-  return TRUE;
+  /* set actually new parameters */
+  return SetHardwareParams();
 }
 
 
-BOOL PSoundChannelALSA::GetBuffers(PINDEX & size, PINDEX & count)
+PBoolean PSoundChannelALSA::GetBuffers(PINDEX & size, PINDEX & count)
 {
-  size = storedSize;
-  count = storedPeriods;
-  
-  return FALSE;
+  size = m_bufferSize;
+  count = m_bufferCount;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::PlaySound(const PSound & sound, BOOL wait)
+PBoolean PSoundChannelALSA::PlaySound(const PSound & sound, PBoolean wait)
 {
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
 
   if (!Write((const BYTE *)sound, sound.GetSize()))
-    return FALSE;
+    return false;
 
   if (wait)
     return WaitForPlayCompletion();
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::PlayFile(const PFilePath & filename, BOOL wait)
+PBoolean PSoundChannelALSA::PlayFile(const PFilePath & filename, PBoolean wait)
 {
   BYTE buffer [512];
-  
+  PTRACE(1, "ALSA\tPlayFile " << filename);
+
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
 
-  PFile file (filename, PFile::ReadOnly);
+  /* use PWAVFile instead of PFile -> skips wav header bytes */
+
+  PWAVFile file(filename, PFile::ReadOnly,PWAVFile::fmt_NotKnown);
+  snd_pcm_prepare(os_handle);
 
   if (!file.IsOpen())
-    return FALSE;
+    return false;
 
   for (;;) {
-
-    if (!file.Read (buffer, 512))
+    if (!file.Read(buffer, 512))
       break;
 
     PINDEX len = file.GetLastReadCount();
+
     if (len == 0)
       break;
+
     if (!Write(buffer, len))
       break;
   }
@@ -679,110 +582,110 @@ BOOL PSoundChannelALSA::PlayFile(const PFilePath & filename, BOOL wait)
   if (wait)
     return WaitForPlayCompletion();
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::HasPlayCompleted()
+PBoolean PSoundChannelALSA::HasPlayCompleted()
 {
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
 
-  return (snd_pcm_state (os_handle) != SND_PCM_STATE_RUNNING);
+  return (snd_pcm_state(os_handle) != SND_PCM_STATE_RUNNING);
 }
 
 
-BOOL PSoundChannelALSA::WaitForPlayCompletion()
+PBoolean PSoundChannelALSA::WaitForPlayCompletion()
 {
   if (!os_handle)
     return SetErrorValues(NotOpen, EBADF);
 
-  snd_pcm_drain (os_handle);
+  snd_pcm_drain(os_handle);
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::RecordSound(PSound & sound)
+PBoolean PSoundChannelALSA::RecordSound(PSound & sound)
 {
-  return FALSE;
+  return false;
 }
 
 
-BOOL PSoundChannelALSA::RecordFile(const PFilePath & filename)
+PBoolean PSoundChannelALSA::RecordFile(const PFilePath & filename)
 {
-  return FALSE;
+  return false;
 }
 
 
-BOOL PSoundChannelALSA::StartRecording()
+PBoolean PSoundChannelALSA::StartRecording()
 {
-  return FALSE;
+  return false;
 }
 
 
-BOOL PSoundChannelALSA::IsRecordBufferFull()
+PBoolean PSoundChannelALSA::IsRecordBufferFull()
 {
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::AreAllRecordBuffersFull()
+PBoolean PSoundChannelALSA::AreAllRecordBuffersFull()
 {
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::WaitForRecordBufferFull()
+PBoolean PSoundChannelALSA::WaitForRecordBufferFull()
 {
-  return TRUE;
+  return true;
 }
 
 
-BOOL PSoundChannelALSA::WaitForAllRecordBuffersFull()
+PBoolean PSoundChannelALSA::WaitForAllRecordBuffersFull()
 {
-  return FALSE;
+  return false;
 }
 
 
-BOOL PSoundChannelALSA::Abort()
+PBoolean PSoundChannelALSA::Abort()
 {
   int r = 0;
 
   if (!os_handle)
-    return FALSE;
+    return false;
 
-  if ((r = snd_pcm_drain (os_handle)) < 0) {
-    PTRACE (1, "ALSA\tCannot abort" << snd_strerror (r));
-    return FALSE;
+  PTRACE(4, "ALSA\tAborting " << device);
+  if ((r = snd_pcm_drain(os_handle)) < 0) {
+    PTRACE(1, "ALSA\tCannot abort" << snd_strerror(r));
+    return false;
   }
-  else
-    return TRUE;
+
+  return true;
 }
 
 
 
-BOOL PSoundChannelALSA::SetVolume (unsigned newVal)
+PBoolean PSoundChannelALSA::SetVolume(unsigned newVal)
 {
   unsigned i = 0;
-
-  return Volume (TRUE, newVal, i);
+  return Volume(true, newVal, i);
 }
 
 
-BOOL  PSoundChannelALSA::GetVolume(unsigned &devVol)
+PBoolean  PSoundChannelALSA::GetVolume(unsigned &devVol)
 {
-  return Volume (FALSE, 0, devVol);
+  return Volume(false, 0, devVol);
 }
-  
 
-BOOL PSoundChannelALSA::IsOpen () const
+
+PBoolean PSoundChannelALSA::IsOpen() const
 {
-  return (os_handle != NULL);
+  return os_handle != NULL;
 }
 
 
-BOOL PSoundChannelALSA::Volume (BOOL set, unsigned set_vol, unsigned &get_vol)
+PBoolean PSoundChannelALSA::Volume(PBoolean set, unsigned set_vol, unsigned &get_vol)
 {
   int err = 0;
   snd_mixer_t *handle;
@@ -798,86 +701,83 @@ BOOL PSoundChannelALSA::Volume (BOOL set, unsigned set_vol, unsigned &get_vol)
   int i = 0;
 
   if (!os_handle)
-    return FALSE;
+    return false;
 
   if (card_nr == -2)
     card_name = "default";
   else
-    card_name = "hw:" + PString (card_nr);
+    card_name = "hw:" + PString(card_nr);
 
   //allocate simple id
-  snd_mixer_selem_id_alloca (&sid);
+  snd_mixer_selem_id_alloca(&sid);
 
   //sets simple-mixer index and name
-  snd_mixer_selem_id_set_index (sid, 0);
+  snd_mixer_selem_id_set_index(sid, 0);
 
-  if ((err = snd_mixer_open (&handle, 0)) < 0) {
-    PTRACE (1, "alsa-control: mixer open error: " << snd_strerror (err));
-    return FALSE;
+  if ((err = snd_mixer_open(&handle, 0)) < 0) {
+    PTRACE(1, "ALSA\tMixer open error: " << snd_strerror(err));
+    return false;
   }
 
-  if ((err = snd_mixer_attach (handle, card_name)) < 0) {
-    PTRACE (1, "alsa-control: mixer attach " << card_name << " error: " << snd_strerror(err));
+  if ((err = snd_mixer_attach(handle, card_name)) < 0) {
+    PTRACE(1, "ALSA\tMixer attach " << card_name << " error: " << snd_strerror(err));
     snd_mixer_close(handle);
-    return FALSE;
+    return false;
   }
 
-  if ((err = snd_mixer_selem_register (handle, NULL, NULL)) < 0) {
-    PTRACE (1, "alsa-control: mixer register error: " << snd_strerror(err));
+  if ((err = snd_mixer_selem_register(handle, NULL, NULL)) < 0) {
+    PTRACE(1, "ALSA\tMixer register error: " << snd_strerror(err));
     snd_mixer_close(handle);
-    return FALSE;
+    return false;
   }
 
   err = snd_mixer_load(handle);
   if (err < 0) {
-    PTRACE (1, "alsa-control: mixer load error: " << snd_strerror(err));
+    PTRACE(1, "ALSA\tMixer load error: " << snd_strerror(err));
     snd_mixer_close(handle);
-    return FALSE;
+    return false;
   }
 
   do {
-    snd_mixer_selem_id_set_name (sid, (direction == Player)?play_mix_name[i]:rec_mix_name[i]);
-    elem = snd_mixer_find_selem (handle, sid);
+    snd_mixer_selem_id_set_name(sid, (direction == Player)?play_mix_name[i]:rec_mix_name[i]);
+    elem = snd_mixer_find_selem(handle, sid);
     i++;
   } while (!elem && ((direction == Player && play_mix_name[i] != NULL) || (direction == Recorder && rec_mix_name[i] != NULL)));
 
   if (!elem) {
-    PTRACE (1, "alsa-control: unable to find simple control.");
+    PTRACE(1, "ALSA\tUnable to find simple control.");
     snd_mixer_close(handle);
-    return FALSE;
+    return false;
   }
 
   if (set) {
     if (direction == Player) {
-      
-      snd_mixer_selem_get_playback_volume_range (elem, &pmin, &pmax);
+      snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
       vol = (set_vol * (pmax?pmax:31)) / 100;
-      snd_mixer_selem_set_playback_volume_all (elem, vol);
+      snd_mixer_selem_set_playback_volume_all(elem, vol);
     }
     else {
-      
-      snd_mixer_selem_get_capture_volume_range (elem, &pmin, &pmax);
+      snd_mixer_selem_get_capture_volume_range(elem, &pmin, &pmax);
       vol = (set_vol * (pmax?pmax:31)) / 100;
-      snd_mixer_selem_set_capture_volume_all (elem, vol);
+      snd_mixer_selem_set_capture_volume_all(elem, vol);
     }
-    PTRACE (4, "Set volume to " << vol);
+    PTRACE(4, "ALSA\tSet volume to " << vol);
   }
   else {
-
     if (direction == Player) {
-      snd_mixer_selem_get_playback_volume_range (elem, &pmin, &pmax);
-      snd_mixer_selem_get_playback_volume (elem, SND_MIXER_SCHN_FRONT_LEFT, &vol);
+      snd_mixer_selem_get_playback_volume_range(elem, &pmin, &pmax);
+      snd_mixer_selem_get_playback_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, &vol);
     }
     else {
-      snd_mixer_selem_get_capture_volume_range (elem, &pmin, &pmax);
-      snd_mixer_selem_get_capture_volume (elem, SND_MIXER_SCHN_FRONT_LEFT, &vol); 
+      snd_mixer_selem_get_capture_volume_range(elem, &pmin, &pmax);
+      snd_mixer_selem_get_capture_volume(elem, SND_MIXER_SCHN_FRONT_LEFT, &vol);
     }
-    get_vol = (vol * 100) / (pmax?pmax:31);
 
-    PTRACE (4, "Got volume " << vol);
+    get_vol = (vol * 100) / (pmax?pmax:31);
+    PTRACE(4, "ALSA\tGot volume " << vol);
   }
 
   snd_mixer_close(handle);
 
-  return TRUE;
+  return true;
 }

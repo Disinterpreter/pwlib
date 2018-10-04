@@ -23,24 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pils.h,v $
- * Revision 1.4  2004/02/20 16:27:52  ykiryanov
- * if'd LDAP code to enable non-LDAP builds
- *
- * Revision 1.3  2003/04/11 00:07:46  robertj
- * More for Microsoft IP address specification wierdness (registration side).
- *
- * Revision 1.2  2003/04/07 13:05:09  robertj
- * Workaround for Microsoft IP address specification wierdness.
- *
- * Revision 1.1  2003/03/31 03:35:20  robertj
- * Major addition of LDAP functionality.
- * Added ILS specialisation of LDAP.
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef _PILS_H
-#define _PILS_H
+#ifndef PTLIB_PILS_H
+#define PTLIB_PILS_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -107,9 +96,9 @@ class PILSSession : public PLDAPSession
        PLDAP_ATTR_INIT(RTPerson, PString,     sappid,       PProcess::Current().GetName()); // Must be non-empty
        PLDAP_ATTR_INIT(RTPerson, PString,     sappguid,     "none"); // Must be non-empty
        PLDAP_ATTR_SIMP(RTPerson, PStringList, smimetype);
-       PLDAP_ATTR_INIT(RTPerson, BOOL,        ilsa32833566, 0); // 1=audio capable
-       PLDAP_ATTR_INIT(RTPerson, BOOL,        ilsa32964638, 0); // 1=video capable
-       PLDAP_ATTR_INIT(RTPerson, BOOL,        ilsa26214430, 0); // 1=in a call
+       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa32833566, 0); // 1=audio capable
+       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa32964638, 0); // 1=video capable
+       PLDAP_ATTR_INIT(RTPerson, PBoolean,        ilsa26214430, 0); // 1=in a call
        PLDAP_ATTR_INIT(RTPerson, unsigned,    ilsa26279966, 0); // unknown
        PLDAP_ATTR_INIT(RTPerson, unsigned,    ilsa39321630, 0); // 1 personal; 2 business user; 4 adults-only
        PLDAP_ATTR_INIT(RTPerson, time_t,      timestamp,    PTime().GetTimeInSeconds());
@@ -119,19 +108,19 @@ class PILSSession : public PLDAPSession
 
     PLDAP_STRUCT_END();
 
-    BOOL AddPerson(
+    PBoolean AddPerson(
       const RTPerson & person
     );
 
-    BOOL ModifyPerson(
+    PBoolean ModifyPerson(
       const RTPerson & person
     );
 
-    BOOL DeletePerson(
+    PBoolean DeletePerson(
       const RTPerson & person
     );
 
-    BOOL SearchPerson(
+    PBoolean SearchPerson(
       const PString & canonicalName,
       RTPerson & person
     );
@@ -143,7 +132,7 @@ class PILSSession : public PLDAPSession
 
 #endif // P_LDAP
 
-#endif // _PILS_H
+#endif // PTLIB_PILS_H
 
 
 // End of file ////////////////////////////////////////////////////////////////

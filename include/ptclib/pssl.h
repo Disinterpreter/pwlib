@@ -23,71 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pssl.h,v $
- * Revision 1.20  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.19  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.18  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.17  2002/03/28 07:26:36  robertj
- * Added Diffie-Hellman parameters wrapper class.
- *
- * Revision 1.16  2001/12/13 09:15:20  robertj
- * Added function to get private key as ray DER binary data or as base64 string.
- *
- * Revision 1.15  2001/12/06 04:06:03  robertj
- * Removed "Win32 SSL xxx" build configurations in favour of system
- *   environment variables to select optional libraries.
- *
- * Revision 1.14  2001/10/31 01:30:40  robertj
- * Added enhancements for saving/loading/creating certificates and keys.
- *
- * Revision 1.13  2001/09/10 02:51:22  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.12  2001/06/01 00:53:59  robertj
- * Added certificate constructor that takes a PBYTEArray
- *
- * Revision 1.11  2001/05/16 06:02:05  craigs
- * Changed to allow detection of non-SSL connection to SecureHTTPServiceProcess
- *
- * Revision 1.10  2000/11/14 08:33:16  robertj
- * Added certificate and private key classes.
- *
- * Revision 1.9  2000/08/25 08:11:02  robertj
- * Fixed OpenSSL support so can operate as a server channel.
- *
- * Revision 1.8  2000/08/04 12:52:18  robertj
- * SSL changes, added error functions, removed need to have openssl include directory in app.
- *
- * Revision 1.7  2000/01/10 02:23:18  craigs
- * Update for new OpenSSL
- *
- * Revision 1.6  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.5  1998/12/04 13:01:51  craigs
- * Changed for SSLeay 0.9
- *
- * Revision 1.4  1998/09/23 06:19:50  robertj
- * Added open source copyright license.
- *
- * Revision 1.3  1997/05/04 02:49:52  craigs
- * Added support for client and server certificates
- *
- * Revision 1.1  1996/11/15 07:37:48  craigs
- * Initial revision
- *
+ * $Revision: 25519 $
+ * $Author: rjongbloed $
+ * $Date: 2011-04-06 03:26:18 -0500 (Wed, 06 Apr 2011) $
  */
 
-#ifndef _PSSL_H
-#define _PSSL_H
+#ifndef PTLIB_PSSL_H
+#define PTLIB_PSSL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -174,7 +116,7 @@ class PSSLPrivateKey : public PObject
 
     /**Create a new private key.
      */
-    BOOL Create(
+    PBoolean Create(
       unsigned modulus,   ///< Number of bits
       void (*callback)(int,int,void *) = NULL,  ///< Progress callback function
       void *cb_arg = NULL                       ///< Argument passed to callback
@@ -193,7 +135,7 @@ class PSSLPrivateKey : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    BOOL Load(
+    PBoolean Load(
       const PFilePath & keyFile,  ///< Private key file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to read
     );
@@ -203,9 +145,9 @@ class PSSLPrivateKey : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    BOOL Save(
+    PBoolean Save(
       const PFilePath & keyFile,  ///< Private key file
-      BOOL append = FALSE,        ///< Append to file
+      PBoolean append = false,        ///< Append to file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to write
     );
 
@@ -284,7 +226,7 @@ class PSSLCertificate : public PObject
           "/OU=Certification Services Division/CN=Thawte Server CA"
           "/Email=server-certs@thawte.com"
      */
-    BOOL CreateRoot(
+    PBoolean CreateRoot(
       const PString & subject,    ///< Subject name for certificate
       const PSSLPrivateKey & key  ///< Key to sign certificate with
     );
@@ -302,7 +244,7 @@ class PSSLCertificate : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    BOOL Load(
+    PBoolean Load(
       const PFilePath & certFile, ///< Certificate file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to read
     );
@@ -312,9 +254,9 @@ class PSSLCertificate : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    BOOL Save(
+    PBoolean Save(
       const PFilePath & keyFile,  ///< Certificate key file
-      BOOL append = FALSE,        ///< Append to file
+      PBoolean append = false,        ///< Append to file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to write
     );
 
@@ -380,7 +322,7 @@ class PSSLDiffieHellman : public PObject
        PSSLFileTypeDEFAULT it will be determined from the file extension,
        ".pem" is a text file, anything else eg ".der" is a binary ASN1 file.
       */
-    BOOL Load(
+    PBoolean Load(
       const PFilePath & dhFile, ///< Diffie-Hellman parameters file
       PSSLFileTypes fileType = PSSLFileTypeDEFAULT  ///< Type of file to read
     );
@@ -397,14 +339,26 @@ class PSSLDiffieHellman : public PObject
   */
 class PSSLContext {
   public:
+    enum Method {
+      SSLv23,
+      SSLv3,
+      TLSv1
+    };
+
     /**Create a new context for SSL channels.
        An optional session ID may be provided in the context. This is used
        to identify sessions across multiple channels in this context. The
        session ID is a completely arbitrary block of data. If sessionId is
        non NULL and idSize is zero, then sessionId is assumed to be a pointer
        to a C string.
+       The default SSL method is SSLv23
       */
     PSSLContext(
+      const void * sessionId = NULL,  ///< Pointer to session ID
+      PINDEX idSize = 0               ///< Size of session ID
+    );
+    PSSLContext(
+      Method method,                  ///< SSL connection method
       const void * sessionId = NULL,  ///< Pointer to session ID
       PINDEX idSize = 0               ///< Size of session ID
     );
@@ -419,41 +373,42 @@ class PSSLContext {
 
     /**Set the path to locate CA certificates.
       */
-    BOOL SetCAPath(
+    PBoolean SetCAPath(
       const PDirectory & caPath   ///< Directory for CA certificates
     );
 
     /**Set the CA certificate file.
       */
-    BOOL SetCAFile(
+    PBoolean SetCAFile(
       const PFilePath & caFile    ///< CA certificate file
     );
 
     /**Use the certificate specified.
       */
-    BOOL UseCertificate(
+    PBoolean UseCertificate(
       const PSSLCertificate & certificate
     );
 
     /**Use the private key specified.
       */
-    BOOL UsePrivateKey(
+    PBoolean UsePrivateKey(
       const PSSLPrivateKey & key
     );
 
     /**Use the Diffie-Hellman parameters specified.
       */
-    BOOL UseDiffieHellman(
+    PBoolean UseDiffieHellman(
       const PSSLDiffieHellman & dh
     );
 
     /**Set the available ciphers to those listed.
       */
-    BOOL SetCipherList(
+    PBoolean SetCipherList(
       const PString & ciphers   ///< List of cipher names.
     );
 
   protected:
+    void Construct(Method method, const void * sessionId, PINDEX idSize);
     ssl_ctx_st * context;
 };
 
@@ -469,7 +424,7 @@ class PSSLChannel : public PIndirectChannel
       */
     PSSLChannel(
       PSSLContext * context = NULL,   ///< Context for SSL channel
-      BOOL autoDeleteContext = FALSE  ///< Flag for context to be automatically deleted.
+      PBoolean autoDeleteContext = false  ///< Flag for context to be automatically deleted.
     );
     PSSLChannel(
       PSSLContext & context           ///< Context for SSL channel
@@ -480,31 +435,31 @@ class PSSLChannel : public PIndirectChannel
     ~PSSLChannel();
 
     // Overrides from PChannel
-    virtual BOOL Read(void * buf, PINDEX len);
-    virtual BOOL Write(const void * buf, PINDEX len);
-    virtual BOOL Close();
-    virtual BOOL Shutdown(ShutdownValue) { return TRUE; }
+    virtual PBoolean Read(void * buf, PINDEX len);
+    virtual PBoolean Write(const void * buf, PINDEX len);
+    virtual PBoolean Close();
+    virtual PBoolean Shutdown(ShutdownValue) { return true; }
     virtual PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
-    virtual BOOL ConvertOSError(int error, ErrorGroup group = LastGeneralError);
+    virtual PBoolean ConvertOSError(int error, ErrorGroup group = LastGeneralError);
 
     // New functions
     /**Accept a new inbound connection (server).
        This version expects that the indirect channel has already been opened
        using Open() beforehand.
       */
-    BOOL Accept();
+    PBoolean Accept();
 
     /**Accept a new inbound connection (server).
       */
-    BOOL Accept(
+    PBoolean Accept(
       PChannel & channel  ///< Channel to attach to.
     );
 
     /**Accept a new inbound connection (server).
       */
-    BOOL Accept(
+    PBoolean Accept(
       PChannel * channel,     ///< Channel to attach to.
-      BOOL autoDelete = TRUE  ///< Flag for if channel should be automatically deleted.
+      PBoolean autoDelete = true  ///< Flag for if channel should be automatically deleted.
     );
 
 
@@ -512,30 +467,30 @@ class PSSLChannel : public PIndirectChannel
        This version expects that the indirect channel has already been opened
        using Open() beforehand.
       */
-    BOOL Connect();
+    PBoolean Connect();
 
     /**Connect to remote server.
       */
-    BOOL Connect(
+    PBoolean Connect(
       PChannel & channel  ///< Channel to attach to.
     );
 
     /**Connect to remote server.
       */
-    BOOL Connect(
+    PBoolean Connect(
       PChannel * channel,     ///< Channel to attach to.
-      BOOL autoDelete = TRUE  ///< Flag for if channel should be automatically deleted.
+      PBoolean autoDelete = true  ///< Flag for if channel should be automatically deleted.
     );
 
     /**Use the certificate specified.
       */
-    BOOL UseCertificate(
+    PBoolean UseCertificate(
       const PSSLCertificate & certificate
     );
 
     /**Use the private key file specified.
       */
-    BOOL UsePrivateKey(
+    PBoolean UsePrivateKey(
       const PSSLPrivateKey & key
     );
 
@@ -551,7 +506,7 @@ class PSSLChannel : public PIndirectChannel
 
     PSSLContext * GetContext() const { return context; }
 
-    virtual BOOL RawSSLRead(void * buf, PINDEX & len);
+    virtual PBoolean RawSSLRead(void * buf, PINDEX & len);
 
   protected:
     /**This callback is executed when the Open() function is called with
@@ -561,14 +516,17 @@ class PSSLChannel : public PIndirectChannel
        The default behaviour "connects" the channel to the OpenSSL library.
 
        @return
-       Returns TRUE if the protocol handshaking is successful.
+       Returns true if the protocol handshaking is successful.
      */
-    virtual BOOL OnOpen();
+    virtual PBoolean OnOpen();
 
   protected:
     PSSLContext * context;
-    BOOL          autoDeleteContext;
+    PBoolean          autoDeleteContext;
     ssl_st      * ssl;
 };
 
-#endif // _PSSL_H
+#endif // PTLIB_PSSL_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

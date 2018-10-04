@@ -7,14 +7,9 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: precompile.cxx,v $
- * Revision 1.1  2004/02/08 11:13:21  rjongbloed
- * Fixed crash in heavily loaded multi-threaded systems using simultaneous sorted
- *   lists, Thanks Federico Pinna, Fabrizio Ammollo and the gang at Reitek S.p.A.
- *
- * Revision 1.1  2002/05/01 04:16:44  robertj
- * Added thread safe collection classes.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>

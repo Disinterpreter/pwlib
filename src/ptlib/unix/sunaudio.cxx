@@ -26,28 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: sunaudio.cxx,v $
- * Revision 1.8  2002/03/27 06:53:47  robertj
- * iSome more implementation, thanks Raimo Ruokonen
- *
- * Revision 1.7  2002/02/09 00:52:01  robertj
- * Slight adjustment to API and documentation for volume functions.
- *
- * Revision 1.6  2002/02/07 20:57:21  dereks
- * add SetVolume and GetVolume methods to PSoundChannel
- *
- * Revision 1.5  2001/10/18 01:15:18  robertj
- * Fixed compile error.
- *
- * Revision 1.4  1999/09/03 02:01:34  robertj
- * Added missing functions so will at least link
- *
- * Revision 1.3  1999/06/28 09:28:02  robertj
- * Portability issues, especially n BeOS (thanks Yuri!)
- *
- * Revision 1.2  1999/03/02 04:34:10  robertj
- * Fixed header comments
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #pragma implementation "sound.h"
@@ -102,15 +83,15 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-BOOL PSound::Load(const PFilePath & /*filename*/)
+PBoolean PSound::Load(const PFilePath & /*filename*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSound::Save(const PFilePath & /*filename*/)
+PBoolean PSound::Save(const PFilePath & /*filename*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -161,7 +142,7 @@ PString PSoundChannel::GetDefaultDevice(Directions /*dir*/)
 }
 
 
-BOOL PSoundChannel::Open(const PString & device,
+PBoolean PSoundChannel::Open(const PString & device,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
@@ -169,7 +150,7 @@ BOOL PSoundChannel::Open(const PString & device,
 {
   Close();
   if (!ConvertOSError(os_handle = ::open(device, (dir == Player ? O_WRONLY : O_RDONLY) ,0)))
-     return FALSE;
+     return PFalse;
 
   direction = dir;
   if (dir == Player) {
@@ -177,7 +158,7 @@ BOOL PSoundChannel::Open(const PString & device,
 
     if (fcntl(os_handle, F_SETFL, flag) < 0) {
       PTRACE(1,"F_SETFL fcntl ERROR");
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -185,13 +166,13 @@ BOOL PSoundChannel::Open(const PString & device,
 }
 
 
-BOOL PSoundChannel::Close()
+PBoolean PSoundChannel::Close()
 {
   return PChannel::Close();
 }
 
 
-BOOL PSoundChannel::SetFormat(unsigned numChannels,
+PBoolean PSoundChannel::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample){
   PAssert(numChannels >= 1 && numChannels <= 2, PInvalidParameter);
@@ -218,7 +199,7 @@ BOOL PSoundChannel::SetFormat(unsigned numChannels,
   }
   err=::ioctl(os_handle,AUDIO_SETINFO,&audio_info);	// The actual setting of the parameters
   if(err==EINVAL || err==EBUSY)
-     return FALSE;
+     return PFalse;
 
   err = ::ioctl(os_handle, AUDIO_GETINFO, &audio_info);	// Let's recheck the configuration...
   if (direction == Player){
@@ -228,11 +209,11 @@ BOOL PSoundChannel::SetFormat(unsigned numChannels,
     actualSampleRate = audio_info.record.sample_rate;
 //    PAssert(actualSampleRate==sampleRate && audio_info.record.precision==bitsPerSample && audio_info.record.encoding==AUDIO_ENCODING_LINEAR, PInvalidParameter);
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
+PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 {
   PAssert(size > 0 && count > 0 && count < 65536, PInvalidParameter);
 
@@ -247,93 +228,93 @@ BOOL PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
 
   err = ioctl(os_handle,AUDIO_SETINFO,&audio_info);	// The actual setting of the parameters
   if (err == EINVAL || err == EBUSY)
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
+PBoolean PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannel::Write(const void * buf, PINDEX len)
+PBoolean PSoundChannel::Write(const void * buf, PINDEX len)
 {
   return PChannel::Write(buf, len);
 
 /* Implementation based on OSS PSoundChannel::Write. This works, but no difference on sound when compared to the basic implementation...
     while (!ConvertOSError(err=::write(os_handle, (void *)buf, len)))
       if (GetErrorCode() != Interrupted){
-	        return FALSE;
+	        return PFalse;
 	}
-    return TRUE;
+    return PTrue;
 */
 }
 
 
-BOOL PSoundChannel::PlaySound(const PSound & sound, BOOL wait)
+PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
 {
   Abort();
 
   if (!Write((const BYTE *)sound, sound.GetSize()))
-    return FALSE;
+    return PFalse;
 
   if (wait)
     return WaitForPlayCompletion();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannel::PlayFile(const PFilePath & filename, BOOL wait)
+PBoolean PSoundChannel::PlayFile(const PFilePath & filename, PBoolean wait)
 {
 }
 
 
-BOOL PSoundChannel::HasPlayCompleted()
+PBoolean PSoundChannel::HasPlayCompleted()
 {
 }
 
 
-BOOL PSoundChannel::WaitForPlayCompletion()
+PBoolean PSoundChannel::WaitForPlayCompletion()
 {
 }
 
 
-BOOL PSoundChannel::Read(void * buffer, PINDEX length)
+PBoolean PSoundChannel::Read(void * buffer, PINDEX length)
 {
   return PChannel::Read(buffer, length);
 }
 
 
-BOOL PSoundChannel::RecordSound(PSound & sound)
+PBoolean PSoundChannel::RecordSound(PSound & sound)
 {
 }
 
 
-BOOL PSoundChannel::RecordFile(const PFilePath & filename)
+PBoolean PSoundChannel::RecordFile(const PFilePath & filename)
 {
 }
 
 
-BOOL PSoundChannel::StartRecording()
+PBoolean PSoundChannel::StartRecording()
 {
 }
 
 
-BOOL PSoundChannel::IsRecordBufferFull()
+PBoolean PSoundChannel::IsRecordBufferFull()
 {
 }
 
 
-BOOL PSoundChannel::AreAllRecordBuffersFull()
+PBoolean PSoundChannel::AreAllRecordBuffersFull()
 {
 }
 
 
-BOOL PSoundChannel::WaitForRecordBufferFull()
+PBoolean PSoundChannel::WaitForRecordBufferFull()
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF);
@@ -342,26 +323,26 @@ BOOL PSoundChannel::WaitForRecordBufferFull()
 }
 
 
-BOOL PSoundChannel::WaitForAllRecordBuffersFull()
+PBoolean PSoundChannel::WaitForAllRecordBuffersFull()
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSoundChannel::Abort()
+PBoolean PSoundChannel::Abort()
 {
 }
 
-BOOL PSoundChannel::SetVolume(unsigned newVolume)
+PBoolean PSoundChannel::SetVolume(unsigned newVolume)
 {
   cerr << __FILE__ << "PSoundChannel :: SetVolume called in error. Please fix"<<endl;
-  return FALSE;
+  return PFalse;
 }
 
-BOOL  PSoundChannel::GetVolume(unsigned & volume)
+PBoolean  PSoundChannel::GetVolume(unsigned & volume)
 {
   cerr << __FILE__ << "PSoundChannel :: GetVolume called in error. Please fix"<<endl;
-  return FALSE;
+  return PFalse;
 }
 
 

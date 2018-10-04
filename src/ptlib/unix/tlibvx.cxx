@@ -26,23 +26,10 @@
  *
  * Contributor(s):  ______________________________________.
  *
- * $Log: tlibvx.cxx,v $
- * Revision 1.4  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * 
- * Revision 1.3  2003/05/21 00:49:16  csoutheren
- *  Added PreShutdown to ~PProcess
- * 
- * Revision 1.2  2003/02/26 01:14:27  robertj
- *  Fixed race condition where thread can terminatebefore an IsSuspeded() call
- *  occurs and cause an assert, thanks Sebastian Meyer
- * 
- * Revision 1.1  2002/11/05 01:43:39  robertj
- *  Added missing VxWorks files. Thanks Andreas Sikkema
- *
- * Revision 1.0 ?????????????
-*/
+ * $Revision: 27623 $
+ * $Author: rjongbloed $
+ * $Date: 2012-05-14 19:03:37 -0500 (Mon, 14 May 2012) $
+ */
 
 
 class PProcess;
@@ -96,7 +83,7 @@ CCriticalSection::~CCriticalSection()
 void CCriticalSection::Lock()
 {
   if (locked == false) {
-    if (::intContext() == FALSE)
+    if (::intContext() == PFalse)
       taskLocked = ::taskLock();
     else
       taskLocked = ERROR;
@@ -138,7 +125,9 @@ int PThread::ThreadFunction(void *threadPtr)
   if (::semTake(thread->syncPoint, WAIT_FOREVER) == OK) {
     if (::semDelete(thread->syncPoint) == OK)
       thread->syncPoint = NULL;
-  thread->Main();
+    process.OnThreadStart(*thread);
+    thread->Main();
+    process.OnThreadEnded(*thread);
   }
   else
     printf("::ThreadFunction> ::semTake failed, errno=0x%X\n",errno);
@@ -171,10 +160,25 @@ void PThread::Trace(PThreadIdentifer threadId)
 }
 
 PThread::PThread()
- : PX_threadId(ERROR),
-   priority(VX_NORMAL_PRIORITY),
-   originalStackSize(0)
+ : autoDelete(false)
+ , PX_threadId(::taskIdSelf())
+ , priority(VX_NORMAL_PRIORITY)
+ , originalStackSize(0)
 {
+  PAssertOS((PX_threadId != ERROR) && (PX_threadId != 0));
+
+  if (!PProcess::IsInitialised())
+    return;
+
+  autoDelete = true;
+
+  PProcess & process = PProcess::Current();
+
+  process.activeThreadMutex.Wait();
+  process.activeThreads.SetAt(PX_threadId, this);
+  process.activeThreadMutex.Signal();
+
+  process.SignalTimerChange();
 }
 
 PThread::PThread(PINDEX stackSize,
@@ -282,7 +286,7 @@ void PThread::Terminate()
 }
 
 
-BOOL PThread::IsTerminated() const
+PBoolean PThread::IsTerminated() const
 {
   STATUS stat = ERROR;
   if (PX_threadId != 0)
@@ -300,22 +304,22 @@ void PThread::WaitForTermination() const
 }
 
 
-BOOL PThread::WaitForTermination(const PTimeInterval & maxWait) const
+PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   if (PX_threadId == 0)
-    return TRUE;
+    return PTrue;
 
   PTimer timeout = maxWait;
   while (!IsTerminated()) {
     if (timeout == 0)
-      return FALSE;
+      return PFalse;
     Current()->Sleep(100);
   }
- return TRUE;
+ return PTrue;
 }
 
 
-void PThread::Suspend(BOOL susp)
+void PThread::Suspend(PBoolean susp)
 {
   if (!IsTerminated()) {
     if (susp) {
@@ -343,9 +347,9 @@ void PThread::Resume()
 }
 
 
-BOOL PThread::IsSuspended() const
+PBoolean PThread::IsSuspended() const
 {
-  BOOL isSuspended = FALSE;
+  PBoolean isSuspended = PFalse;
   if (!IsTerminated())
     isSuspended = ::taskIsSuspended(PX_threadId);
   else
@@ -412,36 +416,12 @@ void PThread::Sleep( const PTimeInterval & delay ) // Time interval to sleep for
   ::taskDelay(delay.GetInterval()*sysClkRateGet()/1000);
 }
 
-void PThread::InitialiseProcessThread()
-{
-  originalStackSize = 0;
-  autoDelete = FALSE;
-
-  PX_threadId = ::taskIdSelf();
-  PAssertOS((PX_threadId != ERROR) && (PX_threadId != 0));
-
-  ((PProcess *)this)->activeThreads.DisallowDeleteObjects();
-  ((PProcess *)this)->activeThreads.SetAt(PX_threadId, this);
-}
-
-
-PThread * PThread::Current()
-{
-  PProcess & process = PProcess::Current();
-  process.activeThreadMutex.Wait();
-  
-  PThread * thread = process.activeThreads.GetAt(::taskIdSelf());
-
-  process.activeThreadMutex.Signal();
-  return thread;
-}
-
 int PThread::PXBlockOnChildTerminate(int pid, const PTimeInterval & /*timeout*/) // Fix timeout
 {
   while (!IsTerminated()) {
     Current()->Sleep(100);
   }
-  return TRUE;
+  return PTrue;
 }
 
 int PThread::PXBlockOnIO(int handle, int type, const PTimeInterval & timeout)
@@ -521,6 +501,9 @@ void PProcess::HouseKeepingThread::Main()
 
 void PProcess::SignalTimerChange()
 {
+  if (!PAssert(IsInitialised(), PLogicError) || m_shuttingDown) 
+    return false;
+
   if (houseKeeper == NULL) {
     // Prevent reentrance before the following assignment is done
     // Placed after above if-statement due to efficiency, and so 
@@ -560,6 +543,8 @@ PProcess::~PProcess()
   deleteThreadMutex.Signal();
 
   delete configFiles;
+
+  PostShutdown();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -618,7 +603,7 @@ void PSemaphore::Wait()
 }
 
 
-BOOL PSemaphore::Wait(const PTimeInterval & timeout)
+PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
 {
   long wait;
 	if (timeout == PMaxTimeInterval) {
@@ -656,7 +641,7 @@ void PSemaphore::Signal()
   section.Unlock();
 }
 
-BOOL PSemaphore::WillBlock() const
+PBoolean PSemaphore::WillBlock() const
 {
   return initialVar == 0;
 }
@@ -690,7 +675,7 @@ void PMutex::Wait()
 	PAssertOS(result == OK);
 }
 
-BOOL PMutex::Wait(const PTimeInterval & timeout)
+PBoolean PMutex::Wait(const PTimeInterval & timeout)
 {
   long wait;
 	if (timeout == PMaxTimeInterval) {
@@ -712,7 +697,7 @@ void PMutex::Signal()
 	::semGive(semId);
 }
 
-BOOL PMutex::WillBlock() const 
+PBoolean PMutex::WillBlock() const 
 {
   STATUS result = ::semTake(semId, NO_WAIT);
   PAssertOS((result != ERROR) || (errno == S_objLib_OBJ_UNAVAILABLE));

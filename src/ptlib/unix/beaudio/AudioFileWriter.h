@@ -3,7 +3,7 @@
 	$Log: AudioFileWriter.h,v $
 	Revision 1.1  2001/07/09 06:16:15  yurik
 	Jac Goudsmit's BeOS changes of July,6th. Cleaning up media subsystem etc.
-	
+
    
 	Copyright 1999-2001, Be Incorporated.   All Rights Reserved.
 	This file may be used under the terms of the Be Sample Code License.

@@ -23,17 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.3  2003/09/26 13:43:49  rjongbloed
- * Added special test to give more indicative error if try to compile without LDAP support.
- *
- * Revision 1.2  2003/03/31 03:35:20  robertj
- * Major addition of LDAP functionality.
- * Added ILS specialisation of LDAP.
- *
- * Revision 1.1  2003/03/28 01:15:44  robertj
- * OpenLDAP support.
- *
+ * $Revision: 25060 $
+ * $Author: willamowius $
+ * $Date: 2011-01-13 05:56:08 -0600 (Thu, 13 Jan 2011) $
  */
 
 #include "precompile.h"
@@ -49,6 +41,8 @@
 
 
 /* Test command lines:
+
+search -h public.ldap.ucalgary.ca -x "cn=Cindy*"
 
 add    -h ils.seconix.com -x "c=AU, cn=robertj@equival.com.au, objectClass=RTPerson" "cn=robertj@equival.com.au" surname=Jongbloed givenName=Robert c=AU
 delete -h ils.seconix.com -x "c=AU, cn=robertj@equival.com.au, objectClass=RTPerson"
@@ -74,7 +68,7 @@ LDAPTest::LDAPTest()
 void LDAPTest::Main()
 {
   PArgList & args = GetArguments();
-  args.Parse("h:p:x.b:s:P.I.", FALSE);
+  args.Parse("h:p:xb:s:PI", PFalse);
 
   if (args.GetCount() == 0) {
     Usage();

@@ -21,31 +21,16 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.3  2005/08/09 09:08:11  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.2.12.1  2005/07/17 09:25:31  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.2  2003/04/29 00:57:21  dereks
- * Add user interface, option setting for format/input/fake. Works on Linux.
- *
- * Revision 1.1  2003/04/28 08:18:42  craigs
- * Initial version
- *
+ * $Revision: 26456 $
+ * $Author: rjongbloed $
+ * $Date: 2011-09-22 00:27:10 -0500 (Thu, 22 Sep 2011) $
  */
 
 #ifndef _Vidtest_MAIN_H
 #define _Vidtest_MAIN_H
 
-
-
+#include <ptlib/pprocess.h>
+#include <ptlib/videoio.h>
 
 class VidTest : public PProcess
 {
@@ -58,11 +43,13 @@ class VidTest : public PProcess
  protected:
    PDECLARE_NOTIFIER(PThread, VidTest, GrabAndDisplay);
 
-  PVideoInputDevice  * grabber;
-  PVideoOutputDevice * display;
-  PSyncPointAck        exitGrabAndDisplay;
-  PSyncPointAck        pauseGrabAndDisplay;
-  PSyncPoint           resumeGrabAndDisplay;
+  PVideoInputDevice     * m_grabber;
+  PVideoOutputDevice    * m_display;
+  PVideoOutputDevice    * m_secondary;
+  PList<PColourConverter> m_converters;
+  PSyncPointAck           m_exitGrabAndDisplay;
+  PSyncPointAck           m_pauseGrabAndDisplay;
+  PSyncPoint              m_resumeGrabAndDisplay;
 };
 
 

@@ -21,17 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2003/02/04 03:31:04  robertj
- * Added STUN
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _StunClient_MAIN_H
 #define _StunClient_MAIN_H
 
-
-
+#include <ptlib/pprocess.h>
 
 class StunClient : public PProcess
 {

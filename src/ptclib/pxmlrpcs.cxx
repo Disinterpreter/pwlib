@@ -23,25 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pxmlrpcs.cxx,v $
- * Revision 1.6  2003/02/19 01:51:18  robertj
- * Change to make it easier to set a fault from the server function handler.
- *
- * Revision 1.5  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.4  2002/10/23 15:57:28  craigs
- * Fixed problem where no params specified
- *
- * Revision 1.3  2002/10/17 12:51:01  rogerh
- * Add a newline at the of the file to silence a gcc compiler warning.
- *
- * Revision 1.2  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.1  2002/10/02 08:54:01  craigs
- * Added support for XMLRPC server
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 // This depends on the expat XML library by Jim Clark
@@ -55,9 +39,12 @@
 
 #define   DEFAULT_XMPRPC_URL  "/RPC2"
 
+#if P_XMLRPC
+
 #include <ptclib/pxmlrpcs.h>
 
-#if P_EXPAT
+#define new PNEW
+
 
 PXMLRPCServerResource::PXMLRPCServerResource()
   : PHTTPResource(DEFAULT_XMPRPC_URL)
@@ -83,7 +70,7 @@ PXMLRPCServerResource::PXMLRPCServerResource(
 {
 }
 
-BOOL PXMLRPCServerResource::SetMethod(const PString & methodName, const PNotifier & func)
+PBoolean PXMLRPCServerResource::SetMethod(const PString & methodName, const PNotifier & func)
 {
   PWaitAndSignal m(methodMutex);
 
@@ -100,23 +87,25 @@ BOOL PXMLRPCServerResource::SetMethod(const PString & methodName, const PNotifie
   // set the function
   methodInfo->methodFunc = func;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PXMLRPCServerResource::LoadHeaders(PHTTPRequest & /*request*/)    // Information on this request.
+PBoolean PXMLRPCServerResource::LoadHeaders(PHTTPRequest & /*request*/)    // Information on this request.
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PXMLRPCServerResource::OnPOSTData(PHTTPRequest & request,
+PBoolean PXMLRPCServerResource::OnPOSTData(PHTTPRequest & request,
                                 const PStringToString & /*data*/)
 {
   PString reply;
 
   OnXMLRPCRequest(request.entityBody, reply);
 
+  PTRACE(4, "XMLRPC\tOnPOSTData() sending XML reply:" << reply);
+
   request.code = PHTTP::RequestOK;
-  request.outMIME.SetAt(PHTTP::ContentTypeTag, "text/xml");
+  request.outMIME.SetAt(PHTTP::ContentTypeTag(), "text/xml");
 
   PINDEX len = reply.GetLength();
   request.server.StartResponse(request.code, request.outMIME, len);
@@ -128,10 +117,12 @@ void PXMLRPCServerResource::OnXMLRPCRequest(const PString & body, PString & repl
 {
   // get body of message here
   PXMLRPCBlock request;
-  BOOL ok = request.Load(body);
-
-  // if cannot parse XML, set return 
-  if (!ok) { 
+  PBoolean ok = request.Load(body);
+  
+  PTRACE(4, "XMLRPC\tOnXMLRPCRequest() received XML request:" << body);
+  
+  // if cannot parse XML, set return
+  if (!ok) {
     reply = FormatFault(PXMLRPC::CannotParseRequestXML, "XML error:" + request.GetErrorString());
     return;
   }
@@ -162,7 +153,7 @@ void PXMLRPCServerResource::OnXMLRPCRequest(const PString & body, PString & repl
   OnXMLRPCRequest(method, request, reply);
 }
 
-void PXMLRPCServerResource::OnXMLRPCRequest(const PString & methodName, 
+void PXMLRPCServerResource::OnXMLRPCRequest(const PString & methodName,
                                             PXMLRPCBlock & request,
                                             PString & reply)
 {
@@ -172,6 +163,7 @@ void PXMLRPCServerResource::OnXMLRPCRequest(const PString & methodName,
   PINDEX pos = methodList.GetValuesIndex(methodName);
   if (pos == P_MAX_INDEX) {
     reply = FormatFault(PXMLRPC::UnknownMethod, "unknown method " + methodName);
+    methodMutex.Signal();
     return;
   }
   PXMLRPCServerMethod * methodInfo = (PXMLRPCServerMethod *)methodList.GetAt(pos);
@@ -219,5 +211,5 @@ PString PXMLRPCServerResource::FormatFault(PINDEX code, const PString & str)
   return reply;
 }
 
-#endif
+#endif // P_XMLRPC
 

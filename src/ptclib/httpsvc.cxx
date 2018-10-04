@@ -23,314 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: httpsvc.cxx,v $
- * Revision 1.96  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.95  2004/04/03 08:22:20  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.94  2004/04/03 06:54:24  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.93  2004/03/23 04:41:05  csoutheren
- * Fixed compile problem on Linux
- *
- * Revision 1.92  2004/03/23 03:40:57  csoutheren
- * Change service process default to be more useful in some environments
- *
- * Revision 1.91  2004/01/17 17:44:54  csoutheren
- * Changed to use PString::MakeEmpty
- *
- * Revision 1.90  2003/09/17 09:02:13  csoutheren
- * Removed memory leak detection code
- *
- * Revision 1.89  2003/02/19 07:23:45  robertj
- * Changes to allow for single threaded HTTP service processes.
- *
- * Revision 1.88  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.87  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.86  2002/08/14 00:43:40  robertj
- * Added ability to have fixed maximum length PStringStream's so does not do
- *   unwanted malloc()'s while outputing data.
- *
- * Revision 1.85  2002/08/13 05:39:17  robertj
- * Fixed GNU compatibility
- *
- * Revision 1.84  2002/08/13 01:57:15  robertj
- * Fixed "last dump object" position in Memory Dump macro.
- *
- * Revision 1.83  2002/08/13 01:30:27  robertj
- * Added UpTime macro for time service has been running.
- * Added IfQuery macro blcok to add chunks of HTML depending on the value
- *   of query parameters in the URL.
- * Added memory statistics dump and memory object dump macros to help in
- *   leak finding.
- *
- * Revision 1.82  2002/07/30 08:37:34  robertj
- * Removed peer host as bad DNS makes it useless due to huge timeout.
- *
- * Revision 1.81  2002/07/30 04:51:26  craigs
- * Added MonitorInfo macro
- *
- * Revision 1.80  2002/07/30 03:16:57  craigs
- * Added StartTime macro
- *
- * Revision 1.79  2002/07/17 09:18:00  robertj
- * made detection of gif file more intelligent for debug version.
- *
- * Revision 1.78  2002/07/17 08:03:45  robertj
- * Allowed for adjustable copyright holder.
- * Allowed for not having gif file for product name in default header.
- *
- * Revision 1.77  2001/10/10 08:06:49  robertj
- * Fixed problem with not shutting down threads when closing listener.
- *
- * Revision 1.76  2001/09/11 02:37:41  robertj
- * Fixed thread name for HTTP service connection handler.
- *
- * Revision 1.75  2001/08/28 06:44:45  craigs
- * Added ability to override PHTTPServer creation
- *
- * Revision 1.74  2001/06/30 06:59:06  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.73  2001/06/27 04:14:48  robertj
- * Added logging for listener thread open/close.
- *
- * Revision 1.72  2001/06/23 00:32:15  robertj
- * Added parameter to be able to set REUSEADDR on listener socket.
- *
- * Revision 1.71  2001/05/07 23:27:06  robertj
- * Added SO_LINGER setting to HTTP sockets to help with clearing up sockets
- *   when the application exits, which prevents new run of app as "port in use".
- *
- * Revision 1.70  2001/03/26 04:55:26  robertj
- * Made sure OnConfigChanged() is called from OnStart() function.
- *
- * Revision 1.69  2001/03/21 06:29:31  robertj
- * Fixed bug in calling OnConfigChanged after service macros are loaded,
- *   should be before so state can be changed before the macros translated.
- *
- * Revision 1.68  2001/03/19 02:41:53  robertj
- * Made sure HTTP listener thread is shut down in OnStop().
- *
- * Revision 1.67  2001/03/16 03:33:21  robertj
- * Fixed HTML signature code due to changes in encryption code.
- *
- * Revision 1.66  2001/03/04 02:24:44  robertj
- * Removed default OnControl() from http service as cannot get port number.
- *
- * Revision 1.65  2001/02/21 04:33:46  robertj
- * Fixed GNU warning.
- *
- * Revision 1.64  2001/02/20 02:32:41  robertj
- * Added PServiceMacro version that can do substitutions on blocks of HTML.
- *
- * Revision 1.63  2001/02/15 01:12:15  robertj
- * Moved some often repeated HTTP service code into PHTTPServiceProcess.
- *
- * Revision 1.62  2001/02/14 06:52:26  robertj
- * Fixed GNU compatibility with last change to PServiceMacro.
- *
- * Revision 1.61  2001/02/14 02:30:59  robertj
- * Moved HTTP Service Macro facility to public API so can be used by apps.
- * Added ability to specify the service macro keyword, defaults to "macro".
- * Added machine macro to get the OS version and hardware.
- *
- * Revision 1.60  2001/01/15 06:17:56  robertj
- * Set HTTP resource members to private to assure are not modified by
- *   dscendents in non-threadsafe manner.
- *
- * Revision 1.59  2001/01/08 22:53:34  craigs
- * Changed OnPOST to allow subtle usage of embedded commands
- *
- * Revision 1.58  2000/12/14 08:09:41  robertj
- * Fixed missing immediate expiry date on string and file service HTTP resourcer.
- *
- * Revision 1.57  2000/12/11 13:15:17  robertj
- * Added macro to include signed or unsigned chunks of HTML.
- * Added flag to globally ignore HTML signatures (useful for develeopment).
- *
- * Revision 1.56  2000/10/23 09:17:26  robertj
- * Fixed bug un Linux version where HTML macros didn't work correctly.
- *
- * Revision 1.55  2000/08/04 12:48:25  robertj
- * Added mechanism by which a service can get at new HTTP connections, eg to add SSL.
- *
- * Revision 1.54  2000/05/02 02:58:49  robertj
- * Fixed MSVC warning about unused parameters.
- *
- * Revision 1.53  2000/05/02 02:01:18  craigs
- * Changed stricmp and added implementation of PServiceMacro::Translate
- *
- * Revision 1.52  2000/05/02 01:50:37  robertj
- * Rewrite of PServiceMacro so does not use malloc (indirectly).
- *
- * Revision 1.51  2000/01/27 00:35:52  robertj
- * Fixed benign warning about uninitialised variables in MSVC optimised compile.
- *
- * Revision 1.50  1999/08/07 06:50:52  robertj
- * Removed silly (and incorrect) warning.
- *
- * Revision 1.49  1999/04/24 05:16:26  robertj
- * Fixed incorrect date in copyright notice.
- *
- * Revision 1.48  1998/11/30 05:37:46  robertj
- * New directory structure
- *
- * Revision 1.47  1998/11/24 23:05:14  robertj
- * Fixed extra *** in demo message
- *
- * Revision 1.46  1998/11/16 07:23:15  robertj
- * More PPC GNU compatibility.
- *
- * Revision 1.45  1998/11/16 06:50:40  robertj
- * Fixed PPC GNU compiler compatibility.
- *
- * Revision 1.44  1998/10/31 12:49:25  robertj
- * Added read/write mutex to the HTTP space variable to avoid thread crashes.
- *
- * Revision 1.43  1998/10/29 11:58:52  robertj
- * Added ability to configure the HTTP threads stack size.
- *
- * Revision 1.42  1998/10/29 11:31:57  robertj
- * Fixed default URL to have lower case and spaceless product name.
- * Increased HTTP stack size.
- *
- * Revision 1.41  1998/10/15 01:53:35  robertj
- * GNU compatibility.
- *
- * Revision 1.40  1998/10/13 14:06:24  robertj
- * Complete rewrite of memory leak detection code.
- *
- * Revision 1.39  1998/09/23 06:22:15  robertj
- * Added open source copyright license.
- *
- * Revision 1.38  1998/09/18 01:47:23  robertj
- * Fixed bug that made files with signature on first line fail on unix systems.
- *
- * Revision 1.37  1998/08/20 06:01:02  robertj
- * Improved internationalisation, registrationpage override.
- *
- * Revision 1.36  1998/04/21 02:43:40  robertj
- * Fixed conditional around wrong way for requiring signature on HTML files.
- *
- * Revision 1.35  1998/04/01 01:55:41  robertj
- * Fixed bug for automatically including GIF file in HTTP name space.
- *
- * Revision 1.34  1998/03/23 03:21:40  robertj
- * Fixed missing invalid case in register page.
- *
- * Revision 1.33  1998/03/20 03:18:15  robertj
- * Added special classes for specific sepahores, PMutex and PSyncPoint.
- *
- * Revision 1.32  1998/03/17 10:14:39  robertj
- * Rewrite of registration page to allow for HTML file override.
- *
- * Revision 1.31  1998/03/09 07:17:48  robertj
- * Added IP peer/local number macros.
- * Set GetPageGraphic reference to GIF file to be at lop level directory.
- *
- * Revision 1.30  1998/02/16 00:14:09  robertj
- * Added ProductName and BuildDate macros.
- * Major rewrite of application info passed in PHTTPServiceProcess constructor.
- *
- * Revision 1.29  1998/02/03 06:22:45  robertj
- * Allowed PHTTPServiceString to be overridden by html file after ';'.
- *
- * Revision 1.28  1998/01/26 02:49:19  robertj
- * GNU support.
- *
- * Revision 1.27  1998/01/26 02:12:14  robertj
- * GNU warnings.
- *
- * Revision 1.26  1998/01/26 00:45:44  robertj
- * Added option flags to ProcessMacros to automatically load from file etc.
- * Assured that all service HTTP resources are overidable with file, using ; URL field.
- * Added a number of extra #equival macros.
- * Added "Pty. Ltd." to company name.
- *
- * Revision 1.25  1997/11/10 12:40:05  robertj
- * Changed SustituteEquivalSequence so can override standard macros.
- *
- * Revision 1.24  1997/11/04 06:02:46  robertj
- * Allowed help gif file name to overridable in PServiceHTML, so can be in subdirectory.
- *
- * Revision 1.23  1997/10/30 10:21:26  robertj
- * Added ability to customise regisration text by application.
- *
- * Revision 1.22  1997/08/28 14:19:40  robertj
- * Fixed bug where HTTP directory was not processed for macros.
- *
- * Revision 1.20  1997/08/20 08:59:58  craigs
- * Changed macro handling to commonise #equival sequence
- *
- * Revision 1.19  1997/07/26 11:38:22  robertj
- * Support for overridable pages in HTTP service applications.
- *
- * Revision 1.18  1997/07/08 13:11:44  robertj
- * Added standard header and copyright macros to service HTML.
- *
- * Revision 1.17  1997/06/16 13:20:15  robertj
- * Fixed bug where PHTTPThread crashes on exit.
- *
- * Revision 1.16  1997/05/16 12:07:21  robertj
- * Added operating system and version to hidden fields on registration form.
- *
- * Revision 1.15  1997/03/02 03:40:59  robertj
- * Added error logging to standard HTTP Service HTTP Server.
- *
- * Revision 1.14  1997/02/05 11:54:54  robertj
- * Added support for order form page overridiing.
- *
- * Revision 1.13  1997/01/28 11:45:19  robertj
- * .
- *
- * Revision 1.13  1997/01/27 10:22:37  robertj
- * Numerous changes to support OEM versions of products.
- *
- * Revision 1.12  1997/01/03 06:33:23  robertj
- * Removed slash from operating system version string, so says Windows NT rather than Windows/NT
- *
- * Revision 1.11  1996/11/16 10:50:26  robertj
- * ??
- *
- * Revision 1.10  1996/11/04 03:58:23  robertj
- * Changed to accept separate copyright and manufacturer strings.
- *
- * Revision 1.8  1996/10/08 13:08:29  robertj
- * Changed standard graphic to use PHTML class.
- *
- * Revision 1.7  1996/09/14 13:09:33  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.6  1996/08/25 09:39:00  robertj
- * Prevented registration if no user etc entered.
- *
- * Revision 1.5  1996/08/19 13:39:55  robertj
- * Fixed race condition in system restart logic.
- *
- * Revision 1.4  1996/08/08 13:36:39  robertj
- * Fixed Registation page so no longer has static link, ie can be DLLed.
- *
- * Revision 1.3  1996/07/15 10:36:48  robertj
- * Added registration info to bottom of order form so can be faxed to us.
- *
- * Revision 1.2  1996/06/28 13:21:30  robertj
- * Fixed nesting problem in tables.
- * Fixed PConfig page always restarting.
- *
- * Revision 1.1  1996/06/13 13:33:34  robertj
- * Initial revision
- *
+ * $Revision: 24854 $
+ * $Author: csoutheren $
+ * $Date: 2010-11-01 09:35:07 -0500 (Mon, 01 Nov 2010) $
  */
 
 #ifdef __GNUC__
@@ -338,6 +33,10 @@
 #endif
 
 #include <ptlib.h>
+#include <ptbuildopts.h>
+
+#ifdef P_HTTPSVC
+
 #include <ptclib/httpsvc.h>
 #include <ptlib/sockets.h>
 
@@ -361,9 +60,6 @@ class PServiceMacros_list : public PServiceMacros_base
 
 static const PTime ImmediateExpiryTime(0, 0, 0, 1, 1, 1980);
 
-
-///////////////////////////////////////////////////////////////////////////////
-
 PHTTPServiceProcess::PHTTPServiceProcess(const Info & inf)
   : PServiceProcess(inf.manufacturerName, inf.productName,
                     inf.majorVersion, inf.minorVersion, inf.buildStatus, inf.buildNumber),
@@ -380,7 +76,7 @@ PHTTPServiceProcess::PHTTPServiceProcess(const Info & inf)
     copyrightHomePage(inf.copyrightHomePage != NULL ? inf.copyrightHomePage : (const char *)manufacturersHomePage),
     copyrightEmail(inf.copyrightEmail != NULL ? inf.copyrightEmail : (const char *)manufacturersEmail)
 {
-  ignoreSignatures = FALSE;
+  ignoreSignatures = PFalse;
 
   if (inf.gifFilename != NULL) {
     PDirectory exeDir = GetFile().GetDirectory();
@@ -391,7 +87,7 @@ PHTTPServiceProcess::PHTTPServiceProcess(const Info & inf)
 #endif
     httpNameSpace.AddResource(new PServiceHTTPFile(inf.gifFilename, exeDir+inf.gifFilename));
     if (gifHTML.IsEmpty()) {
-      gifHTML = psprintf("<img src=\"/%s\" alt=\"%s!\"", inf.gifFilename, inf.productName);
+      gifHTML = psprintf("<img border=0 src=\"%s\" alt=\"%s!\"", inf.gifFilename, inf.productName);
       if (inf.gifWidth != 0 && inf.gifHeight != 0)
         gifHTML += psprintf(" width=%i height=%i", inf.gifWidth, inf.gifHeight);
       gifHTML += " align=absmiddle>";
@@ -418,13 +114,13 @@ PHTTPServiceProcess & PHTTPServiceProcess::Current()
 }
 
 
-BOOL PHTTPServiceProcess::OnStart()
+PBoolean PHTTPServiceProcess::OnStart()
 {
   if (!Initialise("Started"))
-    return FALSE;
+    return PFalse;
 
   OnConfigChanged();
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -436,10 +132,10 @@ void PHTTPServiceProcess::OnStop()
 }
 
 
-BOOL PHTTPServiceProcess::OnPause()
+PBoolean PHTTPServiceProcess::OnPause()
 {
   OnConfigChanged();
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -461,20 +157,20 @@ const char * PHTTPServiceProcess::GetServiceDependencies() const
 #endif
 
 
-BOOL PHTTPServiceProcess::ListenForHTTP(WORD port,
+PBoolean PHTTPServiceProcess::ListenForHTTP(WORD port,
                                         PSocket::Reusability reuse,
                                         PINDEX stackSize)
 {
   if (httpListeningSocket != NULL &&
       httpListeningSocket->GetPort() == port &&
       httpListeningSocket->IsOpen())
-    return TRUE;
+    return PTrue;
 
   return ListenForHTTP(new PTCPSocket(port), reuse, stackSize);
 }
 
 
-BOOL PHTTPServiceProcess::ListenForHTTP(PSocket * listener,
+PBoolean PHTTPServiceProcess::ListenForHTTP(PSocket * listener,
                                         PSocket::Reusability reuse,
                                         PINDEX stackSize)
 {
@@ -485,13 +181,13 @@ BOOL PHTTPServiceProcess::ListenForHTTP(PSocket * listener,
   if (!httpListeningSocket->Listen(5, 0, reuse)) {
     PSYSTEMLOG(Debug, "HTTPSVC\tListen on port " << httpListeningSocket->GetPort()
                    << " failed: " << httpListeningSocket->GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   if (stackSize > 1000)
     new PHTTPServiceThread(stackSize, *this);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -509,8 +205,8 @@ void PHTTPServiceProcess::ShutdownListener()
   httpListeningSocket->Close();
 
   httpThreadsMutex.Wait();
-  for (PINDEX i = 0; i < httpThreads.GetSize(); i++)
-    httpThreads[i].Close();
+  for (ThreadList::iterator i = httpThreads.begin(); i != httpThreads.end(); i++)
+    i->Close();
 
   while (httpThreads.GetSize() > 0) {
     httpThreadsMutex.Signal();
@@ -543,23 +239,21 @@ PString PHTTPServiceProcess::GetCopyrightText()
 
 PString PHTTPServiceProcess::GetPageGraphic()
 {
-  PFile header;
-  if (header.Open("header.html", PFile::ReadOnly))
-    return header.ReadString(header.GetLength());
-
   PHTML html(PHTML::InBody);
   html << PHTML::TableStart()
        << PHTML::TableRow()
-       << PHTML::TableData();
+       << PHTML::TableData()
 
+       << PHTML::HotLink("/");
   if (gifHTML.IsEmpty())
     html << PHTML::Heading(1) << productNameHTML << "&nbsp;" << PHTML::Heading(1);
   else
     html << gifHTML;
+  html << PHTML::HotLink()
 
-  html << PHTML::TableData()
+       << PHTML::TableData()
        << GetOSClass() << ' ' << GetOSName()
-       << " Version " << GetVersion(TRUE) << PHTML::BreakLine()
+       << " Version " << GetVersion(PTrue) << PHTML::BreakLine()
        << ' ' << GetCompilationDate().AsString("d MMMM yyyy")
        << PHTML::BreakLine()
        << "By "
@@ -600,8 +294,9 @@ PTCPSocket * PHTTPServiceProcess::AcceptHTTP()
   if (socket->Accept(*httpListeningSocket))
     return socket;
 
-  if (socket->GetErrorCode() != PChannel::Interrupted)
+  if (socket->GetErrorCode() != PChannel::Interrupted) {
     PSYSTEMLOG(Error, "Accept failed for HTTP: " << socket->GetErrorText());
+  }
 
   if (httpListeningSocket != NULL && httpListeningSocket->IsOpen())
     return socket;
@@ -611,15 +306,15 @@ PTCPSocket * PHTTPServiceProcess::AcceptHTTP()
 }
 
 
-BOOL PHTTPServiceProcess::ProcessHTTP(PTCPSocket & socket)
+PBoolean PHTTPServiceProcess::ProcessHTTP(PTCPSocket & socket)
 {
   if (!socket.IsOpen())
-    return TRUE;
+    return PTrue;
 
   PHTTPServer * server = CreateHTTPServer(socket);
   if (server == NULL) {
     PSYSTEMLOG(Error, "HTTP server creation/open failed.");
-    return TRUE;
+    return PTrue;
   }
 
   // process requests
@@ -633,7 +328,7 @@ BOOL PHTTPServiceProcess::ProcessHTTP(PTCPSocket & socket)
   if (httpListeningSocket->IsOpen())
     CompleteRestartSystem();
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -676,9 +371,9 @@ void PHTTPServiceProcess::AddUnregisteredText(PHTML &)
 }
 
 
-BOOL PHTTPServiceProcess::SubstituteEquivalSequence(PHTTPRequest &, const PString &, PString &)
+PBoolean PHTTPServiceProcess::SubstituteEquivalSequence(PHTTPRequest &, const PString &, PString &)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -709,7 +404,7 @@ PHTTPServer * PHTTPServiceProcess::OnCreateHTTPServer(const PHTTPSpace & httpNam
 
 PHTTPServiceThread::PHTTPServiceThread(PINDEX stackSize,
                                        PHTTPServiceProcess & app)
-  : PThread(stackSize, AutoDeleteThread, NormalPriority, "HTTP Service:%x"),
+  : PThread(stackSize, AutoDeleteThread, NormalPriority, "HTTP Service"),
     process(app)
 {
   process.httpThreadsMutex.Wait();
@@ -740,7 +435,7 @@ void PHTTPServiceThread::Close()
 
 void PHTTPServiceThread::Main()
 {
-  PTCPSocket * socket = process.AcceptHTTP();
+  socket = process.AcceptHTTP();
   if (socket != NULL) {
     new PHTTPServiceThread(myStackSize, process);
     process.ProcessHTTP(*socket);
@@ -772,36 +467,36 @@ PConfigPage::PConfigPage(PHTTPServiceProcess & app,
 void PConfigPage::OnLoadedText(PHTTPRequest & request, PString & text)
 {
   PServiceHTML::ProcessMacros(request, text,
-                              GetURL().AsString(PURL::PathOnly).Mid(1),
+                              GetURL().AsString(PURL::PathOnly),
                               PServiceHTML::LoadFromFile);
   PHTTPConfig::OnLoadedText(request, text);
   PServiceHTML::ProcessMacros(request, text, "", PServiceHTML::NoOptions);
 }
 
 
-BOOL PConfigPage::OnPOST(PHTTPServer & server,
+PBoolean PConfigPage::OnPOST(PHTTPServer & server,
                          const PURL & url,
                          const PMIMEInfo & info,
                          const PStringToString & data,
                          const PHTTPConnectionInfo & connectInfo)
 {
   PHTTPConfig::OnPOST(server, url, info, data, connectInfo);
-  return FALSE;    // Make sure we break any persistent connections
+  return PFalse;    // Make sure we break any persistent connections
 }
 
 
-BOOL PConfigPage::Post(PHTTPRequest & request,
+PBoolean PConfigPage::Post(PHTTPRequest & request,
                        const PStringToString & data,
                        PHTML & reply)
 {
   PSYSTEMLOG(Debug3, "Post to " << request.url << '\n' << data);
-  BOOL retval = PHTTPConfig::Post(request, data, reply);
+  PBoolean retval = PHTTPConfig::Post(request, data, reply);
 
   if (request.code == PHTTP::RequestOK)
     process.BeginRestartSystem();
 
   PServiceHTML::ProcessMacros(request, reply,
-                              GetURL().AsString(PURL::PathOnly).Mid(1),
+                              GetURL().AsString(PURL::PathOnly),
                               PServiceHTML::LoadFromFile);
   OnLoadedText(request, reply);
 
@@ -809,11 +504,11 @@ BOOL PConfigPage::Post(PHTTPRequest & request,
 }
 
 
-BOOL PConfigPage::GetExpirationDate(PTime & when)
+PBoolean PConfigPage::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -838,39 +533,39 @@ PConfigSectionsPage::PConfigSectionsPage(PHTTPServiceProcess & app,
 void PConfigSectionsPage::OnLoadedText(PHTTPRequest & request, PString & text)
 {
   PServiceHTML::ProcessMacros(request, text,
-                              GetURL().AsString(PURL::PathOnly).Mid(1),
+                              GetURL().AsString(PURL::PathOnly),
                               PServiceHTML::LoadFromFile);
   PHTTPConfigSectionList::OnLoadedText(request, text);
 }
 
 
-BOOL PConfigSectionsPage::OnPOST(PHTTPServer & server,
+PBoolean PConfigSectionsPage::OnPOST(PHTTPServer & server,
                                  const PURL & url,
                                  const PMIMEInfo & info,
                                  const PStringToString & data,
                                  const PHTTPConnectionInfo & connectInfo)
 {
   PHTTPConfigSectionList::OnPOST(server, url, info, data, connectInfo);
-  return FALSE;    // Make sure we break any persistent connections
+  return PFalse;    // Make sure we break any persistent connections
 }
 
 
-BOOL PConfigSectionsPage::Post(PHTTPRequest & request,
+PBoolean PConfigSectionsPage::Post(PHTTPRequest & request,
                                const PStringToString & data,
                                PHTML & reply)
 {
-  BOOL retval = PHTTPConfigSectionList::Post(request, data, reply);
+  PBoolean retval = PHTTPConfigSectionList::Post(request, data, reply);
   if (request.code == PHTTP::RequestOK)
     process.BeginRestartSystem();
   return retval;
 }
 
 
-BOOL PConfigSectionsPage::GetExpirationDate(PTime & when)
+PBoolean PConfigSectionsPage::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -895,7 +590,7 @@ PString PRegisterPage::LoadText(PHTTPRequest & request)
   if (process.GetHomePage() == HOME_PAGE) {
     orderURL = "https://home.equival.com.au/purchase.html";
     tempURL = "http://www.equival.com/" + process.GetName().ToLower() + "/register.html";
-    tempURL.Replace(" ", "", TRUE);
+    tempURL.Replace(" ", "", PTrue);
   }
 
   PServiceHTML regPage(process.GetName() & "Registration", NULL);
@@ -1000,7 +695,7 @@ PString PRegisterPage::LoadText(PHTTPRequest & request)
 }
 
 
-static BOOL FindSpliceBlock(const PRegularExpression & regex,
+static PBoolean FindSpliceBlock(const PRegularExpression & regex,
                             const PString & text,
                             PINDEX & pos,
                             PINDEX & len,
@@ -1008,7 +703,7 @@ static BOOL FindSpliceBlock(const PRegularExpression & regex,
                             PINDEX & finish)
 {
   if (!text.FindRegEx(regex, pos, len, 0))
-    return FALSE;
+    return PFalse;
 
   PINDEX endpos, endlen;
   static PRegularExpression EndBlock("<?!--#registration[ \t\n]*end[ \t\n]*[a-z]*[ \t\n]*-->?",
@@ -1019,7 +714,7 @@ static BOOL FindSpliceBlock(const PRegularExpression & regex,
     len = endpos - pos + endlen;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1047,7 +742,7 @@ void PRegisterPage::OnLoadedText(PHTTPRequest & request, PString & text)
                                     PRegularExpression::Extended|PRegularExpression::IgnoreCase);
 
   PServiceHTML::ProcessMacros(request, text,
-                              GetURL().AsString(PURL::PathOnly).Mid(1),
+                              GetURL().AsString(PURL::PathOnly),
                               PServiceHTML::LoadFromFile);
 
   switch (securedConf.GetValidation()) {
@@ -1133,16 +828,16 @@ void PRegisterPage::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-BOOL PRegisterPage::Post(PHTTPRequest & request,
+PBoolean PRegisterPage::Post(PHTTPRequest & request,
                          const PStringToString & data,
                          PHTML & reply)
 {
   if (fields.GetSize() == 0)
     LoadText(request);
 
-  BOOL retval = PHTTPConfig::Post(request, data, reply);
+  PBoolean retval = PHTTPConfig::Post(request, data, reply);
   if (request.code != PHTTP::RequestOK)
-    return FALSE;
+    return PFalse;
 
   PSecureConfig sconf(process.GetProductKey(), process.GetSecuredKeys());
   switch (sconf.GetValidation()) {
@@ -1293,16 +988,16 @@ PString PServiceHTML::CalculateSignature(const PString & out,
 }
 
 
-BOOL PServiceHTML::CheckSignature()
+PBoolean PServiceHTML::CheckSignature()
 {
   return CheckSignature(*this);
 }
 
 
-BOOL PServiceHTML::CheckSignature(const PString & html)
+PBoolean PServiceHTML::CheckSignature(const PString & html)
 {
   if (PHTTPServiceProcess::Current().ShouldIgnoreSignatures())
-    return TRUE;
+    return PTrue;
 
   // extract the signature from the file
   PString out;
@@ -1311,16 +1006,16 @@ BOOL PServiceHTML::CheckSignature(const PString & html)
   // calculate the signature on the data
   PString checkSignature = CalculateSignature(out);
 
-  // return TRUE or FALSE
+  // return PTrue or PFalse
   return checkSignature == signature;
 }
 
 
-static BOOL FindBrackets(const PString & args, PINDEX & open, PINDEX & close)
+static PBoolean FindBrackets(const PString & args, PINDEX & open, PINDEX & close)
 {
   open = args.FindOneOf("[{(", close);
   if (open == P_MAX_INDEX)
-    return FALSE;
+    return PFalse;
 
   switch (args[open]) {
     case '[' :
@@ -1337,7 +1032,7 @@ static BOOL FindBrackets(const PString & args, PINDEX & open, PINDEX & close)
 }
 
 
-static BOOL ExtractVariables(const PString & args,
+static PBoolean ExtractVariables(const PString & args,
                              PString & variable,
                              PString & value)
 {
@@ -1350,12 +1045,12 @@ static BOOL ExtractVariables(const PString & args,
     close = P_MAX_INDEX-1;
   }
   if (variable.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   if (FindBrackets(args, open, close))
     value = args(open+1, close-1);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1364,7 +1059,7 @@ static BOOL ExtractVariables(const PString & args,
 PServiceMacro * PServiceMacro::list;
 
 
-PServiceMacro::PServiceMacro(const char * name, BOOL isBlock)
+PServiceMacro::PServiceMacro(const char * name, PBoolean isBlock)
 {
   macroName = name;
   isMacroBlock = isBlock;
@@ -1373,7 +1068,7 @@ PServiceMacro::PServiceMacro(const char * name, BOOL isBlock)
 }
 
 
-PServiceMacro::PServiceMacro(const PCaselessString & name, BOOL isBlock)
+PServiceMacro::PServiceMacro(const PCaselessString & name, PBoolean isBlock)
 {
   macroName = name;
   isMacroBlock = isBlock;
@@ -1444,7 +1139,7 @@ PCREATE_SERVICE_MACRO(Manufacturer,P_EMPTY,P_EMPTY)
 
 PCREATE_SERVICE_MACRO(Version,P_EMPTY,P_EMPTY)
 {
-  return PHTTPServiceProcess::Current().GetVersion(TRUE);
+  return PHTTPServiceProcess::Current().GetVersion(PTrue);
 }
 
 
@@ -1610,7 +1305,7 @@ PCREATE_SERVICE_MACRO(MonitorInfo,request,P_EMPTY)
 
   PStringStream monitorText; 
   monitorText << "Program: "          << PHTTPServiceProcess::Current().GetProductName() << "\n"
-              << "Version: "          << PHTTPServiceProcess::Current().GetVersion(TRUE) << "\n"
+              << "Version: "          << PHTTPServiceProcess::Current().GetVersion(PTrue) << "\n"
               << "Manufacturer: "     << PHTTPServiceProcess::Current().GetManufacturer() << "\n"
               << "OS: "               << PHTTPServiceProcess::Current().GetOSClass() << " " << PHTTPServiceProcess::Current().GetOSName() << "\n"
               << "OS Version: "       << PHTTPServiceProcess::Current().GetOSVersion() << "\n"
@@ -1805,7 +1500,7 @@ PCREATE_SERVICE_MACRO_BLOCK(IfQuery,request,args,block)
   PString var = args.Left(space);
   PString value = args.Mid(space).LeftTrim();
 
-  BOOL ok;
+  PBoolean ok;
   if (value.IsEmpty())
     ok = vars.Contains(var);
   else {
@@ -1871,7 +1566,7 @@ static void SplitCmdAndArgs(const PString & text, PINDEX pos, PCaselessString & 
 }
 
 
-BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
+bool PServiceHTML::ProcessMacros(PHTTPRequest & request,
                                  PString & text,
                                  const PString & defaultFile,
                                  unsigned options)
@@ -1914,7 +1609,7 @@ BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
            << '"'
            << PHTML::Body();
       text = html;
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -1929,9 +1624,9 @@ BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
   PRegularExpression MacroRegEx("<?!--#(equival|" + process.GetMacroKeyword() + ")[ \t\r\n]+(-?[^-])+-->?",
                                 PRegularExpression::Extended|PRegularExpression::IgnoreCase);
 
-  BOOL substitedMacro;
+  PBoolean substitedMacro;
   do {
-    substitedMacro = FALSE;
+    substitedMacro = PFalse;
 
     PINDEX pos = 0;
     PINDEX len;
@@ -1941,17 +1636,18 @@ BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
       PCaselessString cmd;
       PString args;
       SplitCmdAndArgs(text, pos, cmd, args);
-      PINDEX idx = ServiceMacros.GetValuesIndex(PServiceMacro(cmd, TRUE));
-      if (idx != P_MAX_INDEX) {
-        PRegularExpression EndBlockRegEx("<?!--#(equival|" + process.GetMacroKeyword() + ")"
-                                         "end[ \t\r\n]+" + cmd + "(-?[^-])*-->?",
-                                         PRegularExpression::Extended|PRegularExpression::IgnoreCase);
-        PINDEX endpos, endlen;
-        if (text.FindRegEx(EndBlockRegEx, endpos, endlen, pos+len)) {
-          PINDEX startpos = pos+len;
-          len = endpos-pos + endlen;
+
+      PRegularExpression EndBlockRegEx("<?!--#(equival|" + process.GetMacroKeyword() + ")"
+                                       "end[ \t\r\n]+" + cmd + "(-?[^-])*-->?",
+                                       PRegularExpression::Extended|PRegularExpression::IgnoreCase);
+      PINDEX endpos, endlen;
+      if (text.FindRegEx(EndBlockRegEx, endpos, endlen, pos+len)) {
+        PINDEX startpos = pos+len;
+        len = endpos-pos + endlen;
+        PINDEX idx = ServiceMacros.GetValuesIndex(PServiceMacro(cmd, PTrue));
+        if (idx != P_MAX_INDEX) {
           substitution = ServiceMacros[idx].Translate(request, args, text(startpos, endpos-1));
-          substitedMacro = TRUE;
+          substitedMacro = PTrue;
         }
       }
 
@@ -1966,10 +1662,10 @@ BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
 
       PString substitution;
       if (!process.SubstituteEquivalSequence(request, cmd & args, substitution)) {
-        PINDEX idx = ServiceMacros.GetValuesIndex(PServiceMacro(cmd, FALSE));
+        PINDEX idx = ServiceMacros.GetValuesIndex(PServiceMacro(cmd, PFalse));
         if (idx != P_MAX_INDEX) {
           substitution = ServiceMacros[idx].Translate(request, args, PString::Empty());
-          substitedMacro = TRUE;
+          substitedMacro = PTrue;
         }
       }
 
@@ -1977,7 +1673,26 @@ BOOL PServiceHTML::ProcessMacros(PHTTPRequest & request,
     }
   } while (substitedMacro);
 
-  return TRUE;
+  return PTrue;
+}
+
+
+bool PServiceHTML::SpliceMacro(PString & text, const PString & tokens, const PString & value)
+{
+  PString adjustedTokens = tokens;
+  adjustedTokens.Replace(" ", "[ \t\r\n]+");
+  PRegularExpression RegEx("<?!--#" + adjustedTokens + "[ \t\r\n]*-->?",
+                           PRegularExpression::Extended|PRegularExpression::IgnoreCase);
+
+  bool foundOne = false;
+
+  PINDEX pos, len;
+  while (text.FindRegEx(RegEx, pos, len)) {
+    text.Splice(value, pos, len);
+    foundOne = true;
+  }
+
+  return foundOne;
 }
 
 
@@ -1989,15 +1704,15 @@ static void ServiceOnLoadedText(PString & text)
 
   PString manuf = "<!--Standard_" + process.GetManufacturer() + "_Header-->";
   if (text.Find(manuf) != P_MAX_INDEX)
-    text.Replace(manuf, process.GetPageGraphic(), TRUE);
+    text.Replace(manuf, process.GetPageGraphic(), PTrue);
 
   static const char equiv[] = "<!--Standard_Equivalence_Header-->";
   if (text.Find(equiv) != P_MAX_INDEX)
-    text.Replace(equiv, process.GetPageGraphic(), TRUE);
+    text.Replace(equiv, process.GetPageGraphic(), PTrue);
 
   static const char copy[] = "<!--Standard_Copyright_Header-->";
   if (text.Find(copy) != P_MAX_INDEX)
-    text.Replace(copy, process.GetCopyrightText(), TRUE);
+    text.Replace(copy, process.GetCopyrightText(), PTrue);
 }
 
 
@@ -2010,11 +1725,11 @@ PString PServiceHTTPString::LoadText(PHTTPRequest & request)
   return text;
 }
 
-BOOL PServiceHTTPString::GetExpirationDate(PTime & when)
+PBoolean PServiceHTTPString::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2025,11 +1740,11 @@ void PServiceHTTPFile::OnLoadedText(PHTTPRequest & request, PString & text)
           needSignature ? PServiceHTML::NeedSignature : PServiceHTML::NoOptions);
 }
 
-BOOL PServiceHTTPFile::GetExpirationDate(PTime & when)
+PBoolean PServiceHTTPFile::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2041,12 +1756,13 @@ void PServiceHTTPDirectory::OnLoadedText(PHTTPRequest & request, PString & text)
 }
 
 
-BOOL PServiceHTTPDirectory::GetExpirationDate(PTime & when)
+PBoolean PServiceHTTPDirectory::GetExpirationDate(PTime & when)
 {
   // Well and truly before now....
   when = ImmediateExpiryTime;
-  return TRUE;
+  return PTrue;
 }
 
+#endif // P_HTTPSVC
 
 ///////////////////////////////////////////////////////////////////

@@ -26,30 +26,18 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pnat.h,v $
- * Revision 1.5  2006/02/26 09:29:10  shorne
- * Added GetMethodName and GetList functions
- *
- * Revision 1.4  2006/01/26 03:23:41  shorne
- * Fix compile error when merging code
- *
- * Revision 1.3  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.2  2005/07/13 11:15:14  csoutheren
- * Backported NAT abstraction files from isvo branch
- *
- * Revision 1.1.2.1  2005/04/25 13:23:19  shorne
- * Initial version
- *
- *
-*/
+ * $Revision: 26549 $
+ * $Author: rjongbloed $
+ * $Date: 2011-10-05 23:24:38 -0500 (Wed, 05 Oct 2011) $
+ */
 
-#include <ptlib.h>
 #include <ptlib/sockets.h>
 
-#ifndef P_NATMETHOD
-#define P_NATMETHOD
+#ifndef PTLIB_PNAT_H
+#define PTLIB_PNAT_H
+
+#include <ptlib/plugin.h>
+#include <ptlib/pluginmgr.h>
 
 /** PNatMethod
     Base Network Address Traversal Method class
@@ -60,80 +48,205 @@
 */
 class PNatMethod  : public PObject
 {
-  PCLASSINFO(PNatMethod,PObject);
+    PCLASSINFO(PNatMethod,PObject);
 
-public:
-
+  public:
   /**@name Construction */
   //@{
-  /** Default Contructor
-  */
-  PNatMethod();
+    /** Default Contructor
+    */
+    PNatMethod();
 
-  /** Deconstructor
-  */
-  ~PNatMethod();
+    /** Deconstructor
+    */
+    ~PNatMethod();
   //@}
+
+
+  /**@name Overrides from PObject */
+  //@{
+    virtual void PrintOn(
+      ostream & strm
+    ) const;
+  //@}
+
 
   /**@name General Functions */
   //@{
+    /** Factory Create
+    */
+    static PNatMethod * Create(
+      const PString & name,        ///< Feature Name Expression
+      PPluginManager * pluginMgr = NULL   ///< Plugin Manager
+    );
 
-  /**  GetExternalAddress
-    Get the acquired External IP Address.
-  */
-   virtual BOOL GetExternalAddress(
-      PIPSocket::Address & externalAddress, /// External address of router
-      const PTimeInterval & maxAge = 1000   /// Maximum age for caching
-   ) =0;
+    /** Get the NAT traversal method Name
+    */
+    virtual PString GetName() const = 0;
 
-  /**  CreateSocketPair
-    Create the UDP Socket pair
-  */
-   virtual BOOL CreateSocketPair(
+    /**Get the current server address name.
+       Defaults to be "address:port" string form.
+      */
+    virtual PString GetServer() const;
+
+    /**Get the current server address and port being used.
+      */
+    virtual bool GetServerAddress(
+      PIPSocket::Address & address,   ///< Address of server
+      WORD & port                     ///< Port server is using.
+    ) const = 0;
+
+    /** Get the acquired External IP Address.
+    */
+    virtual PBoolean GetExternalAddress(
+      PIPSocket::Address & externalAddress, ///< External address of router
+      const PTimeInterval & maxAge = 1000   ///< Maximum age for caching
+    ) = 0;
+
+    /**Return the interface NAT router is using.
+      */
+    virtual bool GetInterfaceAddress(
+      PIPSocket::Address & internalAddress  ///< NAT router internal address returned.
+    ) const = 0;
+
+    /**Create a single socket.
+       The NAT traversal protocol is used to create a socket for which the
+       external IP address and port numbers are known. A PUDPSocket descendant
+       is returned which will, in response to GetLocalAddress() return the
+       externally visible IP and port rather than the local machines IP and
+       socket.
+
+       The will create a new socket pointer. It is up to the caller to make
+       sure the socket is deleted to avoid memory leaks.
+
+       The socket pointer is set to NULL if the function fails and returns
+       false.
+      */
+    virtual PBoolean CreateSocket(
+      PUDPSocket * & socket,
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny(),
+      WORD localPort = 0
+    ) = 0;
+
+    /**Create a socket pair.
+       The NAT traversal protocol is used to create a pair of sockets with
+       adjacent port numbers for which the external IP address and port
+       numbers are known. PUDPSocket descendants are returned which will, in
+       response to GetLocalAddress() return the externally visible IP and port
+       rather than the local machines IP and socket.
+
+       The will create new socket pointers. It is up to the caller to make
+       sure the sockets are deleted to avoid memory leaks.
+
+       The socket pointers are set to NULL if the function fails and returns
+       false.
+      */
+    virtual PBoolean CreateSocketPair(
       PUDPSocket * & socket1,
-      PUDPSocket * & socket2
-   ) =0;
+      PUDPSocket * & socket2,
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()
+    ) = 0;
 
-  /**Returns whether the Nat Method is ready and available in
-     assisting in NAT Traversal. The principal is function is
-     to allow the EP to detect various methods and if a method
-     is detected then this method is available for NAT traversal
-     The Order of adding to the PNstStrategy determines which method
-     is used
-  */
-   virtual BOOL IsAvailable() { return FALSE; };
+    /**Create a socket pair.
+       The NAT traversal protocol is used to create a pair of sockets with
+       adjacent port numbers for which the external IP address and port
+       numbers are known. PUDPSocket descendants are returned which will, in
+       response to GetLocalAddress() return the externally visible IP and port
+       rather than the local machines IP and socket.
+
+       The will create new socket pointers. It is up to the caller to make
+       sure the sockets are deleted to avoid memory leaks.
+
+       The socket pointers are set to NULL if the function fails and returns
+       false.
+      */
+    virtual PBoolean CreateSocketPair(
+      PUDPSocket * & socket1,
+      PUDPSocket * & socket2,
+      const PIPSocket::Address & binding,
+      void * userData
+    );
+
+    /**Returns whether the Nat Method is ready and available in
+    assisting in NAT Traversal. The principal is function is
+    to allow the EP to detect various methods and if a method
+    is detected then this method is available for NAT traversal
+    The Order of adding to the PNstStrategy determines which method
+    is used
+    */
+    virtual bool IsAvailable(
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()  ///< Interface to see if NAT is available on
+    ) = 0;
+
+    /**Acrivate
+     Activate/DeActivate the NAT Method on a call by call basis
+     Default does notthing
+      */
+    virtual void Activate(bool active);
+
+    /**Set Alternate Candidate (ICE) or probe (H.460.24A) addresses.
+       Default does nothing.
+      */
+    virtual void SetAlternateAddresses(
+      const PStringArray & addresses,   ///< List of probe/candidates
+      void * userData = NULL            ///< User data to link to NAT handler.
+    );
+
+    enum RTPSupportTypes {
+      RTPSupported,
+      RTPIfSendMedia,
+      RTPUnsupported,
+      RTPUnknown,
+      NumRTPSupportTypes
+    };
+
+    /**Return an indication if the current STUN type supports RTP
+    Use the force variable to guarantee an up to date test
+    */
+    virtual RTPSupportTypes GetRTPSupport(
+      PBoolean force = false    ///< Force a new check
+    ) = 0;
 
     /**Set the port ranges to be used on local machine.
-       Note that the ports used on the NAT router may not be the same unless
-       some form of port forwarding is present.
+    Note that the ports used on the NAT router may not be the same unless
+    some form of port forwarding is present.
 
-       If the port base is zero then standard operating system port allocation
-       method is used.
+    If the port base is zero then standard operating system port allocation
+    method is used.
 
-       If the max port is zero then it will be automatically set to the port
-       base + 99.
-      */
-   virtual void SetPortRanges(
-      WORD portBase,          /// Single socket port number base
-      WORD portMax = 0,       /// Single socket port number max
-      WORD portPairBase = 0,  /// Socket pair port number base
-      WORD portPairMax = 0    /// Socket pair port number max
-   );
-
-   /** Get the Method String Name
-   */
-   virtual PString GetNatMethodName() { return PString(); };
-
+    If the max port is zero then it will be automatically set to the port
+    base + 99.
+    */
+    virtual void SetPortRanges(
+      WORD portBase,          ///< Single socket port number base
+      WORD portMax = 0,       ///< Single socket port number max
+      WORD portPairBase = 0,  ///< Socket pair port number base
+      WORD portPairMax = 0    ///< Socket pair port number max
+    );
   //@}
 
-protected:
-  struct PortInfo {
+  protected:
+    struct PortInfo {
+      PortInfo(WORD port = 0)
+        : basePort(port)
+        , maxPort(port)
+        , currentPort(port)
+      {
+      }
+
       PMutex mutex;
       WORD   basePort;
       WORD   maxPort;
       WORD   currentPort;
     } singlePortInfo, pairedPortInfo;
 
+	/** RandomPortPair
+		This function returns a random port pair base number in the specified range for
+		the creation of the RTP port pairs (this used to avoid issues with multiple
+		NATed devices opening the same local ports and experiencing issues with
+		the behaviour of the NAT device Refer: draft-jennings-behave-test-results-04 sect 3
+	*/
+	WORD RandomPortPair(unsigned int start, unsigned int end);
 };
 
 /////////////////////////////////////////////////////////////
@@ -178,7 +291,18 @@ public :
     Traversal Method. If no available NAT Method is found
     then NULL is returned. 
   */
-  PNatMethod * GetMethod();
+  PNatMethod * GetMethod(const PIPSocket::Address & address = PIPSocket::GetDefaultIpAny());
+
+  /** GetMethodByName
+    This function retrieves the NAT Traversal Method with the given name. 
+    If it is not found then NULL is returned. 
+  */
+  PNatMethod * GetMethodByName(const PString & name);
+
+  /** RemoveMethod
+    This function removes a NAT method from the NATlist matching the supplied method name
+   */
+  PBoolean RemoveMethod(const PString & meth);
 
     /**Set the port ranges to be used on local machine.
        Note that the ports used on the NAT router may not be the same unless
@@ -191,20 +315,59 @@ public :
        base + 99.
       */
     void SetPortRanges(
-      WORD portBase,          /// Single socket port number base
-      WORD portMax = 0,       /// Single socket port number max
-      WORD portPairBase = 0,  /// Socket pair port number base
-      WORD portPairMax = 0    /// Socket pair port number max
+      WORD portBase,          ///< Single socket port number base
+      WORD portMax = 0,       ///< Single socket port number max
+      WORD portPairBase = 0,  ///< Socket pair port number base
+      WORD portPairMax = 0    ///< Socket pair port number max
     );
 
-    /** Get NAT Method List
+    /** Get Loaded NAT Method List
      */
-    PNatList GetNATList() {  return natlist; };
+    PNatList & GetNATList() {  return natlist; };
+
+	PNatMethod * LoadNatMethod(const PString & name);
+
+    static PStringArray GetRegisteredList();
 
   //@}
 
 private:
   PNatList natlist;
+  PPluginManager * pluginMgr;
 };
 
+////////////////////////////////////////////////////////
+//
+// declare macros and structures needed for NAT plugins
+//
+
+template <class className> class PNatMethodServiceDescriptor : public PDevicePluginServiceDescriptor
+{
+  public:
+    virtual PObject *    CreateInstance(int /*userData*/) const { return (PNatMethod *)new className; }
+    virtual PStringArray GetDeviceNames(int /*userData*/) const { return className::GetNatMethodName(); }
+    virtual bool  ValidateDeviceName(const PString & deviceName, int /*userData*/) const { 
+	      return (deviceName == GetDeviceNames(0)[0]); 
+	} 
+};
+
+#define PDECLARE_NAT_METHOD(method, cls) PFACTORY_CREATE(PFactory<PNatMethod>, cls, #method)
+
+#define PCREATE_NAT_PLUGIN(name) \
+  static PNatMethodServiceDescriptor<PNatMethod_##name> PNatMethod_##name##_descriptor; \
+  PCREATE_PLUGIN_STATIC(name, PNatMethod, &PNatMethod_##name##_descriptor)
+
+
+#if P_STUN
+PFACTORY_LOAD(PSTUNClient);
 #endif
+
+#if P_TURN
+PFACTORY_LOAD(PTURNClient);
+#endif
+
+
+#endif // PTLIB_PNAT_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

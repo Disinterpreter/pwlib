@@ -5,16 +5,15 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.h,v $
- * Revision 1.1  2002/10/02 08:58:20  craigs
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _Xmlrpcsrvr_MAIN_H
 #define _Xmlrpcsrvr_MAIN_H
 
-
+#include <ptlib/pprocess.h>
 #include <ptclib/httpsvc.h>
 #include <ptclib/pxmlrpcs.h>
 
@@ -25,13 +24,13 @@ class Xmlrpcsrvr : public PHTTPServiceProcess
   public:
     Xmlrpcsrvr();
     void Main();
-    BOOL OnStart();
+    PBoolean OnStart();
     void OnStop();
     void OnConfigChanged();
     void OnControl();
     PString GetPageGraphic();
     void AddUnregisteredText(PHTML & html);
-    BOOL Initialise(const char * initMsg);
+    PBoolean Initialise(const char * initMsg);
 
     PDECLARE_NOTIFIER(PXMLRPCServerParms, Xmlrpcsrvr, FunctionNotifier);
 

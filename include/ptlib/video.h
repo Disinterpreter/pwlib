@@ -26,79 +26,21 @@
  *
  * Contributor(s): Derek Smithies (derek@indranet.co.nz)
  *
- * $Log: video.h,v $
- * Revision 1.18  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.17  2003/11/19 04:28:21  csoutheren
- * Changed to support video output plugins
- *
- * Revision 1.16  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.15  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.14  2003/04/15 21:10:29  dereks
- * Patches for Firewire video. Thanks Georgi Georgiev.
- *
- * Revision 1.13  2003/03/17 07:45:14  robertj
- * Removed redundant "render now" function.
- *
- * Revision 1.12  2003/02/18 03:55:59  dereks
- * Add 1394AVC pathces from  Georgi Georgiev. Thanks!
- *
- * Revision 1.11  2003/01/11 05:30:13  robertj
- * Added support for IEEE 1394 AV/C cameras, thanks Georgi Georgiev
- *
- * Revision 1.10  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.9  2002/02/20 02:37:26  dereks
- * Initial release of Firewire camera support for linux.
- * Many thanks to Ryutaroh Matsumoto <ryutaroh@rmatsumoto.org>.
- *
- * Revision 1.8  2002/01/04 04:11:45  dereks
- * Add video flip code from Walter Whitlock, which flips code at the grabber.
- *
- * Revision 1.7  2001/12/03 03:44:52  dereks
- * Add method to retrive pointer to the attached video display class.
- *
- * Revision 1.6  2001/11/28 00:07:32  dereks
- * Locking added to PVideoChannel, allowing reader/writer to be changed mid call
- * Enabled adjustment of the video frame rate
- * New fictitous image, a blank grey area
- *
- * Revision 1.5  2001/10/23 02:11:00  dereks
- * Extend video channel so it can display raw data, using attached video devices.
- *
- * Revision 1.4  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.3  2001/03/07 01:42:59  dereks
- * miscellaneous video fixes. Works on linux now. Add debug statements
- * (at PTRACE level of 1)
- *
- * Revision 1.2  2000/12/19 22:20:26  dereks
- * Add video channel classes to connect to the PwLib PVideoInputDevice class.
- * Add PFakeVideoInput class to generate test images for video.
- *
- * Revision 1.1  2000/11/09 00:43:04  dereks
- * Initial release.
- *
- * 
- *
+ * $Revision: 24459 $
+ * $Author: shorne $
+ * $Date: 2010-06-06 08:59:59 -0500 (Sun, 06 Jun 2010) $
  */
 
-#ifndef _PVIDEO
-#define _PVIDEO
+#ifndef PTLIB_VIDEO_H
+#define PTLIB_VIDEO_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
+
+#include <ptbuildopts.h>
+
+#if P_VIDEO
 
 #include <ptlib/videoio.h>
 
@@ -127,8 +69,8 @@ class PVideoChannel : public PChannel
         Create a reference to the video drivers for the platform.
       */
     PVideoChannel(
-      const PString & device,       /// Name of video driver/device
-      Directions dir               /// Video I/O direction
+      const PString & device,   ///< Name of video driver/device
+      Directions dir            ///< Video I/O direction
     );
     // 
 
@@ -142,34 +84,34 @@ class PVideoChannel : public PChannel
        platform specific and is as returned in the GetDevices() function.
 
        @return
-       TRUE if the video device is valid for playing/recording.
+       true if the video device is valid for playing/recording.
      */
-    BOOL Open(
-      const PString & device,       /// Name of video driver/device
-      Directions dir               /// Video I/O direction
+    PBoolean Open(
+      const PString & device,   ///< Name of video driver/device
+      Directions dir            ///< Video I/O direction
     );
 
     /** return True if one (or both) of the video device class pointers
        is non NULL. If either pointer is non NULL, then a device is ready
        to be written to, which indicates this channel is open.
     */
-     BOOL IsOpen() const;
+     PBoolean IsOpen() const;
     
     /**Get all of the names for video devices/drivers that are available on
        this platform. Note that a named device may not necessarily do both
-       playing and recording so the arrays returned with the #dir#
+       playing and recording so the arrays returned with the <code>dir</code>
        parameter in each value is not necessarily the same.
 
        @return
        An array of platform dependent strings for each video player/recorder.
      */
-    static PStringList GetDeviceNames(
-      Directions dir    // Video I/O direction
+    static PStringArray GetDeviceNames(
+      Directions dir    ///< Video I/O direction
     )  ;
 
     /**Get the name for the default video devices/driver that is on this
        platform. Note that a named device may not necessarily do both
-       playing and recording so the arrays returned with the #dir#
+       playing and recording so the arrays returned with the <code>dir</code>
        parameter in each value is not necessarily the same.
 
        @return
@@ -189,7 +131,7 @@ class PVideoChannel : public PChannel
      */
     virtual PINDEX  GetGrabHeight();
 
-    virtual BOOL Read(void * buf, PINDEX  len);
+    virtual PBoolean Read(void * buf, PINDEX  len);
       // Low level read from the video channel. This function will block until the
       // requested number of characters were read.
   
@@ -197,13 +139,21 @@ class PVideoChannel : public PChannel
     /**Low level write to the channel, which is data to be rendered to the 
        local video display device.
        */
-    BOOL Write(const void * buf,  //Pointer to the image data to be rendered
+    PBoolean Write(const void * buf,  //Pointer to the image data to be rendered
                PINDEX      len);
+
+    /** Low level write to the video channel with marker. .
+     */
+    virtual PBoolean Write(
+      const void * buf,  ///< Pointer to a block of memory to write.
+      PINDEX len,        ///< Number of bytes to write.
+	  void * mark        ///< Unique Marker to identify write
+    );
     
     /**Cause the referenced data to be drawn to the 
        previously defined media 
      */
-    virtual BOOL Redraw(const void * frame); 
+    virtual PBoolean Redraw(const void * frame); 
 
     /**Return the previously specified width.
      */
@@ -213,15 +163,20 @@ class PVideoChannel : public PChannel
      */
     PINDEX  GetRenderHeight();
 
-    /**Specifiy the width and height of the video stream, which is to be
+    /**Specify the width and height of the video stream, which is to be
        rendered onto the previously specified device.
      */
-    virtual void SetRenderFrameSize(int _width, int _height); 
+    virtual void SetRenderFrameSize(int width, int height); 
 
+   /**Specify the width and height of the video stream, which is to be
+       rendered onto the previously specified device including sample aspect ratio.
+     */
+    virtual void SetRenderFrameSize(int width, int height,int sarwidth, int sarheight);
+  
     /**Specifiy the width and height of the video stream, which is to be
        extracted from the previously specified device.
      */
-    virtual void SetGrabberFrameSize(int _width, int _height); 
+    virtual void SetGrabberFrameSize(int width, int height); 
 
     /**Attach a user specific class for rendering video 
 
@@ -231,7 +186,7 @@ class PVideoChannel : public PChannel
        If keepCurrent is false, the existing video player is deleted before attaching
        the new player.
      */
-    virtual void AttachVideoPlayer(PVideoOutputDevice * device, BOOL keepCurrent = TRUE);
+    virtual void AttachVideoPlayer(PVideoOutputDevice * device, PBoolean keepCurrent = true);
 
     /**Attach a user specific class for acquiring video 
 
@@ -241,7 +196,7 @@ class PVideoChannel : public PChannel
        If keepCurrent is false, the existing video reader is deleted before attaching
        the new reader.
      */
-    virtual void AttachVideoReader(PVideoInputDevice * device, BOOL keepCurrent = TRUE);
+    virtual void AttachVideoReader(PVideoInputDevice * device, PBoolean keepCurrent = true);
 
     /**Return a pointer to the class for acquiring video 
      */
@@ -253,16 +208,23 @@ class PVideoChannel : public PChannel
 
     /**See if the grabber is open 
      */
-    virtual BOOL IsGrabberOpen();
+    virtual PBoolean IsGrabberOpen();
     
     /**See if the rendering device is open
      */
-    virtual BOOL IsRenderOpen();
+    virtual PBoolean IsRenderOpen();
+
+	/**Allow the outputdevice decide whether the 
+		decoder should ignore decode hence not render
+		any output. This does not mean the video channel is closed
+		just to not decode and render any frames. 
+	  */
+	virtual PBoolean DisableDecode();
 
     /**Get data from the attached inputDevice, and display on the
        attached ouptutDevice.
     */
-    BOOL DisplayRawData(void *videoBuffer);
+    PBoolean DisplayRawData(void *videoBuffer);
 
     /**Destroy the attached grabber class.
      */
@@ -282,7 +244,12 @@ class PVideoChannel : public PChannel
 
     /**Toggle the vertical flip state of the video grabber.
     */
-    BOOL ToggleVFlipInput();
+    PBoolean ToggleVFlipInput();
+
+     /**Flow Control information
+       Pass data to the channel for flowControl determination.
+      */
+    virtual bool FlowControl(const void * flowData);
 
  protected:
 
@@ -306,7 +273,9 @@ class PVideoChannel : public PChannel
 #endif
 };
 
-#endif
+#endif // P_VIDEO
+
+#endif // PTLIB_VIDEO_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

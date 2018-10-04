@@ -25,10 +25,9 @@
  *                 Mark Cooke (mpc@star.sr.bham.ac.uk)
  *                 Nicola Orru' <nigu@itadinanta.it>
  *
- * $Log: vidinput_names.h,v $
- * Revision 1.2  2004/11/07 22:48:47  dominance
- * fixed copyright of v4l2 plugin. Last commit's credits go to Nicola Orru' <nigu@itadinanta.it> ...
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 #ifndef _VIDINPUTNAMES_H
 #define _VIDINPUTNAMES_H

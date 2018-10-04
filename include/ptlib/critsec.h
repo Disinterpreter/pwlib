@@ -23,89 +23,46 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: critsec.h,v $
- * Revision 1.17  2006/03/20 00:24:56  csoutheren
- * Applied patch #1446482
- * Thanks to Adam Butcher
- *
- * Revision 1.16  2006/01/18 07:17:59  csoutheren
- * Added explicit copy constructor for PCriticalSection on Windows
- *
- * Revision 1.15  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.14  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.13  2005/11/14 22:29:13  csoutheren
- * Reverted Wait and Signal to non-const - there is no way we can guarantee that all
- * descendant classes everywhere will be changed over, so we have to keep the
- * original  API
- *
- * Revision 1.12  2005/11/08 10:44:37  dsandras
- * Fixed deadlock with code using the old API.
- *
- * Revision 1.11  2005/11/04 07:20:30  csoutheren
- * Provide backwards compatibility functions and typedefs
- *
- * Revision 1.10  2005/11/04 06:34:20  csoutheren
- * Added new class PSync as abstract base class for all mutex/sempahore classes
- * Changed PCriticalSection to use Wait/Signal rather than Enter/Leave
- * Changed Wait/Signal to be const member functions
- * Renamed PMutex to PTimedMutex and made PMutex synonym for PCriticalSection.
- * This allows use of very efficient mutex primitives in 99% of cases where timed waits
- * are not needed
- *
- * Revision 1.9  2004/05/16 23:31:07  csoutheren
- * Updated API documentation
- *
- * Revision 1.8  2004/05/12 04:36:13  csoutheren
- * Fixed problems with using sem_wait and friends on systems that do not
- * support atomic integers
- *
- * Revision 1.7  2004/04/21 11:22:56  csoutheren
- * Modified to work with gcc 3.4.0
- *
- * Revision 1.6  2004/04/14 06:58:00  csoutheren
- * Fixed PAtomicInteger and PSmartPointer to use real atomic operations
- *
- * Revision 1.5  2004/04/12 03:35:26  csoutheren
- * Fixed problems with non-recursuve mutexes and critical sections on
- * older compilers and libc
- *
- * Revision 1.4  2004/04/12 00:58:45  csoutheren
- * Fixed PAtomicInteger on Linux, and modified PMutex to use it
- *
- * Revision 1.3  2004/04/12 00:36:04  csoutheren
- * Added new class PAtomicInteger and added Windows implementation
- *
- * Revision 1.2  2004/04/11 03:20:41  csoutheren
- * Added Unix implementation of PCriticalSection
- *
- * Revision 1.1  2004/04/11 02:55:17  csoutheren
- * Added PCriticalSection for Windows
- * Added compile time option for PContainer to use critical sections to provide thread safety under some circumstances
- *
+ * $Revision: 29078 $
+ * $Author: rjongbloed $
+ * $Date: 2013-02-12 17:22:50 -0600 (Tue, 12 Feb 2013) $
  */
 
-#ifndef _PCRITICALSECTION
-#define _PCRITICALSECTION
+#ifndef PTLIB_CRITICALSECTION_H
+#define PTLIB_CRITICALSECTION_H
 
 #include <ptlib/psync.h>
 
+#if defined(SOLARIS) && !defined(__GNUC__)
+#include <atomic.h>
+#endif
+
 #if P_HAS_ATOMIC_INT
+
+#if defined(__GNUC__)
+#  if __GNUC__ >= 4 && __GNUC_MINOR__ >= 2
+#     include <ext/atomicity.h>
+#  else
+#     include <bits/atomicity.h>
+#  endif
+#endif
+
 #if P_NEEDS_GNU_CXX_NAMESPACE
 #define EXCHANGE_AND_ADD(v,i)   __gnu_cxx::__exchange_and_add(v,i)
 #else
 #define EXCHANGE_AND_ADD(v,i)   __exchange_and_add(v,i)
 #endif
-#endif
+
+#endif // P_HAS_ATOMIC_INT
+
 
 /** This class implements critical section mutexes using the most
   * efficient mechanism available on the host platform.
   * For Windows, CriticalSection is used.
-  * On other platforms, the sem_wait call is used.
+  * On other platforms, pthread_mutex_t is used
   */
+
+#ifdef _WIN32
 
 class PCriticalSection : public PSync
 {
@@ -117,138 +74,246 @@ class PCriticalSection : public PSync
     /**Create a new critical section object .
      */
     PCriticalSection();
+
+    /**Allow copy constructor, but it actually does not copy the critical section,
+       it creates a brand new one as they cannot be shared in that way.
+     */
     PCriticalSection(const PCriticalSection &);
 
     /**Destroy the critical section object
      */
     ~PCriticalSection();
+
+    /**Assignment operator is allowed but does nothing. Overwriting the old critical
+       section information would be very bad.
+      */
+    PCriticalSection & operator=(const PCriticalSection &) { return *this; }
   //@}
 
   /**@name Operations */
   //@{
+    /** Create a new PCriticalSection
+      */
+    PObject * Clone() const
+    {
+      return new PCriticalSection();
+    }
+
     /** Enter the critical section by waiting for exclusive access.
      */
     void Wait();
-    inline void Enter()
-    { Wait(); }
+    inline void Enter() { Wait(); }
 
     /** Leave the critical section by unlocking the mutex
      */
     void Signal();
-    inline void Leave()
-    { Signal(); }
+    inline void Leave() { Signal(); }
 
+    /** Try to enter the critical section for exlusive access. Does not wait.
+        @return true if cirical section entered, leave/Signal must be called.
+      */
+    bool Try();
   //@}
 
-  private:
-    PCriticalSection & operator=(const PCriticalSection &) { return *this; }
 
-// Include platform dependent part of class
-#ifdef _WIN32
 #include "msos/ptlib/critsec.h"
-#else
-#include "unix/ptlib/critsec.h"
-#endif
+
 };
+
+#endif
 
 typedef PWaitAndSignal PEnterAndLeave;
 
-/** This class implements an integer that can be atomically 
-  * incremented and decremented in a thread-safe manner.
-  * On Windows, the integer is of type long and this class is implemented using InterlockedIncrement
-  * and InterlockedDecrement integer is of type long.
-  * On Unix systems with GNU std++ support for EXCHANGE_AND_ADD, the integer is of type _Atomic_word (normally int)
-  * On all other systems, this class is implemented using PCriticalSection and the integer is of type int.
-  */
 
-class PAtomicInteger 
+class PAtomicBase
 {
-#if defined(_WIN32) || defined(DOC_PLUS_PLUS)
-    public:
-      /** Create a PAtomicInteger with the specified initial value
-        */
-      inline PAtomicInteger(
-        long v = 0                     ///< initial value
-      )
-        : value(v) { }
-
-      /**
-        * Test if an atomic integer has a zero value. Note that this
-        * is a non-atomic test - use the return value of the operator++() or
-        * operator--() tests to perform atomic operations
-        *
-        * @return TRUE if the integer has a value of zero
-        */
-      BOOL IsZero() const                 { return value == 0; }
-
-      /**
-        * atomically increment the integer value
-        *
-        * @return Returns the value of the integer after the increment
-        */
-      inline long operator++()            { return InterlockedIncrement(&value); }
-
-      /**
-        * atomically decrement the integer value
-        *
-        * @return Returns the value of the integer after the decrement
-        */
-      inline long operator--()            { return InterlockedDecrement(&value); }
-
-      /**
-        * @return Returns the value of the integer
-        */
-      inline operator long () const       { return value; }
-
-      /**
-        * Set the value of the integer
-        */
-      inline void SetValue(
-        long v                          ///< value to set
-      )
-      { value = v; }
-    protected:
-      long value;
-#elif defined(_STLP_INTERNAL_THREADS_H) && defined(_STLP_ATOMIC_EXCHANGE)
-    public:
-      inline PAtomicInteger(__stl_atomic_t v = 0)
-        : value(v) { }
-      BOOL IsZero() const                { return value == 0; }
-      inline int operator++()            { return _STLP_ATOMIC_INCREMENT(&value); }
-      inline int unsigned operator--()   { return _STLP_ATOMIC_DECREMENT(&value); }
-      inline operator int () const       { return value; }
-      inline void SetValue(int v)        { value = v; }
-    protected:
-      __stl_atomic_t value;
-#elif !defined(_STLP_INTERNAL_THREADS_H) && P_HAS_ATOMIC_INT
-    public:
-      inline PAtomicInteger(int v = 0)
-        : value(v) { }
-      BOOL IsZero() const                { return value == 0; }
-      inline int operator++()            { return EXCHANGE_AND_ADD(&value, 1) + 1; }
-      inline int unsigned operator--()   { return EXCHANGE_AND_ADD(&value, -1) - 1; }
-      inline operator int () const       { return value; }
-      inline void SetValue(int v)        { value = v; }
-    protected:
-      _Atomic_word value;
-#else 
-    protected:
-      PCriticalSection critSec;
-    public:
-      inline PAtomicInteger(int v = 0)
-        : value(v) { }
-      BOOL IsZero() const                { return value == 0; }
-      inline int operator++()            { PWaitAndSignal m(critSec); value++; return value;}
-      inline int operator--()            { PWaitAndSignal m(critSec); value--; return value;}
-      inline operator int () const       { return value; }
-      inline void SetValue(int v)        { value = v; }
-   private:
-      PAtomicInteger & operator=(const PAtomicInteger & ref) { value = (int)ref; return *this; }
-    protected:
-      int value;
+  public:
+#if defined(_WIN32)
+    typedef long IntegerType;
+#elif defined(_STLP_INTERNAL_THREADS_H) && defined(_STLP_ATOMIC_INCREMENT) && defined(_STLP_ATOMIC_DECREMENT)
+    typedef __stl_atomic_t IntegerType;
+#elif defined(SOLARIS) && !defined(__GNUC__)
+    typedef uint32_t IntegerType;
+#elif defined(__GNUC__) && P_HAS_ATOMIC_INT
+    typedef _Atomic_word IntegerType;
+#else
+    typedef int IntegerType;
+  protected:
+    pthread_mutex_t m_mutex;
 #endif
+
+  protected:
+    IntegerType m_value;
+
+    explicit PAtomicBase(IntegerType value);
+
+  public:
+    /// Destroy the atomic integer
+    ~PAtomicBase();
 };
 
+
+
+/**This class implements an integer that can be atomically incremented and
+   decremented in a thread-safe manner.
+
+   On Windows, the integer is of type long and this class is implemented using
+   InterlockedIncrement and InterlockedDecrement integer is of type long.
+
+   On Unix systems with GNU std++ support for __exchange_and_add, the integer
+   is of type _Atomic_word (normally int).
+
+   On Solaris atomic_add_32_nv is used.
+
+   On all other systems, this class is implemented using PCriticalSection and
+   the integer is of type int.
+  */
+class PAtomicInteger : PAtomicBase
+{
+  public:
+    typedef PAtomicBase::IntegerType IntegerType;
+
+    /** Create a PAtomicInteger with the specified initial value
+      */
+    explicit PAtomicInteger(
+      IntegerType value = 0                     ///< initial value
+    ) : PAtomicBase(value) { }
+
+    /// @return Returns the value of the atomic integer
+    __inline operator IntegerType() const { return m_value; }
+
+    /// Assign a value to the atomic integer
+    __inline PAtomicInteger & operator=(IntegerType value) { m_value = value; return *this; }
+
+    /// Set the value of the atomic integer
+    void SetValue(
+      IntegerType value  ///< value to set
+    ) { m_value = value; }
+
+    /**Test if an atomic integer has a zero value. Note that this, is a
+       non-atomic test - use the return value of the operator++() or
+       operator--() tests to perform atomic operations
+
+       @return true if the integer has a value of zero.
+      */
+    __inline bool IsZero() const { return m_value == 0; }
+
+    /// Test if atomic integer has a non-zero value.
+    __inline bool operator!() const { return m_value != 0; }
+
+    friend __inline ostream & operator<<(ostream & strm, const PAtomicInteger & i)
+    {
+      return strm << i.m_value;
+    }
+
+    /**
+      * atomically pre-increment the integer value
+      *
+      * @return Returns the value of the integer after the increment
+      */
+    IntegerType operator++();
+
+    /**
+      * atomically post-increment the integer value
+      *
+      * @return Returns the value of the integer before the increment
+      */
+    IntegerType operator++(int);
+
+    /**
+      * atomically pre-decrement the integer value
+      *
+      * @return Returns the value of the integer after the decrement
+      */
+    IntegerType operator--();
+
+    /**
+      * atomically post-decrement the integer value
+      *
+      * @return Returns the value of the integer before the decrement
+      */
+    IntegerType operator--(int);
+};
+
+
+/** This class implements an atomic "test and set" boolean.
+  */
+class PAtomicBoolean : PAtomicBase
+{
+  public:
+    /** Create a PAtomicBoolean with the specified initial value
+      */
+    explicit PAtomicBoolean(
+      bool value = false  ///< initial value
+    ) : PAtomicBase(value ? 1 : 0) { }
+
+    /// @return Returns the value of the atomic boolean
+    __inline operator bool() const { return m_value != 0; }
+
+    /// Test if atomic integer has a non-zero value.
+    __inline bool operator!() const { return m_value != 0; }
+
+    /// Assign a value to the atomic boolean
+    __inline PAtomicBoolean & operator=(bool value) { m_value = value ? 1 : 0; return *this; }
+
+    /** Test Set the value of the atomic boolean.
+        @Returns the previous value.
+      */
+    bool TestAndSet(
+      bool value  ///< value to set
+    );
+
+    friend __inline ostream & operator<<(ostream & strm, const PAtomicBoolean & b)
+    {
+      return strm << (b.m_value != 0 ? "true" : "false");
+    }
+};
+
+
+#if defined(_WIN32) || defined(DOC_PLUS_PLUS)
+__inline PAtomicBase::PAtomicBase(IntegerType value) : m_value(value) { }
+__inline PAtomicBase::~PAtomicBase()                                  { }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++()     { return InterlockedIncrement  (&m_value); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++(int)  { return InterlockedExchangeAdd(&m_value, 1); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--()     { return InterlockedDecrement  (&m_value); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--(int)  { return InterlockedExchangeAdd(&m_value, -1); }
+__inline bool PAtomicBoolean::TestAndSet(bool value)                  { return InterlockedExchange   (&m_value, value) != 0; }
+#elif defined(_STLP_INTERNAL_THREADS_H) && defined(_STLP_ATOMIC_INCREMENT) && defined(_STLP_ATOMIC_DECREMENT)
+__inline PAtomicBase::PAtomicBase(IntegerType value) : m_value(value) { }
+__inline PAtomicBase::~PAtomicBase()                                  { }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++()     { return _STLP_ATOMIC_INCREMENT(&m_value); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++(int)  { return _STLP_ATOMIC_INCREMENT(&m_value)-1; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--()     { return _STLP_ATOMIC_DECREMENT(&m_value); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--(int)  { return _STLP_ATOMIC_DECREMENT(&m_value)+1; }
+__inline bool PAtomicBoolean::TestAndSet(bool value)                  { return _STLP_ATOMIC_EXCHANGE (&m_value, value) != 0; }
+#elif defined(SOLARIS) && !defined(__GNUC__)
+__inline PAtomicBase::PAtomicBase(IntegerType value) : m_value(value) { }
+__inline PAtomicBase::~PAtomicBase()                                  { }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++()     { return atomic_add_32_nv(&m_value,  1); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++(int)  { return atomic_add_32_nv(&m_value,  1)-1; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--()     { return atomic_add_32_nv(&m_value, -1); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--(int)  { return atomic_add_32_nv(&m_value, -1)+1; }
+__inline bool PAtomicBoolean::TestAndSet(bool value)                  { return atomic_swap_32  (&m_value, value) != 0; }
+#elif defined(__GNUC__) && P_HAS_ATOMIC_INT
+__inline PAtomicBase::PAtomicBase(IntegerType value) : m_value(value) { }
+__inline PAtomicBase::~PAtomicBase()                                  { }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++()     { return EXCHANGE_AND_ADD(&m_value,  1)+1; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++(int)  { return EXCHANGE_AND_ADD(&m_value,  1); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--()     { return EXCHANGE_AND_ADD(&m_value, -1)-1; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--(int)  { return EXCHANGE_AND_ADD(&m_value, -1); }
+__inline bool PAtomicBoolean::TestAndSet(bool value)                  { IntegerType previous = EXCHANGE_AND_ADD(&m_value, value?1:-1); m_value = value?1:0; return previous > 0; }
+#else
+__inline PAtomicBase::PAtomicBase(IntegerType value) : m_value(value) { pthread_mutex_init(&m_mutex, NULL); }
+__inline PAtomicBase::~PAtomicBase()                                  { pthread_mutex_destroy(&m_mutex); }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++()     { pthread_mutex_lock(&m_mutex); int retval = ++m_value; pthread_mutex_unlock(&m_mutex); return retval; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator++(int)  { pthread_mutex_lock(&m_mutex); int retval = m_value++; pthread_mutex_unlock(&m_mutex); return retval; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--()     { pthread_mutex_lock(&m_mutex); int retval = --m_value; pthread_mutex_unlock(&m_mutex); return retval; }
+__inline PAtomicInteger::IntegerType PAtomicInteger::operator--(int)  { pthread_mutex_lock(&m_mutex); int retval = m_value--; pthread_mutex_unlock(&m_mutex); return retval; }
+__inline bool PAtomicBoolean::TestAndSet(bool value)                  { pthread_mutex_lock(&m_mutex); int retval = m_value; m_value = value; pthread_mutex_unlock(&m_mutex); return retval != 0; }
 #endif
+
+
+#endif // PTLIB_CRITICALSECTION_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

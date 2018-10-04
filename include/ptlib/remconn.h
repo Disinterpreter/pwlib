@@ -26,69 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: remconn.h,v $
- * Revision 1.18  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.17  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.16  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.15  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.14  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.13  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.12  1999/02/16 08:11:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.11  1998/09/23 06:21:17  robertj
- * Added open source copyright license.
- *
- * Revision 1.10  1998/07/24 06:58:27  robertj
- * Added ability to get IP number of RAS connection.
- *
- * Revision 1.9  1998/02/03 06:28:46  robertj
- * Added more error codes.
- *
- * Revision 1.8  1998/01/26 00:34:51  robertj
- * Added parameter to PRemoteConnection to open only if already connected.
- * Added function to PRemoteConnection to get at OS error code.
- *
- * Revision 1.7  1997/04/01 06:00:05  robertj
- * Added Remove Configuration.
- *
- * Revision 1.6  1997/01/12 04:15:11  robertj
- * Added ability to add/change new connections.
- *
- * Revision 1.5  1996/11/04 03:40:43  robertj
- * Added more debugging for remote drop outs.
- *
- * Revision 1.4  1996/08/11 07:03:45  robertj
- * Changed remote connection to late bind DLL.
- *
- * Revision 1.3  1996/04/23 11:33:04  robertj
- * Added username and password.
- *
- * Revision 1.2  1996/03/02 03:09:48  robertj
- * Added function to get all possible remote access connection names.
- *
- * Revision 1.1  1995/12/10 13:04:46  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PREMOTECONNECTION
-#define _PREMOTECONNECTION
+#ifndef PTLIB_REMOTECONNECTION_H
+#define PTLIB_REMOTECONNECTION_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -143,24 +87,24 @@ class PRemoteConnection : public PObject
   //@{
     /** Open the remote connection.
      */
-    BOOL Open(
-      BOOL existing = FALSE  ///< Flag for open only if already connected.
+    PBoolean Open(
+      PBoolean existing = false  ///< Flag for open only if already connected.
     );
 
     /** Open the remote connection.
      */
-    BOOL Open(
+    PBoolean Open(
       const PString & name,   ///< RAS name of of connection to open.
-      BOOL existing = FALSE   ///< Flag for open only if already connected.
+      PBoolean existing = false   ///< Flag for open only if already connected.
     );
 
     /** Open the remote connection.
      */
-    BOOL Open(
+    PBoolean Open(
       const PString & name,     ///< RAS name of of connection to open.
       const PString & username, ///< Username for remote log in.
       const PString & password, ///< password for remote log in.
-      BOOL existing = FALSE     ///< Flag for open only if already connected.
+      PBoolean existing = false     ///< Flag for open only if already connected.
     );
 
     /** Close the remote connection.
@@ -260,16 +204,16 @@ class PRemoteConnection : public PObject
       /// Sub-entry number when Multi-link PPP is used.
       PINDEX  subEntries;
       /// Always establish maximum bandwidth when Multi-link PPP is used.
-      BOOL    dialAllSubEntries;
+      PBoolean    dialAllSubEntries;
     };
 
     /**Get the configuration of the specified remote access connection.
 
        @return
-       #Connected# if the configuration information was obtained,
-       #NoNameOrNumber# if the particular RAS name does not exist,
-       #NotInstalled# if there is no RAS support in the operating system,
-       #GeneralFailure# on any other error.
+       <code>Connected</code> if the configuration information was obtained,
+       <code>NoNameOrNumber</code> if the particular RAS name does not exist,
+       <code>NotInstalled</code> if there is no RAS support in the operating system,
+       <code>GeneralFailure</code> on any other error.
      */
     Status GetConfiguration(
       Configuration & config  ///< Configuration of remote connection
@@ -278,10 +222,10 @@ class PRemoteConnection : public PObject
     /**Get the configuration of the specified remote access connection.
 
        @return
-       #Connected# if the configuration information was obtained,
-       #NoNameOrNumber# if the particular RAS name does not exist,
-       #NotInstalled# if there is no RAS support in the operating system,
-       #GeneralFailure# on any other error.
+       <code>Connected</code> if the configuration information was obtained,
+       <code>NoNameOrNumber</code> if the particular RAS name does not exist,
+       <code>NotInstalled</code> if there is no RAS support in the operating system,
+       <code>GeneralFailure</code> on any other error.
      */
     static Status GetConfiguration(
       const PString & name,   ///< Remote connection name to get configuration
@@ -291,37 +235,37 @@ class PRemoteConnection : public PObject
     /**Set the configuration of the specified remote access connection.
 
        @return
-       #Connected# if the configuration information was set,
-       #NoNameOrNumber# if the particular RAS name does not exist,
-       #NotInstalled# if there is no RAS support in the operating system,
-       #GeneralFailure# on any other error.
+       <code>Connected</code> if the configuration information was set,
+       <code>NoNameOrNumber</code> if the particular RAS name does not exist,
+       <code>NotInstalled</code> if there is no RAS support in the operating system,
+       <code>GeneralFailure</code> on any other error.
      */
     Status SetConfiguration(
       const Configuration & config,  ///< Configuration of remote connection
-      BOOL create = FALSE            ///< Flag to create connection if not present
+      PBoolean create = false            ///< Flag to create connection if not present
     );
 
     /**Set the configuration of the specified remote access connection.
 
        @return
-       #Connected# if the configuration information was set,
-       #NoNameOrNumber# if the particular RAS name does not exist,
-       #NotInstalled# if there is no RAS support in the operating system,
-       #GeneralFailure# on any other error.
+       <code>Connected</code> if the configuration information was set,
+       <code>NoNameOrNumber</code> if the particular RAS name does not exist,
+       <code>NotInstalled</code> if there is no RAS support in the operating system,
+       <code>GeneralFailure</code> on any other error.
      */
     static Status SetConfiguration(
       const PString & name,          ///< Remote connection name to configure
       const Configuration & config,  ///< Configuration of remote connection
-      BOOL create = FALSE            ///< Flag to create connection if not present
+      PBoolean create = false            ///< Flag to create connection if not present
     );
 
     /**Remove the specified remote access connection.
 
        @return
-       #Connected# if the configuration information was removed,
-       #NoNameOrNumber# if the particular RAS name does not exist,
-       #NotInstalled# if there is no RAS support in the operating system,
-       #GeneralFailure# on any other error.
+       <code>Connected</code> if the configuration information was removed,
+       <code>NoNameOrNumber</code> if the particular RAS name does not exist,
+       <code>NotInstalled</code> if there is no RAS support in the operating system,
+       <code>GeneralFailure</code> on any other error.
      */
     static Status RemoveConfiguration(
       const PString & name          ///< Remote connection name to configure
@@ -348,6 +292,8 @@ class PRemoteConnection : public PObject
 #endif
 };
 
-#endif
+
+#endif // PTLIB_REMOTECONNECTION_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -26,29 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pvfiledev.h,v $
- * Revision 1.6  2006/04/19 04:09:04  csoutheren
- * Allow frame size conversions
- *
- * Revision 1.5  2006/03/17 06:54:49  csoutheren
- * Removed unused member variable
- *
- * Revision 1.4  2006/03/13 07:49:09  csoutheren
- * Added newline at end of file
- *
- * Revision 1.3  2006/03/06 06:04:13  csoutheren
- * Added YUVFile video output device
- *
- * Revision 1.2  2006/02/20 06:49:45  csoutheren
- * Added video file and video file input device code
- *
- * Revision 1.1  2006/02/20 06:17:28  csoutheren
- * Added ability to read video from a file
- *
+ * $Revision: 27357 $
+ * $Author: rjongbloed $
+ * $Date: 2012-03-28 19:39:08 -0500 (Wed, 28 Mar 2012) $
  */
 
-#ifndef _PVFILEDEV
-#define _PVFILEDEV
+#ifndef PTLIB_PVFILEDEV_H
+#define PTLIB_PVFILEDEV_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -56,13 +40,15 @@
 
 #include <ptlib.h>
 
+#if P_VIDEO
 #if P_VIDFILE
 
-
 #include <ptlib.h>
-
+#include <ptlib/video.h>
 #include <ptlib/vconvert.h>
 #include <ptclib/pvidfile.h>
+#include <ptclib/delaychan.h>
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -71,54 +57,65 @@
 
 class PVideoInputDevice_YUVFile : public PVideoInputDevice
 {
- PCLASSINFO(PVideoInputDevice_YUVFile, PVideoInputDevice);
- public:
-   enum {
-     Channel_PlayAndClose     = 0,
-     Channel_PlayAndRepeat    = 1,
-     Channel_PlayAndKeepLast  = 2,
-     Channel_PlayAndShowBlack = 3,
-     ChannelCount             = 4
-   };
+  PCLASSINFO(PVideoInputDevice_YUVFile, PVideoInputDevice);
+  public:
+    enum {
+      Channel_PlayAndClose     = 0,
+      Channel_PlayAndRepeat    = 1,
+      Channel_PlayAndKeepLast  = 2,
+      Channel_PlayAndShowBlack = 3,
+      ChannelCount             = 4
+    };
 
-  /** Create a new (fake) video input device.
-   */
+    /** Create a new file based video input device.
+    */
     PVideoInputDevice_YUVFile();
+
+    /** Destroy video input device.
+    */
+    virtual ~PVideoInputDevice_YUVFile();
 
 
     /**Open the device given the device name.
       */
-    BOOL Open(
+    PBoolean Open(
       const PString & deviceName,   /// Device name to open
-      BOOL startImmediate = TRUE    /// Immediately start device
+      PBoolean startImmediate = true    /// Immediately start device
     );
 
     /**Determine of the device is currently open.
       */
-    BOOL IsOpen() ;
+    PBoolean IsOpen() ;
 
     /**Close the device.
       */
-    BOOL Close();
+    PBoolean Close();
 
     /**Start the video device I/O.
       */
-    BOOL Start();
+    PBoolean Start();
 
     /**Stop the video device I/O capture.
       */
-    BOOL Stop();
+    PBoolean Stop();
 
     /**Determine if the video device I/O capture is in progress.
       */
-    BOOL IsCapturing();
+    PBoolean IsCapturing();
 
     /**Get a list of all of the drivers available.
       */
-    static PStringList GetInputDeviceNames();
+    static PStringArray GetInputDeviceNames();
 
-    virtual PStringList GetDeviceNames() const
+    virtual PStringArray GetDeviceNames() const
       { return GetInputDeviceNames(); }
+
+    /**Retrieve a list of Device Capabilities
+      */
+    static bool GetDeviceCapabilities(
+      const PString & /*deviceName*/, ///< Name of device
+      Capabilities * /*caps*/         ///< List of supported capabilities
+    ) { return false; }
 
     /**Get the maximum frame size in bytes.
 
@@ -131,7 +128,7 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
 
        There will be a delay in returning, as specified by frame rate.
       */
-    virtual BOOL GetFrameData(
+    virtual PBoolean GetFrameData(
       BYTE * buffer,                 /// Buffer to receive frame
       PINDEX * bytesReturned = NULL  /// Optional bytes returned.
     );
@@ -140,22 +137,18 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
 
        Do not delay according to the current frame rate.
       */
-    virtual BOOL GetFrameDataNoDelay(
+    virtual PBoolean GetFrameDataNoDelay(
       BYTE * buffer,                 /// Buffer to receive frame
       PINDEX * bytesReturned = NULL  /// OPtional bytes returned.
     );
 
-
-    /**Generate a static image, containing a constant field of grey.
-     */
-    void GrabBlankImage(BYTE *resFrame);
 
     /**Set the video format to be used.
 
        Default behaviour sets the value of the videoFormat variable and then
        returns the IsOpen() status.
     */
-    virtual BOOL SetVideoFormat(
+    virtual PBoolean SetVideoFormat(
       VideoFormat videoFormat   /// New video format
     );
 
@@ -174,7 +167,7 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
        Default behaviour sets the value of the channelNumber variable and then
        returns the IsOpen() status.
     */
-    virtual BOOL SetChannel(
+    virtual PBoolean SetChannel(
          int channelNumber  /// New channel number for device.
     );
     
@@ -183,7 +176,7 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
        Default behaviour sets the value of the colourFormat variable and then
        returns the IsOpen() status.
     */
-    virtual BOOL SetColourFormat(
+    virtual PBoolean SetColourFormat(
       const PString & colourFormat   // New colour format for device.
     );
     
@@ -192,16 +185,16 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
        Default behaviour sets the value of the frameRate variable and then
        return the IsOpen() status.
     */
-    virtual BOOL SetFrameRate(
+    virtual PBoolean SetFrameRate(
       unsigned rate  /// Frames per second
     );
          
     /**Get the minimum & maximum size of a frame on the device.
 
        Default behaviour returns the value 1 to UINT_MAX for both and returns
-       FALSE.
+       false.
     */
-    virtual BOOL GetFrameSizeLimits(
+    virtual PBoolean GetFrameSizeLimits(
       unsigned & minWidth,   /// Variable to receive minimum width
       unsigned & minHeight,  /// Variable to receive minimum height
       unsigned & maxWidth,   /// Variable to receive maximum width
@@ -213,35 +206,19 @@ class PVideoInputDevice_YUVFile : public PVideoInputDevice
        Default behaviour sets the frameWidth and frameHeight variables and
        returns the IsOpen() status.
     */
-    virtual BOOL SetFrameSize(
+    virtual PBoolean SetFrameSize(
       unsigned width,   /// New width of frame
       unsigned height   /// New height of frame
     );
 
-    BOOL SetFrameSizeConverter(
-      unsigned width,        ///< New width of frame
-      unsigned height,       ///< New height of frame
-      BOOL     bScaleNotCrop ///< Scale or crop/pad preference
-    );
-         
-    void ClearMapping() { return ; }
-
-    /**Try all known video formats & see which ones are accepted by the video driver
-     */
-    virtual BOOL TestAllFormats()
-      { return TRUE; }
-
-    void FillRect(BYTE * frame,int xPos, int initialYPos,int rectWidth, int rectHeight,int r, int g,  int b);
    
  protected:
-   unsigned grabCount;
-   PINDEX   videoFrameSize;
-   PINDEX   scanLineWidth;
-   PYUVFile file;
-   PBYTEArray frameStore;
+   PVideoFile   * m_file;
+   PAdaptiveDelay m_pacing;
+   unsigned       m_frameRateAdjust;
+   bool           m_opened;
 };
 
-PLOAD_FACTORY_DECLARE(PVideoInputDevice,YUVFile)
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -257,36 +234,49 @@ class PVideoOutputDevice_YUVFile : public PVideoOutputDevice
      */
     PVideoOutputDevice_YUVFile();
 
+    /** Destroy video output device.
+     */
+    virtual ~PVideoOutputDevice_YUVFile();
+
     /**Get a list of all of the drivers available.
       */
-    static PStringList GetOutputDeviceNames();
+    static PStringArray GetOutputDeviceNames();
 
-    virtual PStringList GetDeviceNames() const
+    virtual PStringArray GetDeviceNames() const
       { return GetOutputDeviceNames(); }
 
     /**Open the device given the device name.
       */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PString & deviceName,   /// Device name to open
-      BOOL startImmediate = TRUE    /// Immediately start device
+      PBoolean startImmediate = true    /// Immediately start device
     );
 
     /**Start the video device I/O.
       */
-    BOOL Start();
+    PBoolean Start();
 
     /**Stop the video device I/O capture.
       */
-    BOOL Stop();
+    PBoolean Stop();
 
     /**Close the device.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Determine if the device is currently open.
       */
-    virtual BOOL IsOpen();
+    virtual PBoolean IsOpen();
 
+    /**Set the colour format to be used.
+
+       Default behaviour sets the value of the colourFormat variable and then
+       returns the IsOpen() status.
+    */
+    virtual PBoolean SetColourFormat(
+      const PString & colourFormat   // New colour format for device.
+    );
+    
     /**Get the maximum frame size in bytes.
 
        Note a particular device may be able to provide variable length
@@ -296,26 +286,25 @@ class PVideoOutputDevice_YUVFile : public PVideoOutputDevice
 
     /**Set a section of the output frame buffer.
       */
-    virtual BOOL SetFrameData(
+    virtual PBoolean SetFrameData(
       unsigned x,
       unsigned y,
       unsigned width,
       unsigned height,
       const BYTE * data,
-      BOOL endFrame = TRUE
+      PBoolean endFrame = true
     );
 
-    /**Indicate frame may be displayed.
-      */
-    virtual BOOL EndFrame();
-
   protected:  
-    PYUVFile file;
+   PVideoFile * m_file;
+   bool         m_opened;
 };
 
-PLOAD_FACTORY_DECLARE(PVideoOutputDevice,YUVFile)
 
 #endif // P_VIDFILE
+#endif
 
-#endif // _PVFILEDEV
+#endif // PTLIB_PVFILEDEV_H
 
+
+// End Of File ///////////////////////////////////////////////////////////////

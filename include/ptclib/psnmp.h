@@ -23,65 +23,26 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psnmp.h,v $
- * Revision 1.9  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.8  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.7  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.6  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.5  1998/11/30 02:50:55  robertj
- * New directory structure
- *
- * Revision 1.4  1998/09/23 06:27:38  robertj
- * Added open source copyright license.
- *
- * Revision 1.3  1996/11/04 03:56:16  robertj
- * Added selectable read buffer size.
- *
- * Revision 1.2  1996/09/20 12:19:36  robertj
- * Used read timeout instead of member variable.
- *
- * Revision 1.1  1996/09/14 12:58:57  robertj
- * Initial revision
- *
- * Revision 1.6  1996/05/09 13:23:49  craigs
- * Added trap functions
- *
- * Revision 1.5  1996/04/23 12:12:46  craigs
- * Changed to use GetErrorText function
- *
- * Revision 1.4  1996/04/16 13:20:43  craigs
- * Final version prior to beta1 release
- *
- * Revision 1.3  1996/04/15 09:05:30  craigs
- * Latest version prior to integration with Robert's changes
- *
- * Revision 1.2  1996/04/01 12:36:12  craigs
- * Fixed RCS header, added IPAddress functions
- *
- * Revision 1.1  1996/03/02 06:49:51  craigs
- * Initial revision
- *
+ * $Revision: 26773 $
+ * $Author: rjongbloed $
+ * $Date: 2011-12-07 00:43:33 -0600 (Wed, 07 Dec 2011) $
  */
 
-#ifndef _PSNMP_H
-#define _PSNMP_H
+#ifndef PTLIB_PSNMP_H
+#define PTLIB_PSNMP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#ifdef P_SNMP
+
 #include <ptlib/sockets.h>
+#include <ptclib/snmp.h>
 #include <ptclib/pasn.h>
 
+#include <list>
+#include <vector>
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -100,14 +61,15 @@ class PSNMPVarBindingList : public PObject
 
     PINDEX GetSize() const;
 
+    PINDEX GetIndex(const PString & objectID) const;
     PString GetObjectID(PINDEX idx) const;
     PASNObject & operator[](PINDEX idx) const;
 
     void PrintOn(ostream & strm) const;
 
   protected:
-    PStringList     objectIds;
-    PASNObjectList  values;
+    PStringArray    objectIds;
+    PASNObjectArray values;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -208,7 +170,8 @@ class PSNMP : public PIndirectChannel
                       const PSNMPVarBindingList & vars,
                        const PIPSocket::Address & agentAddress);
 
-    static BOOL DecodeTrap(const PBYTEArray & readBuffer,
+/*
+  static PBoolean DecodeTrap(const PBYTEArray & readBuffer,
                                        PINDEX & version,
                                       PString & community,
                                       PString & enterprise,
@@ -217,6 +180,9 @@ class PSNMP : public PIndirectChannel
                                       PINDEX  & specificTrapType,
                                  PASNUnsigned & timeTicks,
                           PSNMPVarBindingList & varsOut);
+*/
+
+    typedef list<pair<PString,PRFC1155_ObjectSyntax> > BindingList;
 };
 
 
@@ -248,13 +214,13 @@ class PSNMPClient : public PSNMP
     void SetRequestID(PASNInt requestID);
     PASNInt GetRequestID() const;
 
-    BOOL WriteGetRequest (PSNMPVarBindingList & varsIn,
+    PBoolean WriteGetRequest (PSNMPVarBindingList & varsIn,
                           PSNMPVarBindingList & varsOut);
 
-    BOOL WriteGetNextRequest (PSNMPVarBindingList & varsIn,
+    PBoolean WriteGetNextRequest (PSNMPVarBindingList & varsIn,
                               PSNMPVarBindingList & varsOut);
 
-    BOOL WriteSetRequest (PSNMPVarBindingList & varsIn,
+    PBoolean WriteSetRequest (PSNMPVarBindingList & varsIn,
                           PSNMPVarBindingList & varsOut);
 
     ErrorType GetLastErrorCode() const;
@@ -262,12 +228,12 @@ class PSNMPClient : public PSNMP
     PString   GetLastErrorText() const;
 
   protected:
-    BOOL WriteRequest (PASNInt requestCode,
+    PBoolean WriteRequest (PASNInt requestCode,
                        PSNMPVarBindingList & varsIn,
                        PSNMPVarBindingList & varsOut);
 
 
-    BOOL ReadRequest(PBYTEArray & readBuffer);
+    PBoolean ReadRequest(PBYTEArray & readBuffer);
 
     PString   hostName;
     PString   community;
@@ -291,14 +257,48 @@ class PSNMPServer : public PSNMP
   PCLASSINFO(PSNMPServer, PSNMP)
   public:
 
-    virtual void OnGetRequest     (PSNMPVarBindingList & vars);
-    virtual void OnGetNextRequest (PSNMPVarBindingList & vars);
-    virtual void OnSetRequest     (PSNMPVarBindingList & vars);
+    PSNMPServer(PIPSocket::Address binding = PIPSocket::GetDefaultIpAny(), 
+                WORD localPort = 161,   
+                PINDEX timeout = 5000, 
+                PINDEX rxSize = 10000, 
+                PINDEX txSize = 10000);
 
-    BOOL SendGetResponse          (PSNMPVarBindingList & vars);
+    ~PSNMPServer();
+
+	void Main();
+
+    void SetVersion(PASNInt newVersion);
+    PBoolean HandleChannel();
+    PBoolean ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & writeBuffer);
+
+    virtual PBoolean Authorise(const PIPSocket::Address & received);
+    virtual PBoolean ConfirmVersion(PASN_Integer vers);
+    virtual PBoolean ConfirmCommunity(PASN_OctetString & community);
+
+    virtual PBoolean MIB_LocalMatch(PSNMP_PDU & pdu);
+
+    virtual PBoolean OnGetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual PBoolean OnGetNextRequest (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+    virtual PBoolean OnSetRequest     (PINDEX reqID, PSNMP::BindingList & vars, PSNMP::ErrorType & errCode);
+
+    PSNMP::ErrorType SendGetResponse  (PSNMPVarBindingList & vars);
+  
+  protected:
+    PThreadObj<PSNMPServer> m_thread;
+    PString       community;
+    PASN_Integer  version;
+    PINDEX        lastErrorIndex;
+    ErrorType     lastErrorCode;
+    PBYTEArray    readBuffer;
+    PINDEX        maxRxSize;
+    PINDEX        maxTxSize;
+    PUDPSocket   *baseSocket;
+    PDictionary<PRFC1155_ObjectName, PRFC1155_ObjectSyntax>  objList;
 };
 
-#endif
+#endif // P_SNMP
+
+#endif // PTLIB_PSNMP_H
 
 
-// End of File.
+// End Of File ///////////////////////////////////////////////////////////////

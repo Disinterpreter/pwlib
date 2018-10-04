@@ -11,20 +11,15 @@
  * There are two kind of the specifications of IEEE 1394 digital video
  * cameras, one is called "digital camera" and another is "AV/C camera".
  * A digital camera sends uncompressed video data while an AV/C camera
- * sends compressed data. Currently PWLib only supports digital
- * cameras. We can find a list of supported digital cameras by the Linux
+ * sends compressed data. This file is for digital cameras.
+ * We can find a list of supported digital cameras by the Linux
  * device driver at:
  * http://www.tele.ucl.ac.be/PEOPLE/DOUXCHAMPS/ieee1394/cameras/
- * 
- * AV/C cameras seem able to be used for video phone. You are welcome to
- * write supporting codes for AV/C cameras!
  * 
  * 
  * Installation and Use:
  * 
- * To enable 1394 camera support, you have to define the "TRY_1394DC"
- * shell environment variable at compilation time of PWLib, OpenH323, and
- * ohphone. To select your 1394 camera for video input device instead of
+ * To select your 1394 camera for video input device instead of
  * usual Video4Linux devices, specify "/dev/raw1394" or "/dev/video1394"
  * as the filename of video input device. For example "ohphone
  * --videoinput /dev/raw1394" should use your 1394 camera as video input.
@@ -86,7 +81,7 @@
  *
  *
  * Internal Structure:
- * This module has been tested against the ohphone and GnomeMeeting
+ * This module has been tested against the ohphone and ekiga/GnomeMeeting
  * video phone programs. They use 352x288 and 176x144 resolutions in
  * YUV420P color format. So this module only supports these
  * resolutions and YUV420P.
@@ -136,83 +131,9 @@
  *
  *
  *
- * $Log: video4dc1394.cxx,v $
- * Revision 1.9  2006/04/30 21:25:20  dsandras
- * Fixed resolution detection thanks to Luc Saillard <luc saillard org>.
- * Thanks a lot!
- *
- * Revision 1.8  2005/12/01 00:43:45  csoutheren
- * Fixed typo
- *
- * Revision 1.7  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.6  2005/08/09 09:08:10  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.5.6.2  2005/07/24 09:01:48  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.5.6.1  2005/07/17 09:27:07  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.5  2004/06/15 23:55:50  csoutheren
- * Added check for different versions of dc1394 API
- *
- * Revision 1.4  2004/06/15 15:38:29  dsandras
- * Fixed bug with latest API of libdc1394.
- *
- * Revision 1.3  2004/06/14 20:43:33  dsandras
- * Try to fix compilation.
- *
- * Revision 1.2  2004/05/10 10:09:19  csoutheren
- * Removed printf that was interpreted as a trigraph
- *
- * Revision 1.1  2003/12/17 15:40:56  dominance
- * Added DC Plugin as provided by Julien Puydt <julien.puydt@laposte.net>. Needs manual patching of plugins/configure for now though. (i.e. disabled by default, run autoconf in plugins/)
- *
- * Revision 1.9  2003/03/17 07:53:04  robertj
- * Removed canCaptureVideo variable as this is really a virtual function to
- *   distinguish PVideoOutputDevice from PVideoInputDevice, it is not dynamic.
- *
- * Revision 1.8  2002/08/21 00:00:31  dereks
- * Patches from Ryutaroh, to improve firewire (linux only) support. Many thanks.
- *
- * Revision 1.7  2002/05/30 22:49:35  dereks
- * correct implementation of GetInputDeviceNames().
- *
- * Revision 1.6  2002/03/04 01:21:31  dereks
- * Add frame rate support to Firewire camera. Thanks Ryutaroh Matsumoto.
- *
- * Revision 1.5  2002/02/28 19:44:03  dereks
- * Add complete readme on Firewire usage. Thanks to Ryutaroh Matsumoto.
- *
- * Revision 1.4  2002/02/21 20:00:21  dereks
- * Fix memory leak. Thanks Ryutaroh Matsumoto.
- *
- * Revision 1.3  2002/02/21 19:49:57  dereks
- * Fix spelling mistake. Thanks Ryutaroh
- *
- * Revision 1.2  2002/02/20 20:27:28  dereks
- * updates to previous checkin.
- *
- * Revision 1.1  2002/02/20 02:37:26  dereks
- * Initial release of Firewire camera support for linux.
- * Many thanks to Ryutaroh Matsumoto <ryutaroh@rmatsumoto.org>.
- *
- *
- *
- *
+ * $Revision: 20649 $
+ * $Author: dsandras $
+ * $Date: 2008-08-10 14:49:13 -0500 (Sun, 10 Aug 2008) $
  */
 
 #pragma implementation "videoio1394dc.h"
@@ -245,7 +166,7 @@ static int num_captured;
 PVideoInputDevice_1394DC::PVideoInputDevice_1394DC()
 {
   handle = NULL;
-  is_capturing = FALSE;
+  is_capturing = PFalse;
   capturing_duration = 10000; // arbitrary large value suffices
 }
 
@@ -284,32 +205,32 @@ static int kernel_version_ok(void)
     return minorminor_ver >= 9;
 }
 
-BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate)
+PBoolean PVideoInputDevice_1394DC::Open(const PString & devName, PBoolean startImmediate)
 {
   if (!kernel_version_ok()) {
     PTRACE(0, "The Linux kernel version is too old.");
-    return FALSE;
+    return PFalse;
   }
 
   if (IsOpen()) {
     PTRACE(0, "You cannot open PVideoInputDevice_1394DC twice.");
-    return FALSE;
+    return PFalse;
   }
 
   if (devName == "/dev/raw1394")
-    UseDMA = FALSE;
+    UseDMA = PFalse;
   // Don't forget /dev/video1394/0
   else if (strncmp(devName, "/dev/video1394", 14) == 0)
-    UseDMA = TRUE;
+    UseDMA = PTrue;
   else {
     PTRACE(0, "devName must be /dev/raw1394 or /dev/video1394");
-    return FALSE;
+    return PFalse;
   }
 
   // See if devName is accessible.
   if (!PFile::Exists(devName)) {
     PTRACE(1, devName << " is not accessible.");
-    return FALSE;
+    return PFalse;
   }
 
   /*-----------------------------------------------------------------------
@@ -319,7 +240,7 @@ BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate
   if (handle==NULL)
   {
     PTRACE(0, "Unable to aquire a raw1394 handle\ndid you insmod the drivers?\n");
-    return FALSE;
+    return PFalse;
   }
 
   /*-----------------------------------------------------------------------
@@ -332,7 +253,7 @@ BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate
     PTRACE(0, "no cameras found :(\n");
     dc1394_destroy_handle(handle);
     handle = NULL;
-    return FALSE;
+    return PFalse;
   }
 
   /*-----------------------------------------------------------------------
@@ -365,16 +286,13 @@ BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate
              "\n");
       dc1394_destroy_handle(handle);
       handle = NULL;
-      return FALSE;
+      return PFalse;
     }
   }
 
   frameHeight = 240;
   frameWidth = 320;
   colourFormat = "UYVY422";
-  desiredFrameHeight = CIFHeight;
-  desiredFrameWidth = CIFWidth;
-  desiredColourFormat = "YUV420P";
   capturing_duration = 10000; // arbitrary large value suffices
   deviceName = devName;
 
@@ -383,12 +301,12 @@ BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate
       !SetVideoFormat(videoFormat)) {
     PTRACE(1, "SetChannel() or SetVideoFormat() failed");
     Close();
-    return FALSE;
+    return PFalse;
   }
 
   if (startImmediate && !Start()) {
     Close();
-    return FALSE;
+    return PFalse;
   }
 
   // Verify the format that the card accept
@@ -407,40 +325,40 @@ BOOL PVideoInputDevice_1394DC::Open(const PString & devName, BOOL startImmediate
   }
   
   PTRACE(3, "Successfully opended\n");
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_1394DC::IsOpen() 
+PBoolean PVideoInputDevice_1394DC::IsOpen() 
 {
   return handle != NULL;
 }
 
 
-BOOL PVideoInputDevice_1394DC::Close()
+PBoolean PVideoInputDevice_1394DC::Close()
 {
   if (IsOpen()) {
     if (IsCapturing())
       Stop();
     dc1394_destroy_handle(handle);
     handle = NULL;
-    return TRUE;
+    return PTrue;
   } else
-    return FALSE;
+    return PFalse;
 }
 
-BOOL PVideoInputDevice_1394DC::Start()
+PBoolean PVideoInputDevice_1394DC::Start()
 {
   int dc1394_mode;
-  if (!IsOpen()) return FALSE;
-  if (is_capturing) return TRUE;
+  if (!IsOpen()) return PFalse;
+  if (is_capturing) return PTrue;
   if (frameWidth == 320 && frameHeight == 240)
     dc1394_mode = MODE_320x240_YUV422;
   else if (frameWidth == 160 && frameHeight == 120)
     dc1394_mode = MODE_160x120_YUV444;
   else {
     PTRACE(1, "Frame size is neither 320x240 or 160x120" << frameWidth << "x" << frameHeight);
-    return FALSE;
+    return PFalse;
   }
   PTRACE(1, deviceName << " " << channelNumber);
 
@@ -449,7 +367,7 @@ BOOL PVideoInputDevice_1394DC::Start()
           FORMAT_VGA_NONCOMPRESSED, dc1394_mode,
           &supported_framerates) != DC1394_SUCCESS) {
     PTRACE(1, "dc1394_query_supported_framerates() failed.");
-    return FALSE;
+    return PFalse;
   }
 
   int framerate;
@@ -469,7 +387,7 @@ BOOL PVideoInputDevice_1394DC::Start()
     framerate = FRAMERATE_1_875;
   else {
     PTRACE(1, "Frame rate " << supported_framerates << " is not supported");
-    return FALSE;
+    return PFalse;
   }  
 
   // In order to compile the following line, you need libdc1394 0.9.0 or later.
@@ -496,7 +414,7 @@ BOOL PVideoInputDevice_1394DC::Start()
              "check " __FILE__ " to make sure\n"
              "that the video mode,framerate and format are\n"
              "supported by your camera\n");
-    return FALSE;
+    return PFalse;
   }
 
   /*-----------------------------------------------------------------------
@@ -510,19 +428,19 @@ BOOL PVideoInputDevice_1394DC::Start()
       dc1394_dma_release_camera(handle,&camera);
     else
       dc1394_release_camera(handle,&camera);
-    return FALSE;
+    return PFalse;
   }
-  is_capturing = TRUE;
+  is_capturing = PTrue;
 #ifdef ESTIMATE_CAPTURE_PERFORMANCE
   PTime now;
   start_time = now.GetTimestamp();
   num_captured = 0;
 #endif
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_1394DC::Stop()
+PBoolean PVideoInputDevice_1394DC::Stop()
 {
   if (IsCapturing()) {
     dc1394_stop_iso_transmission(handle,camera.node);
@@ -531,14 +449,14 @@ BOOL PVideoInputDevice_1394DC::Stop()
     dc1394_dma_release_camera(handle,&camera);
     } else
       dc1394_release_camera(handle,&camera);
-    is_capturing = FALSE;
-    return TRUE;
+    is_capturing = PFalse;
+    return PTrue;
   } else
-    return FALSE;
+    return PFalse;
 }
 
 
-BOOL PVideoInputDevice_1394DC::IsCapturing()
+PBoolean PVideoInputDevice_1394DC::IsCapturing()
 {
   return is_capturing;
 }
@@ -569,13 +487,13 @@ PStringList PVideoInputDevice_1394DC::GetInputDeviceNames()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetVideoFormat(VideoFormat newFormat)
+PBoolean PVideoInputDevice_1394DC::SetVideoFormat(VideoFormat newFormat)
 {
   if (!PVideoDevice::SetVideoFormat(newFormat)) {
     PTRACE(3,"PVideoDevice::SetVideoFormat\t failed for format "<<newFormat);
-    return FALSE;
+    return PFalse;
   }
-  return TRUE;
+  return PTrue;
 }
 
 int PVideoInputDevice_1394DC::GetBrightness()
@@ -584,9 +502,9 @@ int PVideoInputDevice_1394DC::GetBrightness()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetBrightness(unsigned newBrightness)
+PBoolean PVideoInputDevice_1394DC::SetBrightness(unsigned newBrightness)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -596,9 +514,9 @@ int PVideoInputDevice_1394DC::GetHue()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetHue(unsigned newHue)
+PBoolean PVideoInputDevice_1394DC::SetHue(unsigned newHue)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -608,12 +526,12 @@ int PVideoInputDevice_1394DC::GetContrast()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetContrast(unsigned newContrast)
+PBoolean PVideoInputDevice_1394DC::SetContrast(unsigned newContrast)
 {
-  return FALSE;
+  return PFalse;
 }
 
-BOOL PVideoInputDevice_1394DC::SetColour(unsigned newColour) 
+PBoolean PVideoInputDevice_1394DC::SetColour(unsigned newColour) 
 {
   return -1;
 }
@@ -624,9 +542,9 @@ int PVideoInputDevice_1394DC::GetColour()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetWhiteness(unsigned newWhiteness) 
+PBoolean PVideoInputDevice_1394DC::SetWhiteness(unsigned newWhiteness) 
 {
-  return FALSE;
+  return PFalse;
 }
 
 int PVideoInputDevice_1394DC::GetWhiteness()
@@ -635,14 +553,14 @@ int PVideoInputDevice_1394DC::GetWhiteness()
 }
 
 
-BOOL PVideoInputDevice_1394DC::GetParameters (int *whiteness, int *brightness,
+PBoolean PVideoInputDevice_1394DC::GetParameters (int *whiteness, int *brightness,
                                        int *colour, int *contrast, int *hue)
 {
   *whiteness = -1;
   *brightness = -1;
   *colour = -1;
   *hue = -1;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -652,26 +570,29 @@ int PVideoInputDevice_1394DC::GetNumChannels()
 }
 
 
-BOOL PVideoInputDevice_1394DC::SetChannel(int newChannel)
+PBoolean PVideoInputDevice_1394DC::SetChannel(int newChannel)
 {
-  if (PVideoDevice::SetChannel(newChannel) == FALSE)
-    return FALSE;
+  if (PVideoDevice::SetChannel(newChannel) == PFalse)
+    return PFalse;
   if(IsCapturing()) {
     Stop();
     Start();
   }
-  return TRUE;
+  return PTrue;
 }
 
 
 
-BOOL PVideoInputDevice_1394DC::SetFrameRate(unsigned rate)
+PBoolean PVideoInputDevice_1394DC::SetFrameRate(unsigned rate)
 {
-  return PVideoDevice::SetFrameRate(rate);
+  if (!PVideoDevice::SetFrameRate(rate))
+    return PFalse;
+
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_1394DC::GetFrameSizeLimits(unsigned & minWidth,
+PBoolean PVideoInputDevice_1394DC::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
@@ -680,7 +601,7 @@ BOOL PVideoInputDevice_1394DC::GetFrameSizeLimits(unsigned & minWidth,
   maxWidth = 320;
   minHeight = 120;
   maxHeight = 240;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -690,15 +611,15 @@ PINDEX PVideoInputDevice_1394DC::GetMaxFrameBytes()
 }
 
 
-BOOL PVideoInputDevice_1394DC::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_1394DC::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
 {
-  if (!IsCapturing()) return FALSE;
+  if (!IsCapturing()) return PFalse;
 
   PTRACE(3, "We are going to single capture.\n");
   if ((UseDMA && dc1394_dma_single_capture(&camera)!=DC1394_SUCCESS) ||
       (!UseDMA && dc1394_single_capture(handle,&camera)!=DC1394_SUCCESS)){
     PTRACE(1, "dc1394_single_capture() failed.");
-    return FALSE;
+    return PFalse;
   }
   
   PTRACE(3, "single captured, try to convert\n");
@@ -709,7 +630,7 @@ BOOL PVideoInputDevice_1394DC::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytes
     converter->Convert((const BYTE *)camera.capture_buffer, buffer, bytesReturned);
   else {
     PTRACE(1, "Converter must exist. Something goes wrong.");
-    return FALSE;
+    return PFalse;
   }
 
 #ifdef ESTIMATE_CAPTURE_PERFORMANCE
@@ -721,21 +642,12 @@ BOOL PVideoInputDevice_1394DC::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytes
 
   if (UseDMA)
     dc1394_dma_done_with_buffer(&camera);
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_1394DC::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_1394DC::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 {
-  if(frameRate>0) {
-    if (msBetweenFrames > capturing_duration)
-      PThread::Current()->Sleep(msBetweenFrames - capturing_duration);
-    PTime start;
-    if ( !GetFrameDataNoDelay(buffer, bytesReturned))
-      return FALSE;
-    PTime end;
-    capturing_duration = (int)((end-start).GetMilliSeconds());
-    return TRUE;
-  }
+  m_pacing.Delay(1000/GetFrameRate());
   return GetFrameDataNoDelay(buffer,bytesReturned);
 }
 
@@ -745,84 +657,44 @@ void PVideoInputDevice_1394DC::ClearMapping()
 }
 
 
-BOOL PVideoInputDevice_1394DC::TestAllFormats()
+PBoolean PVideoInputDevice_1394DC::TestAllFormats()
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_1394DC::SetColourFormat(const PString & newFormat)
+
+PBoolean PVideoInputDevice_1394DC::SetColourFormat(const PString & newFormat)
 {
-  if (newFormat != colourFormat) {
-    return FALSE;
+  return newFormat == colourFormat;
+}
+
+
+PBoolean PVideoInputDevice_1394DC::SetFrameSize(unsigned width, unsigned height)
+{
+  if (width == 320 && height == 240) {
+    if (!(supportedFormat & DC1394_FORMAT_320x240))
+      return PFalse;
+    colourFormat = "UYVY422";
   }
-  return TRUE;
-}
-
-
-BOOL PVideoInputDevice_1394DC::SetFrameSize(unsigned width, unsigned height)
-{
-  if ((!(width == 320 && height == 240)) &&
-      (!(width == 160 && height == 120)))
-    return FALSE;
+  else if (width == 160 && height == 120) {
+    if (!(supportedFormat & DC1394_FORMAT_160x120))
+      return PFalse;
+    colourFormat = "UYV444";
+  }
+  else
+    return PFalse;
 
   frameWidth = width;
   frameHeight = height;
 
-  if (frameWidth == 320 && frameHeight == 240)
-    colourFormat = "UYVY422";
-  else if (frameWidth == 160 && frameHeight == 120)
-    colourFormat = "UYV444";
-
   frameBytes = PVideoDevice::CalculateFrameBytes(frameWidth, frameHeight, colourFormat);
 
   if (IsCapturing()) {
-    Stop(); Start();
+    Stop();
+    Start();
   }
 
-  return TRUE;
-}
-
-BOOL PVideoInputDevice_1394DC::SetFrameSizeConverter(unsigned width, unsigned height, BOOL bScaleNotCrop)
-{
-  if (width == CIFWidth && height == CIFHeight && (supportedFormat & DC1394_FORMAT_320x240))
-    SetFrameSize(320, 240);
-  else if (width == QCIFWidth && height == QCIFHeight && (supportedFormat & DC1394_FORMAT_160x120))
-    SetFrameSize(160, 120);
-  else if (width == QCIFWidth && height == QCIFHeight && (supportedFormat & DC1394_FORMAT_320x240))
-    SetFrameSize(320, 240);
-  else if (width == CIFWidth && height == CIFHeight && (supportedFormat & DC1394_FORMAT_160x120))
-    SetFrameSize(160, 120);
-  else {
-    PTRACE(1, width << "x" << height << " is not supported.");
-    return FALSE;
-  }
-
-  if (converter != NULL) 
-    delete converter;
-  
-  desiredFrameWidth = width;
-  desiredFrameHeight = height;
-
-  converter = PColourConverter::Create(colourFormat, desiredColourFormat, width, height);
-  if (converter == NULL) {
-    PTRACE(1, "Failed to make a converter.");
-    return FALSE;
-  }
-  if (converter->SetSrcFrameSize(frameWidth, frameHeight) == FALSE) {
-    PTRACE(1, "Failed to set source frame size of a converter.");
-    return FALSE;
-  }
-  return TRUE;
-}
-
-BOOL PVideoInputDevice_1394DC::SetColourFormatConverter(const PString & colourFmt)
-{
-  if (colourFmt != "YUV420P") {
-    PTRACE(1, colourFmt << " is unsupported.");
-    return FALSE;
-  }
-  desiredColourFormat = colourFmt;
-  return SetFrameSizeConverter(desiredFrameWidth, desiredFrameHeight, FALSE);
+  return PTrue;
 }
 
 

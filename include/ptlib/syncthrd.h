@@ -3,7 +3,7 @@
  *
  * Various thread synchronisation classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -26,58 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: syncthrd.h,v $
- * Revision 1.14  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.13  2004/03/22 10:15:27  rjongbloed
- * Added classes similar to PWaitAndSignal to automatically unlock a PReadWriteMutex
- *   when goes out of scope.
- *
- * Revision 1.12  2002/12/11 03:21:28  robertj
- * Updated documentation for read/write mutex.
- *
- * Revision 1.11  2002/10/04 08:20:44  robertj
- * Changed read/write mutex so can be called by same thread without deadlock.
- *
- * Revision 1.10  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.9  2002/05/01 03:45:31  robertj
- * Added initialisation of PreadWriteMutex and changed slightly to agree
- *   with the text book definition of a semaphore for one of the mutexes.
- *
- * Revision 1.8  2002/04/30 06:21:54  robertj
- * Fixed PReadWriteMutex class to implement text book algorithm!
- *
- * Revision 1.7  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.6  1999/03/09 02:59:51  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.5  1999/02/16 08:11:17  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.4  1998/11/30 02:52:01  robertj
- * New directory structure
- *
- * Revision 1.3  1998/10/31 12:46:45  robertj
- * Renamed file for having general thread synchronisation objects.
- * Added conditional mutex and read/write mutex thread synchronisation objects.
- *
- * Revision 1.2  1998/09/23 06:21:35  robertj
- * Added open source copyright license.
- *
- * Revision 1.1  1998/05/30 13:26:15  robertj
- * Initial revision
- *
+ * $Revision: 26203 $
+ * $Author: rjongbloed $
+ * $Date: 2011-07-14 23:36:07 -0500 (Thu, 14 Jul 2011) $
  */
 
-
-#define _PSYNCPOINTACK
+#ifndef PTLIB_SYNCTHRD_H
+#define PTLIB_SYNCTHRD_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -85,13 +40,15 @@
 
 #include <ptlib/mutex.h>
 #include <ptlib/syncpoint.h>
+#include <map>
 
-/** This class defines a thread synchonisation object.
+
+/** This class defines a thread synchronisation object.
 
    This may be used to send signals to a thread and await an acknowldegement
-   that the signal was processed. This can be be used to initate an action in
+   that the signal was processed. This can be be used to initiate an action in
    another thread and wait for the action to be completed.
-\begin{verbatim}
+<pre><code>
     ... thread one
     while (condition) {
       sync.Wait();
@@ -102,10 +59,10 @@
     ... thread 2
     do_something_else();
     sync.Signal();    // At this point thread 1 wake up and does something.
-    do_yet_more();    // However, this does not get done until Acknowldege()
+    do_yet_more();    // However, this does not get done until Acknowledge()
                       // is called in the other thread.
 
-\end{verbatim}
+</code></pre>
  */
 class PSyncPointAck : public PSyncPoint
 {
@@ -120,14 +77,14 @@ class PSyncPointAck : public PSyncPoint
        target thread that was blocked by the Wait() function has resumed
        execution and called the Acknowledge() function.
 
-       The #waitTime# parameter is used as a maximum amount of time
+       The <code>waitTime</code> parameter is used as a maximum amount of time
        to wait for the achnowledgement to be returned from the other thread.
      */
     virtual void Signal();
     void Signal(const PTimeInterval & waitTime);
 
     /** This indicates that the thread that was blocked in a Wait() on this
-       synchonrisation object has completed the operation the signal was
+       synchronisation object has completed the operation the signal was
        intended to initiate. This unblocks the thread that had called the
        Signal() function to initiate the action.
      */
@@ -138,7 +95,7 @@ class PSyncPointAck : public PSyncPoint
 };
 
 
-/**This class defines a thread synchonisation object.
+/**This class defines a thread synchronisation object.
 
    This is a special type of mutual exclusion, where a thread wishes to get
    exlusive use of a resource but only if a certain other condition is met.
@@ -163,7 +120,7 @@ class PCondMutex : public PMutex
     /** This is the condition that must be met for the WaitCondition() function
        to acquire the mutex.
      */
-    virtual BOOL Condition() = 0;
+    virtual PBoolean Condition() = 0;
 
     /** This function is called immediately before blocking on the condition in
        the WaitCondition() function. This could get called multiple times
@@ -222,9 +179,9 @@ class PIntCondMutex : public PCondMutex
     /** This is the condition that must be met for the WaitCondition() function
        to acquire the mutex.
 
-       @return TRUE if condition is met.
+       @return true if condition is met.
      */
-    virtual BOOL Condition();
+    virtual PBoolean Condition();
 
     /**Get the current value of the condition variable.
       @return Current condition variable value.
@@ -284,7 +241,7 @@ class PIntCondMutex : public PCondMutex
 };
 
 
-/** This class defines a thread synchonisation object.
+/** This class defines a thread synchronisation object.
 
    This is a special type of mutual exclusion, where the excluded area may
    have multiple read threads but only one write thread and the read threads
@@ -298,6 +255,7 @@ class PReadWriteMutex : public PObject
   /**@name Construction */
   //@{
     PReadWriteMutex();
+    ~PReadWriteMutex();
   //@}
 
   /**@name Operations */
@@ -360,14 +318,16 @@ class PReadWriteMutex : public PObject
       unsigned readerCount;
       unsigned writerCount;
     };
-    PDictionary<POrdinalKey, Nest> nestedThreads;
-    PMutex                         nestingMutex;
+    typedef std::map<PThreadIdentifier, Nest> NestMap;
+    NestMap m_nestedThreads;
+    PMutex  m_nestingMutex;
 
-    Nest * GetNest() const;
+    Nest * GetNest();
     Nest & StartNest();
     void EndNest();
     void InternalStartRead();
     void InternalEndRead();
+    void InternalWait(PSemaphore & semaphore) const;
 };
 
 
@@ -375,7 +335,7 @@ class PReadWriteMutex : public PObject
    and automatically ends the read operation on destruction.
 
   This is very usefull for constructs such as:
-\begin{verbatim}
+<pre><code>
     void func()
     {
       PReadWaitAndSignal mutexWait(myMutex);
@@ -386,17 +346,17 @@ class PReadWriteMutex : public PObject
         return;
       do_something_else();
     }
-\end{verbatim}
+</code></pre>
  */
 class PReadWaitAndSignal {
   public:
     /**Create the PReadWaitAndSignal wait instance.
-       This will wait on the specified PReadWriteMutex using the #StartRead()#
+       This will wait on the specified PReadWriteMutex using the StartRead()
        function before returning.
       */
     PReadWaitAndSignal(
       const PReadWriteMutex & rw,   ///< PReadWriteMutex descendent to wait/signal.
-      BOOL start = TRUE    ///< Start read operation on PReadWriteMutex before returning.
+      PBoolean start = true    ///< Start read operation on PReadWriteMutex before returning.
     );
     /** End read operation on the PReadWriteMutex.
         This will execute the EndRead() function on the PReadWriteMutex that
@@ -412,8 +372,8 @@ class PReadWaitAndSignal {
 /**This class starts a write operation for the PReadWriteMutex on construction
    and automatically ends the write operation on destruction.
 
-  This is very usefull for constructs such as:
-\begin{verbatim}
+  This is very useful for constructs such as:
+<pre><code>
     void func()
     {
       PWriteWaitAndSignal mutexWait(myMutex);
@@ -424,17 +384,17 @@ class PReadWaitAndSignal {
         return;
       do_something_else();
     }
-\end{verbatim}
+</code></pre>
  */
 class PWriteWaitAndSignal {
   public:
     /**Create the PWriteWaitAndSignal wait instance.
-       This will wait on the specified PReadWriteMutex using the #StartWrite()#
+       This will wait on the specified PReadWriteMutex using the StartWrite()
        function before returning.
       */
     PWriteWaitAndSignal(
       const PReadWriteMutex & rw,   ///< PReadWriteMutex descendent to wait/signal.
-      BOOL start = TRUE    ///< Start write operation on PReadWriteMutex before returning.
+      PBoolean start = true    ///< Start write operation on PReadWriteMutex before returning.
     );
     /** End write operation on the PReadWriteMutex.
         This will execute the EndWrite() function on the PReadWriteMutex that
@@ -445,6 +405,9 @@ class PWriteWaitAndSignal {
   protected:
     PReadWriteMutex & mutex;
 };
+
+
+#endif // PTLIB_SYNCTHRD_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

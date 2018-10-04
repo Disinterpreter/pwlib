@@ -23,23 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pils.cxx,v $
- * Revision 1.5  2003/06/05 23:19:52  rjongbloed
- * Changed LDAP version to be compatible with ILS servers.
- *
- * Revision 1.4  2003/04/11 00:07:56  robertj
- * More for Microsoft IP address specification wierdness (registration side).
- *
- * Revision 1.3  2003/04/07 13:05:20  robertj
- * Workaround for Microsoft IP address specification wierdness.
- *
- * Revision 1.2  2003/03/31 12:18:43  robertj
- * Fixed pragma implementation
- *
- * Revision 1.1  2003/03/31 03:35:20  robertj
- * Major addition of LDAP functionality.
- * Added ILS specialisation of LDAP.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifdef __GNUC__
@@ -49,6 +35,9 @@
 #include <ptlib.h>
 
 #include <ptclib/pils.h>
+
+
+#define new PNEW
 
 
 #if P_LDAP
@@ -93,34 +82,34 @@ PILSSession::PILSSession()
 }
 
 
-BOOL PILSSession::AddPerson(const RTPerson & person)
+PBoolean PILSSession::AddPerson(const RTPerson & person)
 {
   return Add(person.GetDN(), person);
 }
 
 
-BOOL PILSSession::ModifyPerson(const RTPerson & person)
+PBoolean PILSSession::ModifyPerson(const RTPerson & person)
 {
   return Modify(person.GetDN(), person);
 }
 
 
-BOOL PILSSession::DeletePerson(const RTPerson & person)
+PBoolean PILSSession::DeletePerson(const RTPerson & person)
 {
   return Delete(person.GetDN());
 }
 
 
-BOOL PILSSession::SearchPerson(const PString & canonicalName, RTPerson & person)
+PBoolean PILSSession::SearchPerson(const PString & canonicalName, RTPerson & person)
 {
   SearchContext context;
   if (!Search(context, "cn="+canonicalName))
-    return FALSE;
+    return PFalse;
 
   if (!GetSearchResult(context, person))
-    return FALSE;
+    return PFalse;
 
-  // Return FALSE if there is more than one match
+  // Return PFalse if there is more than one match
   return !GetNextSearchResult(context);
 }
 

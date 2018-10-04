@@ -26,27 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: winserial.cxx,v $
- * Revision 1.7  2005/01/12 03:24:08  csoutheren
- * More cleanup of event handling
- *
- * Revision 1.6  2005/01/11 12:46:37  csoutheren
- * Removed handle leak on serial port caused by memset
- * Thanks to Dmitry Samokhin
- *
- * Revision 1.5  2004/12/27 22:38:27  csoutheren
- * Fixed problems with accessing serial port under Windows
- *
- * Revision 1.4  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.3  2000/03/20 17:55:05  robertj
- * Fixed prolem with XON/XOFF under NT, thanks Damien Slee.
- *
- * Revision 1.2  1998/11/30 12:32:47  robertj
- * Added missing copyright header.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -85,7 +67,7 @@ PString PSerialChannel::GetName() const
 }
 
 
-BOOL PSerialChannel::Read(void * buf, PINDEX len)
+PBoolean PSerialChannel::Read(void * buf, PINDEX len)
 {
   lastReadCount = 0;
 
@@ -115,7 +97,7 @@ BOOL PSerialChannel::Read(void * buf, PINDEX len)
     if (!ReadFile(commsResource, bufferPtr, bytesToGo, &readCount, &overlap)) {
       if (::GetLastError() != ERROR_IO_PENDING)
         return ConvertOSError(-2, LastReadError);
-      if (!::GetOverlappedResult(commsResource, &overlap, &readCount, FALSE))
+      if (!::GetOverlappedResult(commsResource, &overlap, &readCount, PFalse))
         return ConvertOSError(-2, LastReadError);
     }
 
@@ -141,7 +123,7 @@ BOOL PSerialChannel::Read(void * buf, PINDEX len)
 }
 
 
-BOOL PSerialChannel::Write(const void * buf, PINDEX len)
+PBoolean PSerialChannel::Write(const void * buf, PINDEX len)
 {
   lastWriteCount = 0;
 
@@ -164,17 +146,17 @@ BOOL PSerialChannel::Write(const void * buf, PINDEX len)
     return lastWriteCount == len;
 
   if (GetLastError() == ERROR_IO_PENDING)
-    if (GetOverlappedResult(commsResource, &overlap, (LPDWORD)&lastWriteCount, TRUE)) {
+    if (GetOverlappedResult(commsResource, &overlap, (LPDWORD)&lastWriteCount, PTrue)) {
       return lastWriteCount == len;
     }
 
   ConvertOSError(-2, LastWriteError);
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSerialChannel::Close()
+PBoolean PSerialChannel::Close()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);
@@ -186,7 +168,7 @@ BOOL PSerialChannel::Close()
 }
 
 
-BOOL PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
+PBoolean PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
                      BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   if (speed > 0)
@@ -225,33 +207,33 @@ BOOL PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
   switch (inputFlow) {
     case NoFlowControl :
       deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
-      deviceControlBlock.fInX = FALSE;
+      deviceControlBlock.fInX = PFalse;
       break;
     case XonXoff :
       deviceControlBlock.fRtsControl = RTS_CONTROL_DISABLE;
-      deviceControlBlock.fInX = TRUE;
+      deviceControlBlock.fInX = PTrue;
       break;
     case RtsCts :
       deviceControlBlock.fRtsControl = RTS_CONTROL_HANDSHAKE;
-      deviceControlBlock.fInX = FALSE;
+      deviceControlBlock.fInX = PFalse;
       break;
   }
 
   switch (outputFlow) {
     case NoFlowControl :
-      deviceControlBlock.fOutxCtsFlow = FALSE;
-      deviceControlBlock.fOutxDsrFlow = FALSE;
-      deviceControlBlock.fOutX = FALSE;
+      deviceControlBlock.fOutxCtsFlow = PFalse;
+      deviceControlBlock.fOutxDsrFlow = PFalse;
+      deviceControlBlock.fOutX = PFalse;
       break;
     case XonXoff :
-      deviceControlBlock.fOutxCtsFlow = FALSE;
-      deviceControlBlock.fOutxDsrFlow = FALSE;
-      deviceControlBlock.fOutX = TRUE;
+      deviceControlBlock.fOutxCtsFlow = PFalse;
+      deviceControlBlock.fOutxDsrFlow = PFalse;
+      deviceControlBlock.fOutX = PTrue;
       break;
     case RtsCts :
-      deviceControlBlock.fOutxCtsFlow = TRUE;
-      deviceControlBlock.fOutxDsrFlow = FALSE;
-      deviceControlBlock.fOutX = FALSE;
+      deviceControlBlock.fOutxCtsFlow = PTrue;
+      deviceControlBlock.fOutxDsrFlow = PFalse;
+      deviceControlBlock.fOutX = PFalse;
       break;
   }
 
@@ -262,7 +244,7 @@ BOOL PSerialChannel::SetCommsParam(DWORD speed, BYTE data, Parity parity,
 }
 
 
-BOOL PSerialChannel::Open(const PString & port, DWORD speed, BYTE data,
+PBoolean PSerialChannel::Open(const PString & port, DWORD speed, BYTE data,
                Parity parity, BYTE stop, FlowControl inputFlow, FlowControl outputFlow)
 {
   Close();
@@ -285,16 +267,16 @@ BOOL PSerialChannel::Open(const PString & port, DWORD speed, BYTE data,
   SetupComm(commsResource, QUEUE_SIZE, QUEUE_SIZE);
 
   if (SetCommsParam(speed, data, parity, stop, inputFlow, outputFlow))
-    return TRUE;
+    return PTrue;
 
   ConvertOSError(-2);
   CloseHandle(commsResource);
   os_handle = -1;
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSerialChannel::SetSpeed(DWORD speed)
+PBoolean PSerialChannel::SetSpeed(DWORD speed)
 {
   return SetCommsParam(speed,
                   0, DefaultParity, 0, DefaultFlowControl, DefaultFlowControl);
@@ -307,7 +289,7 @@ DWORD PSerialChannel::GetSpeed() const
 }
 
 
-BOOL PSerialChannel::SetDataBits(BYTE data)
+PBoolean PSerialChannel::SetDataBits(BYTE data)
 {
   return SetCommsParam(0,
                data, DefaultParity, 0, DefaultFlowControl, DefaultFlowControl);
@@ -320,7 +302,7 @@ BYTE PSerialChannel::GetDataBits() const
 }
 
 
-BOOL PSerialChannel::SetParity(Parity parity)
+PBoolean PSerialChannel::SetParity(Parity parity)
 {
   return SetCommsParam(0,0,parity,0,DefaultFlowControl,DefaultFlowControl);
 }
@@ -342,7 +324,7 @@ PSerialChannel::Parity PSerialChannel::GetParity() const
 }
 
 
-BOOL PSerialChannel::SetStopBits(BYTE stop)
+PBoolean PSerialChannel::SetStopBits(BYTE stop)
 {
   return SetCommsParam(0,
                0, DefaultParity, stop, DefaultFlowControl, DefaultFlowControl);
@@ -355,7 +337,7 @@ BYTE PSerialChannel::GetStopBits() const
 }
 
 
-BOOL PSerialChannel::SetInputFlowControl(FlowControl flowControl)
+PBoolean PSerialChannel::SetInputFlowControl(FlowControl flowControl)
 {
   return SetCommsParam(0,0,DefaultParity,0,flowControl,DefaultFlowControl);
 }
@@ -371,7 +353,7 @@ PSerialChannel::FlowControl PSerialChannel::GetInputFlowControl() const
 }
 
 
-BOOL PSerialChannel::SetOutputFlowControl(FlowControl flowControl)
+PBoolean PSerialChannel::SetOutputFlowControl(FlowControl flowControl)
 {
   return SetCommsParam(0,0,DefaultParity,0,DefaultFlowControl,flowControl);
 }
@@ -387,7 +369,7 @@ PSerialChannel::FlowControl PSerialChannel::GetOutputFlowControl() const
 }
 
 
-void PSerialChannel::SetDTR(BOOL state)
+void PSerialChannel::SetDTR(PBoolean state)
 {
   if (IsOpen())
     PAssertOS(EscapeCommFunction(commsResource, state ? SETDTR : CLRDTR));
@@ -396,7 +378,7 @@ void PSerialChannel::SetDTR(BOOL state)
 }
 
 
-void PSerialChannel::SetRTS(BOOL state)
+void PSerialChannel::SetRTS(PBoolean state)
 {
   if (IsOpen())
     PAssertOS(EscapeCommFunction(commsResource, state ? SETRTS : CLRRTS));
@@ -405,7 +387,7 @@ void PSerialChannel::SetRTS(BOOL state)
 }
 
 
-void PSerialChannel::SetBreak(BOOL state)
+void PSerialChannel::SetBreak(PBoolean state)
 {
   if (IsOpen())
     if (state)
@@ -417,7 +399,7 @@ void PSerialChannel::SetBreak(BOOL state)
 }
 
 
-BOOL PSerialChannel::GetCTS()
+PBoolean PSerialChannel::GetCTS()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);
@@ -428,7 +410,7 @@ BOOL PSerialChannel::GetCTS()
 }
 
 
-BOOL PSerialChannel::GetDSR()
+PBoolean PSerialChannel::GetDSR()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);
@@ -439,7 +421,7 @@ BOOL PSerialChannel::GetDSR()
 }
 
 
-BOOL PSerialChannel::GetDCD()
+PBoolean PSerialChannel::GetDCD()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);
@@ -450,7 +432,7 @@ BOOL PSerialChannel::GetDCD()
 }
 
 
-BOOL PSerialChannel::GetRing()
+PBoolean PSerialChannel::GetRing()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);

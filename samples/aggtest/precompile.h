@@ -23,19 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.h,v $
- * Revision 1.1  2005/12/22 03:55:52  csoutheren
- * Added initial version of socket aggregation classes
- *
- * Revision 1.1  2004/08/11 07:39:05  csoutheren
- * Initial version
- *
- * Revision 1.1  2003/02/20 01:10:52  robertj
- * Changed precompiled header so can precompile more than just ptlib.h
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 
 
 // End of File ///////////////////////////////////////////////////////////////

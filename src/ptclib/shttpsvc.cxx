@@ -23,56 +23,21 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: shttpsvc.cxx,v $
- * Revision 1.12  2005/06/06 07:49:54  shorne
- * Added P_SSL directive to fix debug compile problem,
- *
- * Revision 1.11  2004/04/24 03:58:15  rjongbloed
- * Allow for run time enable/disable of secure web access to HTTP process,
- *   changed from old debug only hack to "correct" usager. Thanks Ben Lear
- *
- * Revision 1.10  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.9  2002/08/05 05:40:45  robertj
- * Fixed missing pragma interface/implementation
- *
- * Revision 1.8  2001/12/13 09:19:32  robertj
- * Added ability to create HTTP server certificate if one does not exist.
- *
- * Revision 1.7  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.6  2001/08/28 06:44:45  craigs
- * Added ability to override PHTTPServer creation
- *
- * Revision 1.5  2001/05/24 01:01:28  robertj
- * Fixed GNU C++ warning
- *
- * Revision 1.4  2001/05/16 06:02:37  craigs
- * Changed to allow detection of non-SSL connection to SecureHTTPServiceProcess
- *
- * Revision 1.3  2001/05/07 23:27:06  robertj
- * Added SO_LINGER setting to HTTP sockets to help with clearing up sockets
- *   when the application exits, which prevents new run of app as "port in use".
- *
- * Revision 1.2  2001/03/27 03:55:48  craigs
- * Added hack to allow secure servers to act as non-secure servers
- *
- * Revision 1.1  2001/02/15 02:41:14  robertj
- * Added class to do secure HTTP based service process.
- *
+ * $Revision: 23300 $
+ * $Author: rjongbloed $
+ * $Date: 2009-08-28 04:43:32 -0500 (Fri, 28 Aug 2009) $
  */
-
-#include <ptlib.h>
 
 #ifdef __GNUC__
 #pragma implementation "shttpsvc.h"
 #endif
 
-#include <ptclib/shttpsvc.h>
+#include <ptlib.h>
+#include <ptbuildopts.h>
 
+#ifdef P_HTTPSVC
+
+#include <ptclib/shttpsvc.h>
 
 #ifdef P_SSL
 
@@ -83,7 +48,7 @@ class HTTP_PSSLChannel : public PSSLChannel
   public:
     HTTP_PSSLChannel(PSecureHTTPServiceProcess * svc, PSSLContext * context = NULL);
 
-    virtual BOOL RawSSLRead(void * buf, PINDEX & len);
+    virtual PBoolean RawSSLRead(void * buf, PINDEX & len);
 
   protected:
     enum { PreRead_Size = 4 };
@@ -100,7 +65,7 @@ PSecureHTTPServiceProcess::PSecureHTTPServiceProcess(const Info & inf)
   : PHTTPServiceProcess(inf)
 {
   sslContext = new PSSLContext;
-  disableSSL = FALSE;
+  disableSSL = PFalse;
 }
 
 
@@ -139,8 +104,8 @@ PHTTPServer * PSecureHTTPServiceProcess::CreateHTTPServer(PTCPSocket & socket)
 }
 
 
-BOOL PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certificateFile,
-                                                     BOOL create,
+PBoolean PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certificateFile,
+                                                     PBoolean create,
                                                      const char * dn)
 {
   if (create && !PFile::Exists(certificateFile)) {
@@ -154,18 +119,18 @@ BOOL PSecureHTTPServiceProcess::SetServerCertificate(const PFilePath & certifica
            << "/CN=" << GetName() << '@' << PIPSocket::GetHostName();
     }
     if (!certificate.CreateRoot(name, key)) {
-      PTRACE(0, "MTGW\tCould not create certificate");
-      return FALSE;
+      PTRACE(1, "MTGW\tCould not create certificate");
+      return PFalse;
     }
     certificate.Save(certificateFile);
-    key.Save(certificateFile, TRUE);
+    key.Save(certificateFile, PTrue);
   }
 
   return sslContext->UseCertificate(certificateFile) &&
          sslContext->UsePrivateKey(certificateFile);
 }
 
-BOOL PSecureHTTPServiceProcess::OnDetectedNonSSLConnection(PChannel * chan, const PString & line)
+PBoolean PSecureHTTPServiceProcess::OnDetectedNonSSLConnection(PChannel * chan, const PString & line)
 { 
   // get the MIME info
   PMIMEInfo mime(*chan);
@@ -202,7 +167,7 @@ BOOL PSecureHTTPServiceProcess::OnDetectedNonSSLConnection(PChannel * chan, cons
   chan->WriteString(str);
   chan->Close();
 
-  return FALSE; 
+  return PFalse; 
 }
 
 PString PSecureHTTPServiceProcess::CreateNonSSLMessage(const PString & url)
@@ -227,7 +192,7 @@ HTTP_PSSLChannel::HTTP_PSSLChannel(PSecureHTTPServiceProcess * _svc, PSSLContext
 }
 
 
-BOOL HTTP_PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
+PBoolean HTTP_PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
 { 
   if (preReadLen == 0)
     return PSSLChannel::RawSSLRead(buf, len); 
@@ -238,7 +203,7 @@ BOOL HTTP_PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
     // read some bytes from the channel
     preReadLen = 0;
     while (preReadLen < PreRead_Size) {
-      BOOL b = chan->Read(preRead + preReadLen, PreRead_Size - preReadLen); 
+      PBoolean b = chan->Read(preRead + preReadLen, PreRead_Size - preReadLen); 
       if (!b)
         break;
       preReadLen += chan->GetLastReadCount();
@@ -257,7 +222,7 @@ BOOL HTTP_PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
         line += (char)ch;
 
       if (!svc->OnDetectedNonSSLConnection(chan, line))
-        return FALSE;
+        return PFalse;
     }
   }
 
@@ -265,9 +230,11 @@ BOOL HTTP_PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
   len = PMIN(len, preReadLen);
   memcpy(buf, preRead, len);
   preReadLen -= len;
-  return TRUE;
+  return PTrue;
 }
 
 #endif //P_SSL
+
+#endif // P_HTTPSVC
 
 // End Of File ///////////////////////////////////////////////////////////////

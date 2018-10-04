@@ -23,124 +23,22 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: url.h,v $
- * Revision 1.34  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.33  2005/04/20 05:19:48  csoutheren
- * Patch 1185334. Ensure SIP URLs correctly store status of port
- * Thanks to Ted Szoczei
- *
- * Revision 1.32  2005/01/04 07:44:02  csoutheren
- * More changes to implement the new configuration methodology, and also to
- * attack the global static problem
- *
- * Revision 1.31  2004/12/08 00:51:11  csoutheren
- * Move PURLLegacyScheme to header file to allow external usage
- *
- * Revision 1.30  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.29  2004/07/07 07:18:43  csoutheren
- * Removed warnings on Linux from Windows static global hacks
- *
- * Revision 1.28  2004/07/06 10:12:51  csoutheren
- * Added static integer o factory template to assist in ensuring factories are instantiated
- *
- * Revision 1.27  2004/06/01 07:32:45  csoutheren
- * Removed warning on Linux
- *
- * Revision 1.26  2004/06/01 07:28:44  csoutheren
- * Changed URL parsing to use abstract factory code
- *
- * Revision 1.25  2004/03/13 06:30:52  rjongbloed
- * Virtualised parse function.
- *
- * Revision 1.24  2003/04/04 05:18:08  robertj
- * Added "callto", "tel" and fixed "h323" URL types.
- *
- * Revision 1.23  2002/12/10 04:40:34  robertj
- * Added test function for URL being empty.
- *
- * Revision 1.22  2002/11/20 00:50:09  robertj
- * Fixed correct interpretation of url re double slashes as per latest RFC,
- *   including file: mapping and relative paths. Probably still more to do.
- *
- * Revision 1.21  2002/11/19 10:36:08  robertj
- * Added functions to set anf get "file:" URL. as PFilePath and do the right
- *   things with platform dependent directory components.
- *
- * Revision 1.20  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.19  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.18  2002/03/18 05:01:54  robertj
- * Added functions to set component parts of URL.
- *
- * Revision 1.17  2001/11/08 00:32:49  robertj
- * Added parsing of ';' based parameter fields into string dictionary if there are multiple parameters, with '=' values.
- *
- * Revision 1.16  2001/09/28 00:32:24  robertj
- * Broke out internal static function for unstranslating URL strings.
- *
- * Revision 1.15  1999/03/09 08:01:47  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.14  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.13  1998/09/23 06:20:11  robertj
- * Added open source copyright license.
- *
- * Revision 1.12  1998/02/16 00:12:53  robertj
- * Added function to open a URL in a browser.
- *
- * Revision 1.11  1998/02/03 10:02:35  robertj
- * Added ability to get scheme, host and port from URL as a string.
- *
- * Revision 1.10  1998/02/03 06:18:49  robertj
- * Fixed URL encoding to be closer to RFC
- *
- * Revision 1.9  1997/01/12 04:22:54  robertj
- * Added has function so URL can be dictionary key.
- *
- * Revision 1.8  1996/08/19 13:37:28  robertj
- * Fixed URL parsing and definition (cannot have relative paths).
- *
- * Revision 1.7  1996/06/10 09:55:44  robertj
- * Added global function for query parameters parsing.
- *
- * Revision 1.6  1996/03/31 08:53:13  robertj
- * Added string representation for URI part only.
- *
- * Revision 1.5  1996/03/16 04:46:02  robertj
- * Added translation type to TranslateString() to accommodate query variables.
- *
- * Revision 1.4  1996/03/02 03:12:13  robertj
- * Added function to translate a string to a form suitable for inclusion in a URL.
- *
- * Revision 1.3  1996/02/03 11:06:27  robertj
- * Added splitting of query field into variables dictionary.
- *
- * Revision 1.2  1996/01/26 02:24:32  robertj
- * Further implemetation.
- *
- * Revision 1.1  1996/01/23 13:04:20  robertj
- * Initial revision
- *
+ * $Revision: 27132 $
+ * $Author: rjongbloed $
+ * $Date: 2012-03-06 17:29:05 -0600 (Tue, 06 Mar 2012) $
  */
 
-#ifndef _PURL
-#define _PURL
+#ifndef PTLIB_PURL_H
+#define PTLIB_PURL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
+
+#if P_URL
+
+#include <ptlib/pfactory.h>
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -151,7 +49,7 @@ class PURLLegacyScheme;
 /**
  This class describes a Universal Resource Locator.
  This is the desciption of a resource location as used by the World Wide
- Web and the #PHTTPSocket# class.
+ Web and the <code>PHTTPSocket</code> class.
  */
 class PURL : public PObject
 {
@@ -162,34 +60,37 @@ class PURL : public PObject
     /**Construct a new URL object from the URL string. */
     PURL(
       const char * cstr,    ///< C string representation of the URL.
-      const char * defaultScheme = NULL ///< Default scheme for URL
+      const char * defaultScheme = "http" ///< Default scheme for URL
     );
     /**Construct a new URL object from the URL string. */
     PURL(
       const PString & str,  ///< String representation of the URL.
-      const char * defaultScheme = NULL ///< Default scheme for URL
+      const char * defaultScheme = "http" ///< Default scheme for URL
     );
     /**Construct a new URL object from the file path. */
     PURL(
       const PFilePath & path   ///< File path to turn into a "file:" URL.
     );
 
+    PURL(const PURL & other);
+    PURL & operator=(const PURL & other);
+
   /**@name Overrides from class PObject */
   //@{
     /**Compare the two URLs and return their relative rank.
 
      @return
-       #LessThan#, #EqualTo# or #GreaterThan#
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
       const PObject & obj   ///< Object to compare against.
     ) const;
 
-    /**This function yields a hash value required by the #PDictionary#
+    /**This function yields a hash value required by the <code>PDictionary</code>
        class. A descendent class that is required to be the key of a dictionary
        should override this function. The precise values returned is dependent
-       on the semantics of the class. For example, the #PString# class
+       on the semantics of the class. For example, the <code>PString</code> class
        overrides it to provide a hash function for distinguishing text strings.
 
        The default behaviour is to return the value zero.
@@ -216,12 +117,12 @@ class PURL : public PObject
   /**@name New functions for class. */
   //@{
     /**Parse the URL string into the fields in the object instance. */
-    inline BOOL Parse(
+    inline PBoolean Parse(
       const char * cstr,   ///< URL as a string to parse.
       const char * defaultScheme = NULL ///< Default scheme for URL
     ) { return InternalParse(cstr, defaultScheme); }
     /**Parse the URL string into the fields in the object instance. */
-    inline BOOL Parse(
+    inline PBoolean Parse(
       const PString & str, ///< URL as a string to parse.
       const char * defaultScheme = NULL ///< Default scheme for URL
     ) { return InternalParse((const char *)str, defaultScheme); }
@@ -247,6 +148,7 @@ class PURL : public PObject
     PString AsString(
       UrlFormat fmt = FullURL   ///< The type of string to be returned.
     ) const;
+    operator PString() const { return AsString(); }
 
     /**Get the "file:" URL as a file path.
        If the URL is not a "file:" URL then returns an empty string.
@@ -259,8 +161,12 @@ class PURL : public PObject
       LoginTranslation,
       /// Translate the path field for a URL.
       PathTranslation,
-      /// Translate the query parameters field for a URL.
-      QueryTranslation
+      /// Translate the query variable field for a URL.
+      QueryTranslation,
+      /// Translate the parameter variables field for a URL.
+      ParameterTranslation,
+      /// Translate the quoted parameter variables field for a URL.
+      QuotedParameterTranslation
     };
 
     /**Translate a string from general form to one that can be included into
@@ -287,10 +193,30 @@ class PURL : public PObject
       TranslationType type    ///< Type of translation.
     );
 
+    /** Split a string to a dictionary of names and values. */
+    static void SplitVars(
+      const PString & str,    ///< String to split into variables.
+      PStringToString & vars, ///< Dictionary of variable names and values.
+      char sep1 = ';',        ///< Separater between pairs
+      char sep2 = '=',        ///< Separater between key and value
+      TranslationType type = ParameterTranslation ///< Type of translation.
+    );
+
     /** Split a string in &= form to a dictionary of names and values. */
     static void SplitQueryVars(
       const PString & queryStr,   ///< String to split into variables.
       PStringToString & queryVars ///< Dictionary of variable names and values.
+    ) { SplitVars(queryStr, queryVars, '&', '=', QueryTranslation); }
+
+    /** Construct string from a dictionary using separators.
+      */
+    static void OutputVars(
+      ostream & strm,               ///< Stream to output dictionary to
+      const PStringToString & vars, ///< Dictionary of variable names and values.
+      char sep0 = ';',              ///< First separater before all ('\0' means none)
+      char sep1 = ';',              ///< Separater between pairs
+      char sep2 = '=',              ///< Separater between key and value
+      TranslationType type = ParameterTranslation ///< Type of translation.
     );
 
 
@@ -323,12 +249,15 @@ class PURL : public PObject
 
     /// Set the port field in the URL.
     void SetPort(WORD newPort);
+    
+    /// Get if explicit port is specified.
+    PBoolean GetPortSupplied() const { return portSupplied; }
 
     /// Get if path is relative or absolute
-    BOOL GetRelativePath() const { return relativePath; }
+    PBoolean GetRelativePath() const { return relativePath; }
 
     /// Get the path field of the URL as a string.
-    const PString & GetPathStr() const { return pathStr; }
+    PString GetPathStr() const;
 
     /// Set the path field of the URL as a string.
     void SetPathStr(const PString & pathStr);
@@ -339,6 +268,9 @@ class PURL : public PObject
     /// Set the path field of the URL as a string array.
     void SetPath(const PStringArray & path);
 
+    /// Append segment to the path field of the URL.
+    void AppendPath(const PString & segment);
+
     /// Get the parameter (;) field of the URL.
     PString GetParameters() const;
 
@@ -346,35 +278,65 @@ class PURL : public PObject
     void SetParameters(const PString & parameters);
 
     /// Get the parameter (;) field(s) of the URL as a string dictionary.
-    const PStringToString & GetParamVars() const { return paramVars; }
+    /// Note the values have already been translated using UntranslateString
+    const PStringOptions & GetParamVars() const { return paramVars; }
 
     /// Set the parameter (;) field(s) of the URL as a string dictionary.
+    /// Note the values will be translated using TranslateString
     void SetParamVars(const PStringToString & paramVars);
 
     /// Set the parameter (;) field of the URL as a string dictionary.
-    void SetParamVar(const PString & key, const PString & data);
+    /// Note the values will be translated using TranslateString
+    void SetParamVar(
+      const PString & key,          ///< Key to add/delete
+      const PString & data,         ///< Vlaue to add at key, if empty string may be removed
+      bool emptyDataDeletes = true  ///< If true, and data empty string, key is removed
+    );
 
-    /// Get the fragment (##) field of the URL.
+    /// Get the fragment (\#) field of the URL.
     const PString & GetFragment() const { return fragment; }
 
     /// Get the Query (?) field of the URL as a string.
     PString GetQuery() const;
 
     /// Set the Query (?) field of the URL as a string.
+    /// Note the values will be translated using UntranslateString
     void SetQuery(const PString & query);
 
     /// Get the Query (?) field of the URL as a string dictionary.
-    const PStringToString & GetQueryVars() const { return queryVars; }
+    /// Note the values have already been translated using UntranslateString
+    const PStringOptions & GetQueryVars() const { return queryVars; }
 
     /// Set the Query (?) field(s) of the URL as a string dictionary.
+    /// Note the values will be translated using TranslateString
     void SetQueryVars(const PStringToString & queryVars);
 
     /// Set the Query (?) field of the URL as a string dictionary.
+    /// Note the values will be translated using TranslateString
     void SetQueryVar(const PString & key, const PString & data);
 
-    /// Return TRUE if the URL is an empty string.
-    BOOL IsEmpty() const { return urlString.IsEmpty(); }
+    /// Get the contents of URL, data left after all elemetns are parsed out
+    const PString & GetContents() const { return m_contents; }
 
+    /// Set the contents of URL, data left after all elemetns are parsed out
+    void SetContents(const PString & str);
+
+    /// Return true if the URL is an empty string.
+    PBoolean IsEmpty() const { return urlString.IsEmpty(); }
+
+
+    /**Get the resource the URL is pointing at.
+       The data returned is obtained according to the scheme and the factory
+       PURLLoaderFactory.
+      */
+    bool LoadResource(
+      PString & data,  ///< Resource data as a string
+      const PString & requiredContentType = PString::Empty() ///< Expected content type where applicable
+    ) const;
+    bool LoadResource(
+      PBYTEArray & data,  ///< Resource data as a binary blob
+      const PString & requiredContentType = PString::Empty() ///< Expected content type where applicable
+    ) const;
 
     /**Open the URL in a browser.
 
@@ -382,16 +344,18 @@ class PURL : public PObject
        The browser was successfully opened. This does not mean the URL exists and was
        displayed.
      */
-    static BOOL OpenBrowser(
+    bool OpenBrowser() const { return OpenBrowser(AsString()); }
+    static bool OpenBrowser(
       const PString & url   ///< URL to open
     );
   //@}
 
-    BOOL LegacyParse(const PString & _url, const PURLLegacyScheme * schemeInfo);
+    PBoolean LegacyParse(const PString & url, const PURLLegacyScheme * schemeInfo);
     PString LegacyAsString(PURL::UrlFormat fmt, const PURLLegacyScheme * schemeInfo) const;
 
   protected:
-    virtual BOOL InternalParse(
+    void CopyContents(const PURL & other);
+    virtual PBoolean InternalParse(
       const char * cstr,         ///< URL as a string to parse.
       const char * defaultScheme ///< Default scheme for URL
     );
@@ -403,13 +367,13 @@ class PURL : public PObject
     PString password;
     PCaselessString hostname;
     WORD port;
-    BOOL portSupplied;          /// port was supplied in string input
-    BOOL relativePath;
-    PString pathStr;
+    PBoolean portSupplied;          /// port was supplied in string input
+    PBoolean relativePath;
     PStringArray path;
-    PStringToString paramVars;
+    PStringOptions paramVars;
     PString fragment;
-    PStringToString queryVars;
+    PStringOptions queryVars;
+    PString m_contents;  // Anything left after parsing other elements
 };
 
 
@@ -421,9 +385,12 @@ class PURLScheme : public PObject
   PCLASSINFO(PURLScheme, PObject);
   public:
     virtual PString GetName() const = 0;
-    virtual BOOL Parse(const PString & url, PURL & purl) const = 0;
+    virtual PBoolean Parse(const PString & url, PURL & purl) const = 0;
     virtual PString AsString(PURL::UrlFormat fmt, const PURL & purl) const = 0;
 };
+
+typedef PFactory<PURLScheme> PURLSchemeFactory;
+
 
 //////////////////////////////////////////////////////////////////////////////
 // PURLLegacyScheme
@@ -431,10 +398,35 @@ class PURLScheme : public PObject
 class PURLLegacyScheme : public PURLScheme
 {
   public:
-    PURLLegacyScheme(const char * _scheme)
-      : scheme(_scheme) { }
+    PURLLegacyScheme(
+      const char * s,
+      bool user    = false,
+      bool pass    = false,
+      bool host    = false,
+      bool def     = false,
+      bool defhost = false,
+      bool query   = false,
+      bool params  = false,
+      bool frags   = false,
+      bool path    = false,
+      bool rel     = false,
+      WORD port    = 0
+    )
+      : scheme(s)
+      , hasUsername           (user)
+      , hasPassword           (pass)
+      , hasHostPort           (host)
+      , defaultToUserIfNoAt   (def)
+      , defaultHostToLocal    (defhost)
+      , hasQuery              (query)
+      , hasParameters         (params)
+      , hasFragments          (frags)
+      , hasPath               (path)
+      , relativeImpliesScheme (rel)
+      , defaultPort           (port)
+    { }
 
-    BOOL Parse(const PString & url, PURL & purl) const
+    PBoolean Parse(const PString & url, PURL & purl) const
     { return purl.LegacyParse(url, this); }
 
     PString AsString(PURL::UrlFormat fmt, const PURL & purl) const
@@ -444,19 +436,48 @@ class PURLLegacyScheme : public PURLScheme
     { return scheme; }
 
     PString scheme;
-    BOOL hasUsername;
-    BOOL hasPassword;
-    BOOL hasHostPort;
-    BOOL defaultToUserIfNoAt;
-    BOOL defaultHostToLocal;
-    BOOL hasQuery;
-    BOOL hasParameters;
-    BOOL hasFragments;
-    BOOL hasPath;
-    BOOL relativeImpliesScheme;
+    bool hasUsername;
+    bool hasPassword;
+    bool hasHostPort;
+    bool defaultToUserIfNoAt;
+    bool defaultHostToLocal;
+    bool hasQuery;
+    bool hasParameters;
+    bool hasFragments;
+    bool hasPath;
+    bool relativeImpliesScheme;
     WORD defaultPort;
 };
 
-#endif
+#define PURL_LEGACY_SCHEME(schemeName, user, pass, host, def, defhost, query, params, frags, path, rel, port) \
+  class PURLLegacyScheme_##schemeName : public PURLLegacyScheme \
+  { \
+    public: \
+      PURLLegacyScheme_##schemeName() \
+        : PURLLegacyScheme(#schemeName, user, pass, host, def, defhost, query, params, frags, path, rel, port) \
+        { } \
+  }; \
+  static PURLSchemeFactory::Worker<PURLLegacyScheme_##schemeName> schemeName##Factory(#schemeName, true); \
+
+
+
+//////////////////////////////////////////////////////////////////////////////
+// PURLLoader
+
+class PURLLoader : public PObject
+{
+  PCLASSINFO(PURLLoader, PObject);
+  public:
+    virtual bool Load(const PURL & url, PString & str, const PString & requiredContentType) = 0;
+    virtual bool Load(const PURL & url, PBYTEArray & data, const PString & requiredContentType) = 0;
+};
+
+typedef PFactory<PURLLoader> PURLLoaderFactory;
+
+
+#endif // P_URL
+
+#endif // PTLIB_PURL_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

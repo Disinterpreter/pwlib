@@ -26,52 +26,16 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ipsock.h,v $
- * Revision 1.11  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.10  2003/02/04 22:28:19  robertj
- * Fixed use of NETDB_SUCCESS symbol in WinCE, thanks Joerg Schoemer
- *
- * Revision 1.9  2002/12/04 00:41:12  robertj
- * Added sockets symbol not in winsock for getXbyY functions.
- *
- * Revision 1.8  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.7  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.6  2001/01/24 06:06:34  yurik
- * Windows CE port-related changes - actually my first change of openh323 code
- *
- * Revision 1.5  1998/11/30 02:55:15  robertj
- * New directory structure
- *
- * Revision 1.4  1998/09/24 03:30:09  robertj
- * Added open software license.
- *
- * Revision 1.3  1997/01/10 13:15:39  robertj
- * Added unix style error codes for WinSock codes compatible with GetErrorNumber().
- *
- * Revision 1.2  1996/08/08 10:09:04  robertj
- * Directory structure changes for common files.
- *
- * Revision 1.1  1994/07/27 06:00:10  robertj
- * Initial revision
- *
+ * $Revision: 26863 $
+ * $Author: ededu $
+ * $Date: 2012-01-17 09:04:17 -0600 (Tue, 17 Jan 2012) $
  */
 
-#ifndef _WIN32_WCE
-
+#ifndef EINPROGRESS
 #define EINPROGRESS             (WSAEINPROGRESS|PWIN32ErrorFlag)
 #define ENOTSOCK                (WSAENOTSOCK|PWIN32ErrorFlag)
 #define EMSGSIZE                (WSAEMSGSIZE|PWIN32ErrorFlag)
-#define ESOCKTNOSUPPORT         (WSAESOCKTNOSUPPORT|PWIN32ErrorFlag)
 #define EOPNOTSUPP              (WSAEOPNOTSUPP|PWIN32ErrorFlag)
-#define EPFNOSUPPORT            (WSAEPFNOSUPPORT|PWIN32ErrorFlag)
 #define EAFNOSUPPORT            (WSAEAFNOSUPPORT|PWIN32ErrorFlag)
 #define EADDRINUSE              (WSAEADDRINUSE|PWIN32ErrorFlag)
 #define EADDRNOTAVAIL           (WSAEADDRNOTAVAIL|PWIN32ErrorFlag)
@@ -83,13 +47,10 @@
 #define ENOBUFS                 (WSAENOBUFS|PWIN32ErrorFlag)
 #define EISCONN                 (WSAEISCONN|PWIN32ErrorFlag)
 #define ENOTCONN                (WSAENOTCONN|PWIN32ErrorFlag)
-#define ESHUTDOWN               (WSAESHUTDOWN|PWIN32ErrorFlag)
-#define ETOOMANYREFS            (WSAETOOMANYREFS|PWIN32ErrorFlag)
 #define ETIMEDOUT               (WSAETIMEDOUT|PWIN32ErrorFlag)
 #define ECONNREFUSED            (WSAECONNREFUSED|PWIN32ErrorFlag)
-#define EHOSTDOWN               (WSAEHOSTDOWN|PWIN32ErrorFlag)
 #define EHOSTUNREACH            (WSAEHOSTUNREACH|PWIN32ErrorFlag)
-
+#define EWOULDBLOCK             (WSAEWOULDBLOCK|PWIN32ErrorFlag)
 #endif
 
 

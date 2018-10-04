@@ -23,15 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: precompile.h,v $
- * Revision 1.1  2006/02/07 01:02:56  dereksmithies
- * Initial release of code to test the PSafeDictionary structure in pwlib.
- * Thanks to Indranet Technologies for supporting this work.
- *
- *
- *
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>

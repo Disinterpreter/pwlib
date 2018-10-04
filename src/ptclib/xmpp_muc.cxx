@@ -24,15 +24,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: xmpp_muc.cxx,v $
- * Revision 1.2  2005/08/04 03:19:08  dereksmithies
- * Add xmpp_muc (XMPP multi user conference) to the compile process for unix.
- * Correct compile errors under unix.
- *
- * Revision 1.1  2004/05/09 07:23:50  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 25392 $
+ * $Author: rjongbloed $
+ * $Date: 2011-03-22 23:29:41 -0500 (Tue, 22 Mar 2011) $
  */
 
 #ifdef __GNUC__
@@ -41,6 +35,9 @@
 
 #include <ptlib.h>
 #include <ptclib/xmpp_muc.h>
+
+#define new PNEW
+
 
 #if P_EXPAT
 
@@ -68,8 +65,8 @@ PObject::Comparison XMPP::MUC::User::Compare(const PObject & obj) const
 
 ///////////////////////////////////////////////////////
 
-PString XMPP::MUC::Namespace("http://jabber.org/protocol/muc");
-PString XMPP::MUC::User::Namespace("http://jabber.org/protocol/muc#user");
+const PCaselessString & XMPP::MUC::NamespaceTag()       { static const PConstCaselessString s("http://jabber.org/protocol/muc"); return s; }
+const PCaselessString & XMPP::MUC::User::NamespaceTag() { static const PConstCaselessString s("http://jabber.org/protocol/muc#user"); return s; }
 
 XMPP::MUC::Room::Room(C2S::StreamHandler * handler, const JID& jid, const PString& nick)
   : m_Handler(handler), m_RoomJID(jid)
@@ -90,10 +87,10 @@ XMPP::MUC::Room::Room(C2S::StreamHandler * handler, const JID& jid, const PStrin
 }
 
 
-BOOL XMPP::MUC::Room::Enter()
+PBoolean XMPP::MUC::Room::Enter()
 {
   if (PAssertNULL(m_Handler) == NULL)
-    return FALSE;
+    return PFalse;
 
   JID ourUser(m_RoomJID);
   ourUser.SetResource(m_User.m_Nick);
@@ -104,7 +101,7 @@ BOOL XMPP::MUC::Room::Enter()
   pre.SetPriority(0);
 
   PXMLElement * x = new PXMLElement(NULL, "x");
-  x->SetAttribute(XMPP::Namespace, XMPP::MUC::Namespace);
+  x->SetAttribute(XMPP::NamespaceTag(), XMPP::MUC::NamespaceTag());
 
   pre.AddElement(x);
 
@@ -112,10 +109,10 @@ BOOL XMPP::MUC::Room::Enter()
 }
 
 
-BOOL XMPP::MUC::Room::Leave()
+PBoolean XMPP::MUC::Room::Leave()
 {
   if (PAssertNULL(m_Handler) == NULL)
-    return FALSE;
+    return PFalse;
 
   XMPP::Presence pre;
   pre.SetTo(m_RoomJID);
@@ -125,7 +122,7 @@ BOOL XMPP::MUC::Room::Leave()
 }
 
 
-BOOL XMPP::MUC::Room::SendMessage(const PString& msg)
+PBoolean XMPP::MUC::Room::SendMessage(const PString& msg)
 {
   XMPP::Message _msg;
   _msg.SetBody(msg);
@@ -134,10 +131,10 @@ BOOL XMPP::MUC::Room::SendMessage(const PString& msg)
 }
 
 
-BOOL XMPP::MUC::Room::SendMessage(Message& msg)
+PBoolean XMPP::MUC::Room::SendMessage(Message& msg)
 {
   if (PAssertNULL(m_Handler) == NULL)
-    return FALSE;
+    return PFalse;
 
   msg.SetTo(m_RoomJID);
   msg.SetType(XMPP::Message::GroupChat);
@@ -196,7 +193,7 @@ void XMPP::MUC::Room::OnPresence(XMPP::Presence& msg, INT)
 
   PXMLElement * x = msg.GetElement("x");
 
-  if (x != NULL && x->GetAttribute(XMPP::Namespace) == XMPP::MUC::User::Namespace) {
+  if (x != NULL && x->GetAttribute(XMPP::NamespaceTag()) == XMPP::MUC::User::NamespaceTag()) {
     PXMLElement * item = x->GetElement("item");
 
     if (item != NULL) {

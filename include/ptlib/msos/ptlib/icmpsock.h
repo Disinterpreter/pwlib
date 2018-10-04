@@ -26,32 +26,17 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: icmpsock.h,v $
- * Revision 1.7  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.6  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.5  1998/12/02 03:51:40  robertj
- * Unix compatibility changes
- *
- * Revision 1.4  1998/09/24 03:30:06  robertj
- * Added open software license.
- *
- * Revision 1.3  1996/10/29 13:28:30  robertj
- * Change ICMP to use DLL rather than Winsock
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 ///////////////////////////////////////////////////////////////////////////////
 // PICMPSocket
 
   public:
-    BOOL Close();
-    BOOL IsOpen() const;
+    PBoolean Close();
+    PBoolean IsOpen() const;
 
   protected:
     HANDLE icmpHandle;

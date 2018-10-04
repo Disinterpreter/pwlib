@@ -26,149 +26,14 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: file.h,v $
- * Revision 1.43  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.42  2003/09/26 09:58:50  rogerhardiman
- * Move #include <sys/stat.h> from the unix file.h to the main file.h
- * FreeBSD's sys/stat.h includes extern "C" for some prototypes and you
- * cannot have an extern "C" in the middle of a C++ class
- *
- * Revision 1.41  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.40  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.39  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.38  2002/07/02 08:00:55  craigs
- * Also made GetPosition, SetPosition and SetLength virtual as well
- *
- * Revision 1.37  2002/07/02 07:59:42  craigs
- * Added virtual to GetLength call
- *
- * Revision 1.36  2002/01/13 20:54:55  rogerh
- * Make the other Open() virtual so it can be overridden (eg in PWAVFile)
- *
- * Revision 1.35  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.34  2000/09/27 05:58:07  craigs
- * Added virtual to PFile::Open to allow overriding in descandant classes
- *
- * Revision 1.33  2000/07/09 14:05:46  robertj
- * Added file share options.
- *
- * Revision 1.32  1999/06/13 13:54:07  robertj
- * Added PConsoleChannel class for access to stdin/stdout/stderr.
- *
- * Revision 1.31  1999/06/09 02:05:20  robertj
- * Added ability to open file as standard input, output and error streams.
- *
- * Revision 1.30  1999/03/09 02:59:49  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.29  1999/02/16 08:07:11  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.28  1998/09/23 06:20:35  robertj
- * Added open source copyright license.
- *
- * Revision 1.27  1995/07/31 12:15:43  robertj
- * Removed PContainer from PChannel ancestor.
- *
- * Revision 1.26  1995/06/17 11:12:33  robertj
- * Documentation update.
- *
- * Revision 1.25  1995/04/22 00:43:57  robertj
- * Added Move() function and changed semantics of Rename().
- * Changed all file name strings to PFilePath objects.
- *
- * Revision 1.24  1995/03/14 12:41:23  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.23  1995/03/12  04:37:13  robertj
- * Moved GetHandle() function from PFile to PChannel.
- *
- * Revision 1.22  1995/01/14  06:22:11  robertj
- * Documentation
- *
- * Revision 1.21  1994/12/21  11:52:54  robertj
- * Documentation and variable normalisation.
- *
- * Revision 1.20  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.19  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.18  1994/08/21  23:43:02  robertj
- * Added "remove on close" feature for temporary files.
- * Added "force" option to Remove/Rename etc to override write protection.
- * Added function to set file permissions.
- *
- * Revision 1.17  1994/07/17  10:46:06  robertj
- * Moved data to platform dependent files.
- *
- * Revision 1.16  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.15  1994/04/20  12:17:44  robertj
- * Split name into PFilePath
- *
- * Revision 1.14  1994/04/01  14:11:03  robertj
- * Added const to functions.
- * Added SetName function.
- *
- * Revision 1.13  1994/03/07  07:38:19  robertj
- * Major enhancementsacross the board.
- *
- * Revision 1.12  1994/01/13  03:40:22  robertj
- * Added hidden flag to file info.
- *
- * Revision 1.12  1994/01/13  03:36:48  robertj
- * Created intermediate class PInteractorLayout for dialog-ish windows.
- *
- * Revision 1.11  1994/01/03  04:42:23  robertj
- * Mass changes to common container classes and interactors etc etc etc.
- *
- * Revision 1.10  1993/12/31  06:45:38  robertj
- * Made inlines optional for debugging purposes.
- *
- * Revision 1.9  1993/09/27  16:35:25  robertj
- * Changed GetName() to GetTitle(), better naming convention.
- * Moved internal functions to private section.
- *
- * Revision 1.8  1993/08/31  03:38:02  robertj
- * Changed PFile::Status to PFile::Info due to X-Windows compatibility.
- *
- * Revision 1.7  1993/08/27  18:17:47  robertj
- * Moved code from MS-DOS platform to common files.
- *
- * Revision 1.6  1993/08/21  04:40:19  robertj
- * Added Copy() function.
- *
- * Revision 1.5  1993/08/21  01:50:33  robertj
- * Made Clone() function optional, default will assert if called.
- *
- * Revision 1.4  1993/08/01  14:05:27  robertj
- * Added GetFileName() function required for proper portability.
- * Improved some comments.
- *
- * Revision 1.3  1993/07/14  12:49:16  robertj
- * Fixed RCS keywords.
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
 
-#ifndef _PFILE
-#define _PFILE
+#ifndef PTLIB_FILE_H
+#define PTLIB_FILE_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -201,37 +66,29 @@ class PFile : public PChannel
   //@{
     /**Create a file object but do not open it. It does not initially have a
        valid file name. However, an attempt to open the file using the
-       #Open()# function will generate a unique temporary file.
+       <code>Open()</code> function will generate a unique temporary file.
      */
     PFile();
 
     /**When a file is opened, it may restrict the access available to
        operations on the object instance. A value from this enum is passed to
-       the #Open()# function to set the mode.
+       the <code>Open()</code> function to set the mode.
      */
     enum OpenMode {
-      /// File can be read but not written.
-      ReadOnly,
-      /// File can be written but not read.
-      WriteOnly,
-      /// File can be both read and written.
-      ReadWrite
+      ReadOnly,   ///< File can be read but not written.
+      WriteOnly,  ///< File can be written but not read.
+      ReadWrite   ///< File can be both read and written.
     };
 
     /**When a file is opened, a number of options may be associated with the
        open file. These describe what action to take on opening the file and
        what to do on closure. A value from this enum is passed to the
-       #Open()# function to set the options.
+       <code>Open()</code> function to set the options.
 
-       The #ModeDefault# option will use the following values:
-\begin{tabular}{rr}
-          Mode  & Options   \\
-\hline
-          #ReadOnly#  &    #MustExist# \\
-          #WriteOnly# &    #Create | Truncate# \\
-          #ReadWrite# &    #Create# \\
-\hline
-\end{tabular}
+       The <code>ModeDefault</code> option will use the following values:
+          \arg \c ReadOnly  <code>MustExist</code>
+          \arg \c WriteOnly <code>Create | Truncate</code>
+          \arg \c ReadWrite <code>Create</code>
      */
     enum OpenOptions {
       /// File options depend on the OpenMode parameter.
@@ -257,24 +114,24 @@ class PFile : public PChannel
        temporary file name in ReadOnly mode will always fail. This would only
        be usefull in a mode and options that will create the file.
 
-       The #PChannel::IsOpen()# function may be used after object
+       The <code>PChannel::IsOpen()</code> function may be used after object
        construction to determine if the file was successfully opened.
      */
     PFile(
       OpenMode mode,          ///< Mode in which to open the file.
-      int opts = ModeDefault  ///< #OpenOptions enum# for open operation.
+      int opts = ModeDefault  ///< <code>OpenOptions</code> enum# for open operation.
     );
 
     /**Create a file object with the specified name and open it in the
        specified mode and with the specified options.
 
-       The #PChannel::IsOpen()# function may be used after object
+       The <code>PChannel::IsOpen()</code> function may be used after object
        construction to determine if the file was successfully opened.
      */
     PFile(
       const PFilePath & name,    ///< Name of file to open.
       OpenMode mode = ReadWrite, ///< Mode in which to open the file.
-      int opts = ModeDefault     ///< #OpenOptions enum# for open operation.
+      int opts = ModeDefault     ///< <code>OpenOptions</code> enum# for open operation.
     );
 
     /// Close the file on destruction.
@@ -285,7 +142,7 @@ class PFile : public PChannel
   /**@name Overrides from class PObject */
   //@{
     /**Determine the relative rank of the two objects. This is essentially the
-       string comparison of the #PFilePath# names of the files.
+       string comparison of the <code>PFilePath</code> names of the files.
 
        @return
        relative rank of the file paths.
@@ -299,7 +156,7 @@ class PFile : public PChannel
   /**@name Overrides from class PChannel */
   //@{
     /**Get the platform and I/O channel type name of the channel. For example,
-       it would return the filename in #PFile# type channels.
+       it would return the filename in <code>PFile</code> type channels.
 
        @return
        the name of the channel.
@@ -311,13 +168,13 @@ class PFile : public PChannel
        of bytes read.
 
        The GetErrorCode() function should be consulted after Read() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE indicates that at least one character was read from the channel.
-       FALSE means no bytes were read due to timeout or some other I/O error.
+       true indicates that at least one character was read from the channel.
+       false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -327,19 +184,19 @@ class PFile : public PChannel
        of bytes written.
 
        The GetErrorCode() function should be consulted after Write() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
-       @return TRUE if at least len bytes were written to the channel.
+       @return true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
 
     /** Close the file channel.
-        @return TRUE if close was OK.
+        @return true if close was OK.
       */
-    virtual BOOL Close();
+    virtual PBoolean Close();
   //@}
 
 
@@ -350,9 +207,9 @@ class PFile : public PChannel
        file system.
 
        @return
-       TRUE if the file exists.
+       true if the file exists.
      */
-    static BOOL Exists(
+    static PBoolean Exists(
       const PFilePath & name  ///< Name of file to see if exists.
     );
 
@@ -361,20 +218,20 @@ class PFile : public PChannel
        of the object actually exists within the platforms file system.
 
        @return
-       TRUE if the file exists.
+       true if the file exists.
      */
-    BOOL Exists() const;
+    PBoolean Exists() const;
 
     /**Check for file access modes.
        Determine if the file specified may be opened in the specified mode. This would
        check the current access rights to the file for the mode. For example,
        for a file that is read only, using mode == ReadWrite would return
-       FALSE but mode == ReadOnly would return TRUE.
+       false but mode == ReadOnly would return true.
 
        @return
-       TRUE if a file open would succeed.
+       true if a file open would succeed.
      */
-    static BOOL Access(
+    static PBoolean Access(
       const PFilePath & name, ///< Name of file to have its access checked.
       OpenMode mode         ///< Mode in which the file open would be done.
     );
@@ -384,53 +241,57 @@ class PFile : public PChannel
        instance of the object may be opened in the specified mode. This would
        check the current access rights to the file for the mode. For example,
        for a file that is read only, using mode == ReadWrite would return
-       FALSE but mode == ReadOnly would return TRUE.
+       false but mode == ReadOnly would return true.
 
        @return
-       TRUE if a file open would succeed.
+       true if a file open would succeed.
      */
-    BOOL Access(
+    PBoolean Access(
       OpenMode mode         ///< Mode in which the file open would be done.
     );
 
-    /**Delete the specified file. If #force# is FALSE and the file
+    /**Delete the specified file. If <code>force</code> is false and the file
        is protected against being deleted then the function fails. If
-       #force# is TRUE then the protection is ignored. What
+       <code>force</code> is true then the protection is ignored. What
        constitutes file deletion protection is platform dependent, eg on DOS
        is the Read Only attribute and on a Novell network it is a Delete
        trustee right. Some protection may not be able to overridden with the
-       #force# parameter at all, eg on a Unix system and you are
+       <code>force</code> parameter at all, eg on a Unix system and you are
        not the owner of the file.
 
        @return
-       TRUE if the file was deleted.
+       true if the file was deleted.
      */
-    static BOOL Remove(
+    static PBoolean Remove(
       const PFilePath & name,   // Name of file to delete.
-      BOOL force = FALSE      // Force deletion even if file is protected.
+      PBoolean force = false      // Force deletion even if file is protected.
+    );
+    static PBoolean Remove(
+      const PString & name,   // Name of file to delete.
+      PBoolean force = false      // Force deletion even if file is protected.
     );
 
-    /**Delete the current file. If #force# is FALSE and the file
+    /**Delete the current file. If <code>force</code> is false and the file
        is protected against being deleted then the function fails. If
-       #force# is TRUE then the protection is ignored. What
+       <code>force</code> is true then the protection is ignored. What
        constitutes file deletion protection is platform dependent, eg on DOS
        is the Read Only attribute and on a Novell network it is a Delete
        trustee right. Some protection may not be able to overridden with the
-       #force# parameter at all, eg on a Unix system and you are
+       <code>force</code> parameter at all, eg on a Unix system and you are
        not the owner of the file.
 
        @return
-       TRUE if the file was deleted.
+       true if the file was deleted.
      */
-    BOOL Remove(
-      BOOL force = FALSE      // Force deletion even if file is protected.
+    PBoolean Remove(
+      PBoolean force = false      // Force deletion even if file is protected.
     );
 
     /**Change the specified files name. This does not move the file in the
        directory hierarchy, it only changes the name of the directory entry.
 
-       The #newname# parameter must consist only of the file name
-       part, as returned by the #PFilePath::GetFileName()# function. Any
+       The <code>newname</code> parameter must consist only of the file name
+       part, as returned by the <code>PFilePath::GetFileName()</code> function. Any
        other file path parts will cause an error.
 
        The first form uses the file path specification associated with the
@@ -439,12 +300,12 @@ class PFile : public PChannel
        arbitrary file specified by name.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    static BOOL Rename(
+    static PBoolean Rename(
       const PFilePath & oldname,  ///< Old name of the file.
       const PString & newname,    ///< New name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
 
@@ -452,8 +313,8 @@ class PFile : public PChannel
        This does not move the file in the
        directory hierarchy, it only changes the name of the directory entry.
 
-       The #newname# parameter must consist only of the file name
-       part, as returned by the #PFilePath::GetFileName()# function. Any
+       The <code>newname</code> parameter must consist only of the file name
+       part, as returned by the <code>PFilePath::GetFileName()</code> function. Any
        other file path parts will cause an error.
 
        The first form uses the file path specification associated with the
@@ -462,34 +323,34 @@ class PFile : public PChannel
        arbitrary file specified by name.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    BOOL Rename(
+    PBoolean Rename(
       const PString & newname,  ///< New name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
 
     /**Make a copy of the specified file.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    static BOOL Copy(
+    static PBoolean Copy(
       const PFilePath & oldname,  ///< Old name of the file.
       const PFilePath & newname,  ///< New name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
 
     /**Make a copy of the current file.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    BOOL Copy(
+    PBoolean Copy(
       const PFilePath & newname,  ///< New name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
 
@@ -500,12 +361,12 @@ class PFile : public PChannel
        it is across file systems then a copy and a delete is performed.
 
        @return
-       TRUE if the file was moved.
+       true if the file was moved.
      */
-    static BOOL Move(
+    static PBoolean Move(
       const PFilePath & oldname,  ///< Old path and name of the file.
       const PFilePath & newname,  ///< New path and name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
 
@@ -516,18 +377,18 @@ class PFile : public PChannel
        it is across file systems then a copy and a delete is performed.
 
        @return
-       TRUE if the file was moved.
+       true if the file was moved.
      */
-    BOOL Move(
+    PBoolean Move(
       const PFilePath & newname,  ///< New path and name for the file.
-      BOOL force = FALSE
+      PBoolean force = false
         ///< Delete file if a destination exists with the same name.
     );
   //@}
 
   /**@name File channel functions */
   //@{
-    /**Get the full path name of the file. The #PFilePath# object
+    /**Get the full path name of the file. The <code>PFilePath</code> object
        describes the full file name specification for the particular platform.
 
        @return
@@ -535,7 +396,7 @@ class PFile : public PChannel
      */
     const PFilePath & GetFilePath() const;
 
-    /**Set the full path name of the file. The #PFilePath# object
+    /**Set the full path name of the file. The <code>PFilePath</code> object
        describes the full file name specification for the particular platform.
      */
     void SetFilePath(
@@ -548,13 +409,13 @@ class PFile : public PChannel
        it is closed.
        
        If there has not been a filename attached to the file object (via
-       #SetFilePath()#, the #name# parameter or a previous
+       <code>SetFilePath()</code>, the <code>name</code> parameter or a previous
        open) then a new unique temporary filename is generated.
 
        @return
-       TRUE if the file was successfully opened.
+       true if the file was successfully opened.
      */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       OpenMode mode = ReadWrite,  // Mode in which to open the file.
       int opts = ModeDefault      // Options for open operation.
     );
@@ -563,16 +424,16 @@ class PFile : public PChannel
        the specified options. If the file object already has an open file then
        it is closed.
        
-       Note: if #mode# is StandardInput, StandardOutput or StandardError,
-       then the #name# parameter is ignored.
+       Note: if <code>mode</code> is StandardInput, StandardOutput or StandardError,
+       then the <code>name</code> parameter is ignored.
 
        @return
-       TRUE if the file was successfully opened.
+       true if the file was successfully opened.
      */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PFilePath & name,    // Name of file to open.
       OpenMode mode = ReadWrite, // Mode in which to open the file.
-      int opts = ModeDefault     // #OpenOptions enum# for open operation.
+      int opts = ModeDefault     // <code>OpenOptions</code> enum# for open operation.
     );
       
     /**Get the current size of the file.
@@ -586,9 +447,9 @@ class PFile : public PChannel
        expanding the file, or truncating it if being made shorter.
 
        @return
-       TRUE if the file size was changed to the length specified.
+       true if the file size was changed to the length specified.
      */
-    virtual BOOL SetLength(
+    virtual PBoolean SetLength(
       off_t len   // New length of file.
     );
 
@@ -603,16 +464,16 @@ class PFile : public PChannel
     };
 
     /**Set the current active position in the file for the next read or write
-       operation. The #pos# variable is a signed number which is
-       added to the specified origin. For #origin == PFile::Start#
-       only positive values for #pos# are meaningful. For
-       #origin == PFile::End# only negative values for
-       #pos# are meaningful.
+       operation. The <code>pos</code> variable is a signed number which is
+       added to the specified origin. For <code>origin == PFile::Start</code>
+       only positive values for <code>pos</code> are meaningful. For
+       <code>origin == PFile::End</code> only negative values for
+       <code>pos</code> are meaningful.
 
        @return
-       TRUE if the new file position was set.
+       true if the new file position was set.
      */
-    virtual BOOL SetPosition(
+    virtual PBoolean SetPosition(
       off_t pos,                         ///< New position to set.
       FilePositionOrigin origin = Start  ///< Origin for position change.
     );
@@ -626,60 +487,58 @@ class PFile : public PChannel
     virtual off_t GetPosition() const;
 
     /**Determine if the current file position is at the end of the file. If
-       this is TRUE then any read operation will fail.
+       this is true then any read operation will fail.
 
        @return
-       TRUE if at end of file.
+       true if at end of file.
      */
-    BOOL IsEndOfFile() const;
+    PBoolean IsEndOfFile() const;
       
     /**Get information (eg protection, timestamps) on the specified file.
 
        @return
-       TRUE if the file info was retrieved.
+       true if the file info was retrieved.
      */
-    static BOOL GetInfo(
+    static PBoolean GetInfo(
       const PFilePath & name,  // Name of file to get the information on.
       PFileInfo & info
-      // #PFileInfo# structure to receive the information.
+      // <code>PFileInfo</code> structure to receive the information.
     );
 
     /**Get information (eg protection, timestamps) on the current file.
 
        @return
-       TRUE if the file info was retrieved.
+       true if the file info was retrieved.
      */
-    BOOL GetInfo(
+    PBoolean GetInfo(
       PFileInfo & info
-      // #PFileInfo# structure to receive the information.
+      // <code>PFileInfo</code> structure to receive the information.
     );
 
     /**Set permissions on the specified file.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    static BOOL SetPermissions(
+    static PBoolean SetPermissions(
       const PFilePath & name,   // Name of file to change the permission of.
       int permissions           // New permissions mask for the file.
     );
     /**Set permissions on the current file.
 
        @return
-       TRUE if the file was renamed.
+       true if the file was renamed.
      */
-    BOOL SetPermissions(
+    PBoolean SetPermissions(
       int permissions           // New permissions mask for the file.
     );
   //@}
 
   protected:
     // Member variables
-    /// The fully qualified path name for the file.
-    PFilePath path;
 
-    /// File is to be removed when closed.
-    BOOL removeOnClose;
+    PFilePath path;         ///< The fully qualified path name for the file.
+    PBoolean removeOnClose; ///< File is to be removed when closed.
 
 
 // Include platform dependent part of class
@@ -690,6 +549,8 @@ class PFile : public PChannel
 #endif
 };
 
-#endif
+
+#endif // PTLIB_FILE_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

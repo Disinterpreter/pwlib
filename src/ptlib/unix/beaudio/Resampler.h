@@ -3,7 +3,7 @@
 	$Log: Resampler.h,v $
 	Revision 1.4  2002/02/04 03:15:47  yurik
 	VC compiler complained of invoking new on array with paramters in constructor. Fixed it.
-	
+
 	Revision 1.3  2001/07/09 06:16:15  yurik
 	Jac Goudsmit's BeOS changes of July,6th. Cleaning up media subsystem etc.
 	

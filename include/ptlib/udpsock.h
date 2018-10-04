@@ -26,107 +26,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: udpsock.h,v $
- * Revision 1.28  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.27  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.26  2005/11/21 11:49:36  shorne
- * Changed disableQos to disableGQoS to better reflect what it does
- *
- * Revision 1.25  2005/07/13 12:08:09  csoutheren
- * Fixed QoS patches to be more consistent with PWLib style and to allow Unix compatibility
- *
- * Revision 1.24  2005/07/13 11:48:53  csoutheren
- * Backported QOS changes from isvo branch
- *
- * Revision 1.23.10.1  2005/04/25 13:39:28  shorne
- * Extended QoS support for per-call negotiation
- *
- * Revision 1.23  2003/10/27 04:06:13  csoutheren
- * Added code to allow compilation of new QoS code on Unix
- *
- * Revision 1.22  2003/10/27 03:22:44  csoutheren
- * Added handling for QoS
- *   Thanks to Henry Harrison of AliceStreet
- *
- * Revision 1.21  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.20  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.19  2002/10/08 12:41:51  robertj
- * Changed for IPv6 support, thanks Sébastien Josset.
- *
- * Revision 1.18  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.17  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.16  1999/08/27 08:18:52  robertj
- * Added ability to get the host/port of the the last packet read/written to UDP socket.
- *
- * Revision 1.15  1999/03/09 02:59:51  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.14  1999/02/16 08:11:17  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.13  1998/09/23 06:21:47  robertj
- * Added open source copyright license.
- *
- * Revision 1.12  1997/06/06 10:54:11  craigs
- * Added overrides and new functions for connectionless Writes
- *
- * Revision 1.11  1996/09/14 13:09:43  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.10  1996/05/15 10:19:15  robertj
- * Added ICMP protocol socket, getting common ancestor to UDP.
- *
- * Revision 1.9  1996/03/03 07:38:00  robertj
- * Added Reusability clause to the Listen() function on sockets.
- *
- * Revision 1.8  1995/12/10 11:44:45  robertj
- * Numerous fixes for sockets.
- *
- * Revision 1.7  1995/06/17 11:13:41  robertj
- * Documentation update.
- *
- * Revision 1.6  1995/06/17 00:48:01  robertj
- * Implementation.
- *
- * Revision 1.5  1995/01/03 09:36:24  robertj
- * Documentation.
- *
- * Revision 1.4  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.3  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.2  1994/07/25  03:36:03  robertj
- * Added sockets to common, normalising to same comment standard.
- *
+ * $Revision: 26309 $
+ * $Author: ededu $
+ * $Date: 2011-08-14 18:01:01 -0500 (Sun, 14 Aug 2011) $
  */
 
-#ifndef _PUDPSOCKET
-#define _PUDPSOCKET
+#ifndef PTLIB_UDPSOCKET_H
+#define PTLIB_UDPSOCKET_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#include <ptlib/ipdsock.h>
 #include <ptlib/qos.h>
  
 /**
@@ -143,15 +55,18 @@ class PUDPSocket : public PIPDatagramSocket
        a "listening" socket is specified then the channel is also opened.
      */
     PUDPSocket(
-      WORD port = 0             ///< Port number to use for the connection.
+      WORD port = 0,             ///< Port number to use for the connection.
+      int iAddressFamily = AF_INET ///< Family
     );
     PUDPSocket(
        PQoS * qos,              ///< Pointer to a QOS structure for the connection
-      WORD port = 0             ///< Port number to use for the connection.
+      WORD port = 0,            ///< Port number to use for the connection.
+      int iAddressFamily = AF_INET ///< Family
     );
     PUDPSocket(
       const PString & service,   ///< Service name to use for the connection.
-      PQoS * qos = NULL          ///< Pointer to a QOS structure for the connection
+      PQoS * qos = NULL,         ///< Pointer to a QOS structure for the connection
+      int iAddressFamily = AF_INET ///< Family
     );
     PUDPSocket(
       const PString & address,  ///< Address of remote machine to connect to.
@@ -167,21 +82,21 @@ class PUDPSocket : public PIPDatagramSocket
   //@{
     /** Override of PChannel functions to allow connectionless reads
      */
-    BOOL Read(
+    PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to read.
       PINDEX len    ///< Number of bytes to read.
     );
 
     /** Override of PChannel functions to allow connectionless writes
      */
-    BOOL Write(
+    PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
 
     /** Override of PSocket functions to allow connectionless writes
      */
-    BOOL Connect(
+    PBoolean Connect(
       const PString & address   ///< Address of remote machine to connect to.
     );
   //@}
@@ -200,20 +115,9 @@ class PUDPSocket : public PIPDatagramSocket
     void GetSendAddress(
       Address & address,    ///< IP address to send packets.
       WORD & port           ///< Port to send packets.
-    );
+    ) const;
+    PString GetSendAddress() const;
 
-
-    /** Change the QOS spec for the socket and try to apply the changes
-     */
-    virtual BOOL ModifyQoSSpec(
-      PQoS * qos            ///< QoS specification to use
-    );
-
-#if P_HAS_QOS
-    /** Get the QOS object for the socket.
-    */
-    virtual PQoS & GetQoSSpec();
-#endif
     /** Get the address of the sender in the last connectionless Read().
         Note that thsi only applies to the Read() and not the ReadFrom()
         function.
@@ -221,11 +125,41 @@ class PUDPSocket : public PIPDatagramSocket
     void GetLastReceiveAddress(
       Address & address,    ///< IP address to send packets.
       WORD & port           ///< Port to send packets.
+    ) const;
+    PString GetLastReceiveAddress() const;
+
+    /** CallBack to check if the detected address of the connectionless Read()
+        is an alternate address. Use this to switch the target to send and
+        receive the connectionless read/write.
+     */
+    virtual PBoolean IsAlternateAddress(
+      const Address & address,    ///< Detected IP Address.
+      WORD port                    ///< Detected Port.
     );
+
+    /** PseudoRead
+        This indicates to the upper system that reading on this socket
+        will be a pseudo read when means there is data available that
+        did not orginate from the physical socket but was programmically
+        injected.
+     */
+    virtual PBoolean DoPseudoRead(int & selectStatus);
+
+    /** Change the QOS spec for the socket and try to apply the changes
+     */
+    virtual PBoolean ModifyQoSSpec(
+      PQoS * qos            ///< QoS specification to use
+    );
+
+#if P_QOS
+    /** Get the QOS object for the socket.
+    */
+    virtual PQoS & GetQoSSpec();
+#endif
 
     /** Check to See if the socket will support QoS on the given local Address
      */
-    static BOOL SupportQoS(const PIPSocket::Address & address);
+    static PBoolean SupportQoS(const PIPSocket::Address & address);
 
     /** Manually Enable GQoS Support
      */
@@ -234,18 +168,18 @@ class PUDPSocket : public PIPDatagramSocket
 
   protected:
     // Open an IPv4 socket (for backward compatibility)
-    virtual BOOL OpenSocket();
+    virtual PBoolean OpenSocket();
 
     // Open an IPv4 or IPv6 socket
-    virtual BOOL OpenSocket(
+    virtual PBoolean OpenSocket(
       int ipAdressFamily
     );
 
     // Create a QOS-enabled socket
-    virtual int OpenSocketGQOS(int af, int type, int proto);
+    virtual PBoolean OpenSocketGQOS(int af, int type, int proto);
 
     // Modify the QOS settings
-    virtual BOOL ApplyQoS();
+    virtual PBoolean ApplyQoS();
 
     virtual const char * GetProtocolName() const;
 
@@ -265,13 +199,11 @@ class PUDPSocket : public PIPDatagramSocket
 #endif
 };
 
-#if P_HAS_QOS
+#if P_QOS
 
 #ifdef _WIN32
 #include <winbase.h>
 #include <winreg.h>
-
-#ifndef _WIN32_WCE
 
 class PWinQoS : public PObject
 {
@@ -287,12 +219,11 @@ protected:
     sockaddr * sa;
 };
 
-#endif  // _WIN32_WCE
 #endif  // _WIN32
-#endif // P_HAS_QOS
+#endif // P_QOS
 
 
-#endif
+#endif // PTLIB_UDPSOCKET_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

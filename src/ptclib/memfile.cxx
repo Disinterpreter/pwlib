@@ -23,22 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: memfile.cxx,v $
- * Revision 1.5  2004/04/03 08:22:21  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.4  2002/12/19 03:35:43  robertj
- * Fixed missing set of lastWriteCount in Write() function.
- *
- * Revision 1.3  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.2  2002/06/27 03:53:35  robertj
- * Cleaned up documentation and added Compare() function.
- *
- * Revision 1.1  2002/06/26 09:03:16  craigs
- * Initial version
- *
+ * $Revision: 26949 $
+ * $Author: rjongbloed $
+ * $Date: 2012-02-07 20:27:07 -0600 (Tue, 07 Feb 2012) $
  */
 
 #include <ptlib.h>
@@ -54,91 +41,131 @@
 //////////////////////////////////////////////////////////////////////////////
 
 PMemoryFile::PMemoryFile()
+  : m_position(0)
 {
-  position = 0;
+  os_handle = INT_MAX; // Start open
 }
 
 
-PMemoryFile::PMemoryFile(const PBYTEArray & ndata)
+PMemoryFile::PMemoryFile(const PBYTEArray & data)
+  : m_data(data)
+  , m_position(0)
 {
-  data = ndata;
-  position = 0;
+  os_handle = INT_MAX; // Start open
+}
+
+
+PMemoryFile::~PMemoryFile()
+{
+  Close();
 }
 
 
 PObject::Comparison PMemoryFile::Compare(const PObject & obj) const
 {
   PAssert(PIsDescendant(&obj, PMemoryFile), PInvalidCast);
-  return data.Compare(((const PMemoryFile &)obj).data);
+  return m_data.Compare(((const PMemoryFile &)obj).m_data);
 }
 
 
-BOOL PMemoryFile::Read(void * buf, PINDEX len)
+PBoolean PMemoryFile::Open(OpenMode, int)
 {
-  if ((position + len) > data.GetSize())
-    len = data.GetSize() - position;
+  os_handle = INT_MAX;
+  m_position = 0;
+  return true;
+}
 
-  lastReadCount = len;
 
-  if (len != 0) {
-    ::memcpy(buf, position + (const BYTE * )data, len);
-    position += len;
-    lastReadCount = len;
+PBoolean PMemoryFile::Open(const PFilePath &, OpenMode mode, int opts)
+{
+  return Open(mode, opts);
+}
+
+      
+PBoolean PMemoryFile::Close()
+{
+  os_handle = -1;
+  return true;
+}
+
+
+PBoolean PMemoryFile::Read(void * buf, PINDEX len)
+{
+  if (!IsOpen())
+    return SetErrorValues(NotOpen, EBADF);
+
+  if (m_position > m_data.GetSize()) {
+    lastReadCount = 0;
+    return true;
   }
 
-  return lastReadCount != 0;
+  if ((m_position + len) > m_data.GetSize())
+    len = m_data.GetSize() - m_position;
+
+  memcpy(buf, m_position + (const BYTE * )m_data, len);
+  m_position += len;
+  lastReadCount = len;
+
+  return lastReadCount > 0;
 }
 
 
-BOOL PMemoryFile::Write(const void * buf, PINDEX len)
+PBoolean PMemoryFile::Write(const void * buf, PINDEX len)
 {
-  memcpy(data.GetPointer(position+len) + position, buf, len);
-  position += len;
+  if (!IsOpen())
+    return SetErrorValues(NotOpen, EBADF);
+
+  BYTE * ptr = m_data.GetPointer(m_position+len);
+  if (ptr == NULL)
+    return SetErrorValues(DiskFull, ENOMEM);
+
+  memcpy(ptr + m_position, buf, len);
+  m_position += len;
   lastWriteCount = len;
-  return TRUE;
+  return true;
 }
 
 
 off_t PMemoryFile::GetLength() const
 {
-  return data.GetSize();
+  return m_data.GetSize();
 }
       
 
-BOOL PMemoryFile::SetLength(off_t len)
+PBoolean PMemoryFile::SetLength(off_t len)
 {
-  return data.SetSize(len);
+  return m_data.SetSize(len);
 }
 
 
-BOOL PMemoryFile::SetPosition(off_t pos, FilePositionOrigin origin)
+PBoolean PMemoryFile::SetPosition(off_t pos, FilePositionOrigin origin)
 {
   switch (origin) {
     case Start:
-      if (pos > data.GetSize())
-        return FALSE;
-      position = pos;
+      if (pos > m_data.GetSize())
+        return false;
+      m_position = pos;
       break;
 
     case Current:
-      if (pos < -position || pos > (data.GetSize() - position))
-        return FALSE;
-      position += pos;
+      if (pos < -m_position || pos > (m_data.GetSize() - m_position))
+        return false;
+      m_position += pos;
       break;
 
     case End:
-      if (pos < -data.GetSize())
-        return FALSE;
-      position = data.GetSize() - pos;
+      if (-pos > m_data.GetSize())
+        return false;
+      m_position = m_data.GetSize() - pos;
       break;
   }
-  return TRUE;
+  return true;
 }
 
 
 off_t PMemoryFile::GetPosition() const
 {
-  return position;
+  return m_position;
 }
 
 

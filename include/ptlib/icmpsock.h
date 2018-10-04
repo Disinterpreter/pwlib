@@ -26,70 +26,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: icmpsock.h,v $
- * Revision 1.16  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.15  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.14  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.13  2003/02/11 06:47:19  craigs
- * Added missing OpenSocket function
- *
- * Revision 1.12  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.11  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.10  1999/08/07 15:22:20  craigs
- * Changed Success to PingSuccess to avoid namespace collision with X define of the same name
- *
- * Revision 1.9  1999/03/09 02:59:49  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.8  1999/02/16 08:20:48  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.7  1998/09/23 06:20:39  robertj
- * Added open source copyright license.
- *
- * Revision 1.6  1998/01/26 00:30:41  robertj
- * Added error codes, TTL and data buffer to Ping.
- *
- * Revision 1.5  1997/02/05 11:52:07  robertj
- * Changed current process function to return reference and validate objects descendancy.
- *
- * Revision 1.4  1996/11/04 03:57:16  robertj
- * Rewrite of ping for Win32 support.
- *
- * Revision 1.3  1996/09/14 13:09:19  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.2  1996/06/03 10:03:22  robertj
- * Changed ping to return more parameters.
- *
- * Revision 1.1  1996/05/15 21:11:16  robertj
- * Initial revision
- *
+ * $Revision: 27817 $
+ * $Author: rjongbloed $
+ * $Date: 2012-06-12 21:52:14 -0500 (Tue, 12 Jun 2012) $
  */
 
-#ifndef _PICMPSOCKET
-#define _PICMPSOCKET
+#ifndef PTLIB_ICMPSOCKET_H
+#define PTLIB_ICMPSOCKET_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#include <ptlib/pprocess.h>
 
 /**Create a socket channel that uses allows ICMP commands in the Internal
    Protocol.
@@ -129,7 +78,7 @@ class PICMPSocket : public PIPDatagramSocket
     class PingInfo {
       public:
         /// Create Ping information structure.
-        PingInfo(WORD id = (WORD)PProcess::Current().GetProcessID());
+        PingInfo(WORD id = (WORD)PProcess::GetCurrentProcessID());
 
         /**@name Supplied data */
         //@{
@@ -165,18 +114,18 @@ class PICMPSocket : public PIPDatagramSocket
        to be sent back.
 
        @return
-       FALSE if host not found or no response.
+       false if host not found or no response.
      */
-    BOOL Ping(
+    PBoolean Ping(
       const PString & host   ///< Host to send ping.
     );
     /**Send an ECHO_REPLY message to the specified host and wait for a reply
        to be sent back.
 
        @return
-       FALSE if host not found or no response.
+       false if host not found or no response.
      */
-    BOOL Ping(
+    PBoolean Ping(
       const PString & host,   ///< Host to send ping.
       PingInfo & info         ///< Information on the ping and reply.
     );
@@ -184,8 +133,8 @@ class PICMPSocket : public PIPDatagramSocket
 
   protected:
     const char * GetProtocolName() const;
-    virtual BOOL OpenSocket();
-    virtual BOOL OpenSocket(int ipAdressFamily);
+    virtual PBoolean OpenSocket();
+    virtual PBoolean OpenSocket(int ipAdressFamily);
 
 
 // Include platform dependent part of class
@@ -196,6 +145,8 @@ class PICMPSocket : public PIPDatagramSocket
 #endif
 };
 
-#endif
+
+#endif // PTLIB_ICMPSOCKET_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -25,302 +25,9 @@
  *
  * $Log: asner.cxx,v $
  * Revision 1.93  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.92  2005/11/25 01:01:15  csoutheren
- * Applied patch #1351168
- * PWlib various fixes
- *
- * Revision 1.91  2005/06/07 06:25:53  csoutheren
- * Applied patch 1199897 to increase speed of ASN parser debugging output
- * Thanks to Dmitriy <ddv@abinet.com>
- *
- * Revision 1.90  2004/07/12 03:42:22  csoutheren
- * Fixed problem with checking character set constraints too aggressively
- *
- * Revision 1.89  2004/07/12 01:56:10  csoutheren
- * Fixed incorrect asn decoding check
- *
- * Revision 1.88  2004/07/11 14:19:07  csoutheren
- * More bulletproofing of ASN routines against random data attacks
- *
- * Revision 1.87  2004/07/11 12:33:47  csoutheren
- * Added guards against illegal PDU values causing crashes
- *
- * Revision 1.86  2004/04/22 07:54:01  csoutheren
- * Fix problem with VS.net asserting on in isprint when chars outside normal range
- *
- * Revision 1.85  2004/04/18 04:33:37  rjongbloed
- * Changed all operators that return BOOL to return standard type bool. This is primarily
- *   for improved compatibility with std STL usage removing many warnings.
- *
- * Revision 1.84  2004/04/03 08:22:20  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.83  2004/01/17 09:21:21  csoutheren
- * Added protection against NULL ptr to PASN_Stream::BlockDecode
- *
- * Revision 1.82  2003/08/01 02:11:38  csoutheren
- * Changed to allow easy isolation of PER, BER and XER encoding/decoding routines
- *
- * Revision 1.81  2003/04/28 02:50:33  robertj
- * Fixed problem with spaces in type name, thanks Federico Pinna
- *
- * Revision 1.80  2003/02/26 04:37:21  robertj
- * Tidied some comments
- *
- * Revision 1.79  2003/02/26 01:57:44  robertj
- * Added XML encoding rules to ASN system, thanks Federico Pinna
- *
- * Revision 1.78  2003/01/24 23:43:43  robertj
- * Fixed subtle problems with the use of MAX keyword for unsigned numbers,
- *   should beUINT_MAX not INT_MAX, thanks Stevie Gray for pointing it out.
- *
- * Revision 1.77  2002/12/17 07:00:15  robertj
- * Fixed incorrect encoding of arrays greater than 8192 and less than 16384
- *
- * Revision 1.76  2002/12/13 03:57:17  robertj
- * Fixed crash if enable extension fields beyond the "known" extensions.
- *
- * Revision 1.75  2002/12/02 01:03:33  robertj
- * Fixed bug were if setting the size of a constrained bit string, it
- *   actually sets the size of the underlying byte array correctly.
- *
- * Revision 1.74  2002/11/26 23:29:32  robertj
- * Added missing const to DecodeSubType() function.
- *
- * Revision 1.73  2002/11/22 09:43:32  robertj
- * Fixed encoding of a ASN NULL sequence extension field, eg fastConnectRefused
- *
- * Revision 1.72  2002/11/21 03:46:22  robertj
- * Changed to encode only the minimum number of bits required, this improves
- *   compatibility with some brain dead ASN decoders.
- *
- * Revision 1.71  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.70  2002/10/31 05:51:10  robertj
- * Changed to use new UTF-8/UCS-2 conversion functions on PString.
- *
- * Revision 1.69  2002/10/29 08:12:44  robertj
- * Fixed MSVC warnings.
- *
- * Revision 1.68  2002/10/29 07:26:45  robertj
- * Fixed subtle bug when encoding or decoding Octet String with 1 or 2 bytes
- *   in it, was not byte aligned correctly.
- *
- * Revision 1.67  2002/09/26 23:53:20  robertj
- * Fixed incorrect asserts in PASN_Enumerated, thanks Platzer Wolfgang
- *
- * Revision 1.66  2002/09/13 08:16:15  robertj
- * Fixed missing line feed when dumping hex octet strings.
- *
- * Revision 1.65  2002/08/06 02:27:58  robertj
- * GNU C++ v3 compatibility.
- *
- * Revision 1.64  2002/07/25 10:52:49  robertj
- * Changes to allow more granularity in PDU dumps, hex output increasing
- *   with increasing trace level.
- *
- * Revision 1.63  2002/06/05 12:29:15  craigs
- * Changes for gcc 3.1
- *
- * Revision 1.62  2002/05/29 01:22:35  robertj
- * Added ability to set object id from unsigned integer arrays.
- *
- * Revision 1.61  2002/05/21 04:23:40  robertj
- * Fixed problem with ASN encoding/decoding unsconstrained negative numbers,
- *
- * Revision 1.60  2002/05/14 08:34:29  robertj
- * Fixed problem encoding unsigned where value==lower bound, thanks Greg Adams.
- *
- * Revision 1.59  2002/05/14 06:59:50  robertj
- * Added more bullet proofing so a malformed PDU cannot cause teh decoder
- *   to try and allocate huge arrays and consume all CPU and memory on a
- *   system. A configurable limit of 100 is set for things like SEQUENCE OF.
- *
- * Revision 1.58  2002/02/08 12:47:19  robertj
- * Fixed incorrect encoding of integer, did not allow for sign bit, thanks Kevin Tran.
- *
- * Revision 1.57  2002/02/01 01:17:36  robertj
- * Fixed bug in encoding empty strings (H.450 issue), thanks Frans Dams, Frank Derks et al.
- *
- * Revision 1.56  2002/01/30 08:40:55  robertj
- * Fixed incorrect decode function in BER string decode, thanks ct_dev@sohu.com
- *
- * Revision 1.55  2001/12/13 09:13:57  robertj
- * Added function get get oid as a string.
- *
- * Revision 1.54  2001/11/26 03:07:13  robertj
- * Fixed decode of extendable constrained integer types.
- *
- * Revision 1.53  2001/09/14 05:26:11  robertj
- * Fixed problem with assigning a PASN_Choice to itself, thanks Chih-Wei Huang
- *
- * Revision 1.52  2001/09/14 01:59:59  robertj
- * Fixed problem with incorrectly initialised PASN_Choice sub-object.
- *
- * Revision 1.51  2001/08/08 04:19:28  robertj
- * Fixed PString<->BMPString conversion so can have embedded nulls.
- *
- * Revision 1.50  2001/08/07 04:37:03  robertj
- * Simplified &#num; parsing.
- *
- * Revision 1.49  2001/08/07 02:49:05  robertj
- * Fixed incorrect alignment if constrained string upper bound is exactly
- *     16 bits long. thanks Guntram Diehl & Thomas Arimont.
- *
- * Revision 1.48  2001/08/06 09:35:25  robertj
- * Fixed GNU compatibility.
- *
- * Revision 1.47  2001/08/06 09:31:48  robertj
- * Added conversion of BMPString to PString without losing special characters.
- *
- * Revision 1.46  2001/08/06 01:39:02  robertj
- * Added assignement operator with RHS of PASN_BMPString to classes
- *   descended from PASN_BMPString.
- *
- * Revision 1.45  2001/06/14 02:14:12  robertj
- * Added functions to encode and decode another ASN type that is inside
- *   an octet string, useful for ANY or EXTERNAL types etc.
- *
- * Revision 1.44  2001/05/29 00:59:16  robertj
- * Fixed excessive padding on constrained strings.
- *
- * Revision 1.43  2001/05/22 23:37:42  robertj
- * Fixed problem with assigning a constrained string value to itself, which
- *   can occur when changing constraints.
- *
- * Revision 1.42  2001/04/30 10:47:33  robertj
- * Fixed stupid error in last patch.
- *
- * Revision 1.41  2001/04/30 06:47:04  robertj
- * Fixed problem with en/decoding more than 16 extension fields in a sequence.
- *
- * Revision 1.40  2001/04/26 08:15:58  robertj
- * Fixed problem with ASN compile of single constraints on enumerations.
- *
- * Revision 1.39  2001/04/23 05:46:06  robertj
- * Fixed problem with unconstrained PASN_NumericString coding in 8 bits
- *   instead of 4, thanks Chew Kuan.
- *
- * Revision 1.38  2001/04/23 04:40:14  robertj
- * Added ASN standard types GeneralizedTime and UTCTime
- *
- * Revision 1.37  2001/04/12 03:26:59  robertj
- * Fixed PASN_Boolean cosntructor to be compatible with usage in ASN parser.
- * Changed all PASN_xxx types so constructor can take real type as only
- *   parameter. eg PASN_OctetString s = "fred";
- * Changed block encode/decode so does not do a ByteAlign() if zero
- *   length, required for interoperability even though spec implies otherwise..
- *
- * Revision 1.36  2001/01/24 04:37:07  robertj
- * Added more bulletproofing to ASN structures to obey constraints.
- *
- * Revision 1.35  2001/01/03 01:20:13  robertj
- * Fixed error in BlockEncode, should ByteAlign() even on zero length strings.
- *
- * Revision 1.34  2000/10/26 11:09:16  robertj
- * More bullet proofing of PER decoder, changed bit type to be unsigned.
- *
- * Revision 1.33  2000/10/26 01:29:32  robertj
- * Fixed MSVC warning.
- *
- * Revision 1.32  2000/10/25 04:05:38  robertj
- * More bullet proofing of PER decoder.
- *
- * Revision 1.31  2000/09/29 04:11:51  robertj
- * Fixed possible out of range memory access, thanks Petr Parýzek <paryzek@wo.cz>
- *
- * Revision 1.30  2000/02/29 06:32:12  robertj
- * Added ability to remove optional field in sequence, thanks Dave Harvey.
- *
- * Revision 1.29  2000/01/20 06:22:22  robertj
- * Fixed boundary condition error for constrained integer encoding (values 1, 256 etc)
- *
- * Revision 1.28  1999/11/22 23:15:43  robertj
- * Fixed bug in PASN_Choice::Compare(), should make sure choices are the same before comparing.
- *
- * Revision 1.27  1999/08/19 15:43:07  robertj
- * Fixed incorrect size of OID if zero length encoded.
- *
- * Revision 1.26  1999/08/09 13:02:45  robertj
- * dded ASN compiler #defines for backward support of pre GCC 2.9 compilers.
- * Added ASN compiler #defines to reduce its memory footprint.
- *
- * Revision 1.25  1999/08/08 15:45:59  robertj
- * Fixed incorrect encoding of unknown extensions.
- *
- * Revision 1.24  1999/08/05 00:44:28  robertj
- * Fixed PER encoding problems for large integer values.
- *
- * Revision 1.23  1999/07/22 06:48:54  robertj
- * Added comparison operation to base ASN classes and compiled ASN code.
- * Added support for ANY type in ASN parser.
- *
- * Revision 1.22  1999/07/08 08:39:12  robertj
- * Fixed bug when assigning negative number ot cosntrained PASN_Integer
- *
- * Revision 1.21  1999/06/30 08:58:12  robertj
- * Fixed bug in encoding/decoding OID greater than 2.39
- *
- * Revision 1.20  1999/06/17 13:27:09  robertj
- * Fixed bug causing crashes on pass through of unknown extensions.
- *
- * Revision 1.19  1999/06/07 00:31:25  robertj
- * Fixed signed/unsigned problem with number of unknown extensions check.
- *
- * Revision 1.18  1999/04/26 05:58:48  craigs
- * Fixed problems with encoding of extensions
- *
- * Revision 1.17  1999/03/09 08:12:38  robertj
- * Fixed problem with closing a steam encoding twice.
- *
- * Revision 1.16  1999/01/16 01:28:25  robertj
- * Fixed problems with reading stream multiple times.
- *
- * Revision 1.15  1998/11/30 04:50:44  robertj
- * New directory structure
- *
- * Revision 1.14  1998/10/22 04:33:11  robertj
- * Fixed bug in constrained strings and PER, incorrect order of character set.
- *
- * Revision 1.13  1998/09/23 06:21:49  robertj
- * Added open source copyright license.
- *
- * Revision 1.12  1998/05/26 05:29:23  robertj
- * Workaroung for g++ iostream bug.
- *
- * Revision 1.11  1998/05/21 04:58:54  robertj
- * GCC comptaibility.
- *
- * Revision 1.10  1998/05/21 04:26:54  robertj
- * Fixed numerous PER problems.
- *
- * Revision 1.9  1998/05/11 06:01:55  robertj
- * Why did this compile under MSC?
- *
- * Revision 1.8  1998/05/07 05:19:29  robertj
- * Fixed problems with using copy constructor/assignment oeprator on PASN_Objects.
- *
- * Revision 1.7  1998/03/05 12:49:50  robertj
- * MemCheck fixes.
- *
- * Revision 1.6  1998/02/03 06:28:27  robertj
- * Fixed length calculation of integers in BER.
- * Added new function to read a block with minimum number of bytes.
- *
- * Revision 1.5  1998/01/26 01:51:20  robertj
- * Removed uninitialised variable warnings.
- *
- * Revision 1.4  1997/12/18 05:07:56  robertj
- * Fixed bug in choice name display.
- * Added function to get choice discriminator name.
- * Fixed bug in encoding extensions.
- *
- * Revision 1.3  1997/12/11 10:36:22  robertj
- * Support for new ASN parser.
- *
+ * $Revision: 23918 $
+ * $Author: rjongbloed $
+ * $Date: 2010-01-10 22:03:52 -0600 (Sun, 10 Jan 2010) $
  */
 
 #include <ptlib.h>
@@ -331,7 +38,7 @@
 
 #include <ptclib/asner.h>
 
-#if P_EXPAT
+#ifdef P_EXPAT
 #include <ptclib/pxml.h>
 #endif
 
@@ -358,7 +65,7 @@ static PINDEX CountBits(unsigned range)
   return nBits;
 }
 
-inline BOOL CheckByteOffset(PINDEX offset, PINDEX upper = MaximumStringSize)
+inline PBoolean CheckByteOffset(PINDEX offset, PINDEX upper = MaximumStringSize)
 {
   // a 1mbit PDU has got to be an error
   return (0 <= offset && offset <= upper);
@@ -377,7 +84,7 @@ static PINDEX FindNameByValue(const PASN_Names *names, unsigned namesCount, PIND
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Object::PASN_Object(unsigned theTag, TagClass theTagClass, BOOL extend)
+PASN_Object::PASN_Object(unsigned theTag, TagClass theTagClass, PBoolean extend)
 {
   extendable = extend;
 
@@ -523,7 +230,7 @@ PINDEX PASN_Null::GetDataLength() const
 }
 
 
-BOOL PASN_Null::Decode(PASN_Stream & strm)
+PBoolean PASN_Null::Decode(PASN_Stream & strm)
 {
   return strm.NullDecode(*this);
 }
@@ -537,14 +244,14 @@ void PASN_Null::Encode(PASN_Stream & strm) const
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Boolean::PASN_Boolean(BOOL val)
+PASN_Boolean::PASN_Boolean(PBoolean val)
   : PASN_Object(UniversalBoolean, UniversalTagClass)
 {
   value = val;
 }
 
 
-PASN_Boolean::PASN_Boolean(unsigned tag, TagClass tagClass, BOOL val)
+PASN_Boolean::PASN_Boolean(unsigned tag, TagClass tagClass, PBoolean val)
   : PASN_Object(tag, tagClass)
 {
   value = val;
@@ -568,9 +275,9 @@ PObject * PASN_Boolean::Clone() const
 void PASN_Boolean::PrintOn(ostream & strm) const
 {
   if (value)
-    strm << "TRUE";
+    strm << "true";
   else
-    strm << "FALSE";
+    strm << "false";
 }
 
 
@@ -586,7 +293,7 @@ PINDEX PASN_Boolean::GetDataLength() const
 }
 
 
-BOOL PASN_Boolean::Decode(PASN_Stream & strm)
+PBoolean PASN_Boolean::Decode(PASN_Stream & strm)
 {
   return strm.BooleanDecode(*this);
 }
@@ -614,7 +321,7 @@ PASN_Integer::PASN_Integer(unsigned tag, TagClass tagClass, unsigned val)
 }
 
 
-BOOL PASN_Integer::IsUnsigned() const
+PBoolean PASN_Integer::IsUnsigned() const
 {
   return constraint != Unconstrained && lowerLimit >= 0;
 }
@@ -716,7 +423,7 @@ PINDEX PASN_Integer::GetDataLength() const
 }
 
 
-BOOL PASN_Integer::Decode(PASN_Stream & strm)
+PBoolean PASN_Integer::Decode(PASN_Stream & strm)
 {
   return strm.IntegerDecode(*this);
 }
@@ -731,7 +438,7 @@ void PASN_Integer::Encode(PASN_Stream & strm) const
 ///////////////////////////////////////////////////////////////////////
 
 PASN_Enumeration::PASN_Enumeration(unsigned val)
-: PASN_Object(UniversalEnumeration, UniversalTagClass, FALSE),names(NULL),namesCount(0)
+: PASN_Object(UniversalEnumeration, UniversalTagClass, PFalse),names(NULL),namesCount(0)
 {
   value = val;
   maxEnumValue = P_MAX_INDEX;
@@ -739,7 +446,7 @@ PASN_Enumeration::PASN_Enumeration(unsigned val)
 
 
 PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
-                                   unsigned maxEnum, BOOL extend,
+                                   unsigned maxEnum, PBoolean extend,
                                    unsigned val)
   : PASN_Object(tag, tagClass, extend),names(NULL),namesCount(0)
 {
@@ -750,7 +457,7 @@ PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
 
 
 PASN_Enumeration::PASN_Enumeration(unsigned tag, TagClass tagClass,
-                                   unsigned maxEnum, BOOL extend,
+                                   unsigned maxEnum, PBoolean extend,
                                    const PASN_Names * nameSpec,
                                    unsigned namesCnt,
                                    unsigned val)
@@ -808,7 +515,7 @@ PINDEX PASN_Enumeration::GetDataLength() const
 }
 
 
-BOOL PASN_Enumeration::Decode(PASN_Stream & strm)
+PBoolean PASN_Enumeration::Decode(PASN_Stream & strm)
 {
   return strm.EnumerationDecode(*this);
 }
@@ -886,7 +593,7 @@ PINDEX PASN_Real::GetDataLength() const
 }
 
 
-BOOL PASN_Real::Decode(PASN_Stream & strm)
+PBoolean PASN_Real::Decode(PASN_Stream & strm)
 {
   return strm.RealDecode(*this);
 }
@@ -1015,13 +722,13 @@ PString PASN_ObjectId::GetTypeAsString() const
 }
 
 
-BOOL PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
+PBoolean PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
 {
   value.SetSize(0);
 
   // handle zero length strings correctly
   if (dataLen == 0)
-    return TRUE;
+    return PTrue;
 
   unsigned subId;
 
@@ -1033,7 +740,7 @@ BOOL PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
     subId = 0;
     do {    /* shift and add in low order 7 bits */
       if (strm.IsAtEnd())
-        return FALSE;
+        return PFalse;
       byte = strm.ByteDecode();
       subId = (subId << 7) + (byte & 0x7f);
       dataLen--;
@@ -1061,7 +768,7 @@ BOOL PASN_ObjectId::CommonDecode(PASN_Stream & strm, unsigned dataLen)
     value[1] = subId-80;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1129,7 +836,7 @@ PINDEX PASN_ObjectId::GetDataLength() const
 }
 
 
-BOOL PASN_ObjectId::Decode(PASN_Stream & strm)
+PBoolean PASN_ObjectId::Decode(PASN_Stream & strm)
 {
   return strm.ObjectIdDecode(*this);
 }
@@ -1200,20 +907,20 @@ void PASN_BitString::SetData(unsigned nBits, const BYTE * buf, PINDEX size)
 }
 
 
-BOOL PASN_BitString::SetSize(unsigned nBits)
+PBoolean PASN_BitString::SetSize(unsigned nBits)
 {
   if (!CheckByteOffset(nBits))
-    return FALSE;
+    return PFalse;
 
   if (constraint == Unconstrained)
     totalBits = nBits;
   else if (totalBits < (unsigned)lowerLimit) {
     if (lowerLimit < 0)
-      return FALSE;
+      return PFalse;
     totalBits = lowerLimit;
   } else if ((unsigned)totalBits > upperLimit) {
     if (upperLimit > (unsigned)MaximumSetSize)
-      return FALSE;
+      return PFalse;
     totalBits = upperLimit;
   } else
     totalBits = nBits;
@@ -1225,7 +932,7 @@ bool PASN_BitString::operator[](PINDEX bit) const
 {
   if ((unsigned)bit < totalBits)
     return (bitData[bit>>3] & (1 << (7 - (bit&7)))) != 0;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1271,8 +978,8 @@ PObject * PASN_BitString::Clone() const
 
 void PASN_BitString::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
-  _Ios_Fmtflags flags = strm.flags();
+  int indent = (int)strm.precision() + 2;
+  ios::fmtflags flags = strm.flags();
 
   if (totalBits > 128)
     strm << "Hex {\n"
@@ -1324,7 +1031,7 @@ PINDEX PASN_BitString::GetDataLength() const
 }
 
 
-BOOL PASN_BitString::Decode(PASN_Stream & strm)
+PBoolean PASN_BitString::Decode(PASN_Stream & strm)
 {
   return strm.BitStringDecode(*this);
 }
@@ -1432,8 +1139,8 @@ PObject * PASN_OctetString::Clone() const
 
 void PASN_OctetString::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
-  _Ios_Fmtflags flags = strm.flags();
+  int indent = (int)strm.precision() + 2;
+  ios::fmtflags flags = strm.flags();
 
   strm << ' ' << value.GetSize() << " octets {\n"
        << hex << setfill('0') << resetiosflags(ios::floatfield)
@@ -1477,19 +1184,19 @@ PINDEX PASN_OctetString::GetDataLength() const
 }
 
 
-BOOL PASN_OctetString::SetSize(PINDEX newSize)
+PBoolean PASN_OctetString::SetSize(PINDEX newSize)
 {
   if (!CheckByteOffset(newSize, MaximumStringSize))
-    return FALSE;
+    return PFalse;
 
   if (constraint != Unconstrained) {
     if (newSize < (PINDEX)lowerLimit) {
       if (lowerLimit < 0)
-        return FALSE;
+        return PFalse;
       newSize = lowerLimit;
     } else if ((unsigned)newSize > upperLimit) {
       if (upperLimit > (unsigned)MaximumStringSize)
-        return FALSE;
+        return PFalse;
       newSize = upperLimit;
     }
   }
@@ -1498,7 +1205,7 @@ BOOL PASN_OctetString::SetSize(PINDEX newSize)
 }
 
 
-BOOL PASN_OctetString::Decode(PASN_Stream & strm)
+PBoolean PASN_OctetString::Decode(PASN_Stream & strm)
 {
   return strm.OctetStringDecode(*this);
 }
@@ -1637,7 +1344,7 @@ PINDEX PASN_ConstrainedString::GetDataLength() const
 }
 
 
-BOOL PASN_ConstrainedString::Decode(PASN_Stream & strm)
+PBoolean PASN_ConstrainedString::Decode(PASN_Stream & strm)
 {
   return strm.ConstrainedStringDecode(*this);
 }
@@ -1718,7 +1425,7 @@ PASN_BMPString::PASN_BMPString(const char * str)
 }
 
 
-PASN_BMPString::PASN_BMPString(const PWORDArray & wstr)
+PASN_BMPString::PASN_BMPString(const PWCharArray & wstr)
   : PASN_ConstrainedObject(UniversalBMPString, UniversalTagClass)
 {
   Construct();
@@ -1758,7 +1465,7 @@ PASN_BMPString & PASN_BMPString::operator=(const PASN_BMPString & other)
 {
   PASN_ConstrainedObject::operator=(other);
 
-  value = PWORDArray(other.value, other.value.GetSize());
+  value = PWCharArray(other.value, other.value.GetSize());
   characterSet = other.characterSet;
   firstChar = other.firstChar;
   lastChar = other.lastChar;
@@ -1769,33 +1476,30 @@ PASN_BMPString & PASN_BMPString::operator=(const PASN_BMPString & other)
 }
 
 
-BOOL PASN_BMPString::IsLegalCharacter(WORD ch)
+PBoolean PASN_BMPString::IsLegalCharacter(WORD ch)
 {
   if (ch < firstChar)
-    return FALSE;
+    return PFalse;
 
   if (ch > lastChar)
-    return FALSE;
+    return PFalse;
 
   if (characterSet.IsEmpty())
-    return TRUE;
+    return PTrue;
 
-  const WORD * wptr = characterSet;
+  const wchar_t * wptr = characterSet;
   PINDEX count = characterSet.GetSize();
   while (count-- > 0) {
     if (*wptr == ch)
-      return TRUE;
+      return PTrue;
     wptr++;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
-
-PASN_BMPString & PASN_BMPString::operator=(const PWORDArray & array)
+void PASN_BMPString::SetValueRaw(const wchar_t * array, PINDEX paramSize)
 {
-  PINDEX paramSize = array.GetSize();
-
   // Can't copy any more than the upper constraint
   if ((unsigned)paramSize > upperLimit)
     paramSize = upperLimit;
@@ -1815,13 +1519,25 @@ PASN_BMPString & PASN_BMPString::operator=(const PWORDArray & array)
   while (count < newSize)
     value[count++] = firstChar;
 
+}
+
+PASN_BMPString & PASN_BMPString::operator=(const PWCharArray & array)
+{
+  PINDEX paramSize = array.GetSize();
+
+  // Remove trailing NULL character, if present
+  if (paramSize > 0 && array[paramSize-1] == 0)
+    paramSize--;
+
+  SetValueRaw(array, paramSize);
+ 
   return *this;
 }
 
 
 void PASN_BMPString::SetCharacterSet(ConstraintType ctype, const char * charSet)
 {
-  PWORDArray array(strlen(charSet));
+  PWCharArray array(strlen(charSet));
 
   PINDEX count = 0;
   while (*charSet != '\0')
@@ -1831,7 +1547,7 @@ void PASN_BMPString::SetCharacterSet(ConstraintType ctype, const char * charSet)
 }
 
 
-void PASN_BMPString::SetCharacterSet(ConstraintType ctype, const PWORDArray & charSet)
+void PASN_BMPString::SetCharacterSet(ConstraintType ctype, const PWCharArray & charSet)
 {
   if (ctype == Unconstrained) {
     firstChar = 0;
@@ -1890,7 +1606,7 @@ PObject::Comparison PASN_BMPString::Compare(const PObject & obj) const
 
 void PASN_BMPString::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  int indent = (int)strm.precision() + 2;
   PINDEX sz = value.GetSize();
   strm << ' ' << sz << " characters {\n";
   PINDEX i = 0;
@@ -1931,7 +1647,7 @@ PINDEX PASN_BMPString::GetDataLength() const
 }
 
 
-BOOL PASN_BMPString::Decode(PASN_Stream & strm)
+PBoolean PASN_BMPString::Decode(PASN_Stream & strm)
 {
   return strm.BMPStringDecode(*this);
 }
@@ -2031,7 +1747,7 @@ PTime PASN_UniversalTime::GetValue() const
 
 ///////////////////////////////////////////////////////////////////////
 
-PASN_Choice::PASN_Choice(unsigned nChoices, BOOL extend)
+PASN_Choice::PASN_Choice(unsigned nChoices, PBoolean extend)
   : PASN_Object(0, ApplicationTagClass, extend),names(NULL),namesCount(0)
 {
   numChoices = nChoices;
@@ -2040,7 +1756,7 @@ PASN_Choice::PASN_Choice(unsigned nChoices, BOOL extend)
 
 
 PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
-                         unsigned upper, BOOL extend)
+                         unsigned upper, PBoolean extend)
   : PASN_Object(tag, tagClass, extend),names(NULL),namesCount(0)
 {
   numChoices = upper;
@@ -2049,7 +1765,7 @@ PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
 
 
 PASN_Choice::PASN_Choice(unsigned tag, TagClass tagClass,
-                         unsigned upper, BOOL extend, const PASN_Names * nameSpec,unsigned namesCnt)
+                         unsigned upper, PBoolean extend, const PASN_Names * nameSpec,unsigned namesCnt)
   : PASN_Object(tag, tagClass, extend),
     names(nameSpec),namesCount(namesCnt)
 {
@@ -2126,10 +1842,10 @@ PString PASN_Choice::GetTagName() const
 }
 
 
-BOOL PASN_Choice::CheckCreate() const
+PBoolean PASN_Choice::CheckCreate() const
 {
   if (choice != NULL)
-    return TRUE;
+    return PTrue;
 
   return ((PASN_Choice *)this)->CreateObject();
 }
@@ -2241,15 +1957,15 @@ PINDEX PASN_Choice::GetDataLength() const
 }
 
 
-BOOL PASN_Choice::IsPrimitive() const
+PBoolean PASN_Choice::IsPrimitive() const
 {
   if (CheckCreate())
     return choice->IsPrimitive();
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PASN_Choice::Decode(PASN_Stream & strm)
+PBoolean PASN_Choice::Decode(PASN_Stream & strm)
 {
   return strm.ChoiceDecode(*this);
 }
@@ -2273,7 +1989,7 @@ PINDEX PASN_Choice::GetValueByName(PString name) const
 ///////////////////////////////////////////////////////////////////////
 
 PASN_Sequence::PASN_Sequence(unsigned tag, TagClass tagClass,
-                             unsigned nOpts, BOOL extend, unsigned nExtend)
+                             unsigned nOpts, PBoolean extend, unsigned nExtend)
   : PASN_Object(tag, tagClass, extend)
 {
   optionMap.SetConstraints(PASN_ConstrainedObject::FixedConstraint, nOpts);
@@ -2315,7 +2031,7 @@ PASN_Sequence & PASN_Sequence::operator=(const PASN_Sequence & other)
 }
 
 
-BOOL PASN_Sequence::HasOptionalField(PINDEX opt) const
+PBoolean PASN_Sequence::HasOptionalField(PINDEX opt) const
 {
   if (opt < (PINDEX)optionMap.GetSize())
     return optionMap[opt];
@@ -2367,7 +2083,7 @@ PObject * PASN_Sequence::Clone() const
 
 void PASN_Sequence::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  int indent = (int)strm.precision() + 2;
   strm << "{\n";
   for (PINDEX i = 0; i < fields.GetSize(); i++) {
     strm << setw(indent+6) << "field[" << i << "] <";
@@ -2409,13 +2125,13 @@ PINDEX PASN_Sequence::GetDataLength() const
 }
 
 
-BOOL PASN_Sequence::IsPrimitive() const
+PBoolean PASN_Sequence::IsPrimitive() const
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PASN_Sequence::Decode(PASN_Stream & strm)
+PBoolean PASN_Sequence::Decode(PASN_Stream & strm)
 {
   return PreambleDecode(strm) && UnknownExtensionsDecode(strm);
 }
@@ -2428,7 +2144,7 @@ void PASN_Sequence::Encode(PASN_Stream & strm) const
 }
 
 
-BOOL PASN_Sequence::PreambleDecode(PASN_Stream & strm)
+PBoolean PASN_Sequence::PreambleDecode(PASN_Stream & strm)
 {
   return strm.SequencePreambleDecode(*this);
 }
@@ -2440,7 +2156,7 @@ void PASN_Sequence::PreambleEncode(PASN_Stream & strm) const
 }
 
 
-BOOL PASN_Sequence::KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field)
+PBoolean PASN_Sequence::KnownExtensionDecode(PASN_Stream & strm, PINDEX fld, PASN_Object & field)
 {
   return strm.SequenceKnownDecode(*this, fld, field);
 }
@@ -2452,7 +2168,7 @@ void PASN_Sequence::KnownExtensionEncode(PASN_Stream & strm, PINDEX fld, const P
 }
 
 
-BOOL PASN_Sequence::UnknownExtensionsDecode(PASN_Stream & strm)
+PBoolean PASN_Sequence::UnknownExtensionsDecode(PASN_Stream & strm)
 {
   return strm.SequenceUnknownDecode(*this);
 }
@@ -2467,7 +2183,7 @@ void PASN_Sequence::UnknownExtensionsEncode(PASN_Stream & strm) const
 ///////////////////////////////////////////////////////////////////////
 
 PASN_Set::PASN_Set(unsigned tag, TagClass tagClass,
-                   unsigned nOpts, BOOL extend, unsigned nExtend)
+                   unsigned nOpts, PBoolean extend, unsigned nExtend)
   : PASN_Sequence(tag, tagClass, nOpts, extend, nExtend)
 {
 }
@@ -2514,24 +2230,24 @@ PASN_Array & PASN_Array::operator=(const PASN_Array & other)
 }
 
 
-BOOL PASN_Array::SetSize(PINDEX newSize)
+PBoolean PASN_Array::SetSize(PINDEX newSize)
 {
   if (newSize > MaximumArraySize)
-    return FALSE;
+    return PFalse;
 
   PINDEX originalSize = array.GetSize();
   if (!array.SetSize(newSize))
-    return FALSE;
+    return PFalse;
 
   for (PINDEX i = originalSize; i < newSize; i++) {
     PASN_Object * obj = CreateObject();
     if (obj == NULL)
-      return FALSE;
+      return PFalse;
 
     array.SetAt(i, obj);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -2545,7 +2261,7 @@ PObject::Comparison PASN_Array::Compare(const PObject & obj) const
 
 void PASN_Array::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  int indent = (int)strm.precision() + 2;
   strm << array.GetSize() << " entries {\n";
   for (PINDEX i = 0; i < array.GetSize(); i++)
     strm << setw(indent+1) << "[" << i << "]=" << setprecision(indent) << array[i] << '\n';
@@ -2583,13 +2299,13 @@ PINDEX PASN_Array::GetDataLength() const
 }
 
 
-BOOL PASN_Array::IsPrimitive() const
+PBoolean PASN_Array::IsPrimitive() const
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PASN_Array::Decode(PASN_Stream & strm)
+PBoolean PASN_Array::Decode(PASN_Stream & strm)
 {
   return strm.ArrayDecode(*this);
 }
@@ -2632,7 +2348,7 @@ void PASN_Stream::Construct()
 
 void PASN_Stream::PrintOn(ostream & strm) const
 {
-  int indent = strm.precision() + 2;
+  int indent = (int)strm.precision() + 2;
   strm << " size=" << GetSize()
        << " pos=" << byteOffset << '.' << (8-bitOffset)
        << " {\n";

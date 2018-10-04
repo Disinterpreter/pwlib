@@ -23,111 +23,19 @@
  *
  * Contributor(s): Roger Hardiman <roger@freebsd.org>
  *
- * $Log: vidinput_bsd.cxx,v $
- * Revision 1.2  2005/08/09 09:08:09  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.1.8.2  2005/07/24 09:01:47  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.1.8.1  2005/07/17 09:27:04  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.1  2003/12/12 04:38:17  rogerhardiman
- * Add plugin for the BSD Video Capture API (also called the meteor API)
- * for FreeBSD, NetBSD and OpenBSD
- *
- * Revision 1.20  2002/10/28 19:12:45  rogerh
- * Add svideo input support for Lars Eggert <larse@isi.edu>
- *
- * Revision 1.19  2002/04/10 08:40:36  rogerh
- * Simplify the SetVideoChannelFormat() code. Use the implementation in the
- * ancestor class.
- *
- * Revision 1.18  2002/04/05 06:41:54  rogerh
- * Apply video changes from Damien Sandras <dsandras@seconix.com>.
- * The Video Channel and Format are no longer set in Open(). Instead
- * call the new SetVideoChannelFormat() method. This makes video capture
- * and GnomeMeeting more stable with certain Linux video capture devices.
- *
- * Revision 1.17  2002/01/08 17:16:13  rogerh
- * Add code to grab Even fields (instead of interlaced frames) whenever
- * possible. This improves the image quality.
- * Add TestAllFormats
- *
- * Revision 1.16  2001/12/05 14:45:20  rogerh
- * Implement GetFrameData and GetFrameDataNoDelay
- *
- * Revision 1.15  2001/12/05 14:32:48  rogerh
- * Add GetParemters function
- *
- * Revision 1.14  2001/08/06 06:56:16  rogerh
- * Add scaling for new methods to match BSD's Meteor API
- *
- * Revision 1.13  2001/08/06 06:19:33  rogerh
- * Implement Brightness, Contract and Hue methods.
- *
- * Revision 1.12  2001/03/26 16:02:01  rogerh
- * Add dummy function for VerifyHardwareFrameSize
- *
- * Revision 1.11  2001/03/08 03:59:13  robertj
- * Fixed previous change, needed to allow for -1 as chammelNumber in Open().
- *
- * Revision 1.10  2001/03/08 02:23:17  robertj
- * Added improved defaulting of video formats so Open() does not fail.
- *
- * Revision 1.9  2001/03/07 00:10:05  robertj
- * Improved the device list, uses /proc, thanks Thorsten Westheider.
- *
- * Revision 1.8  2001/03/03 23:29:00  robertj
- * Oops, fixed BSD version of video.
- *
- * Revision 1.7  2001/03/03 23:25:07  robertj
- * Fixed use of video conversion function, returning bytes in destination frame.
- *
- * Revision 1.6  2001/03/03 06:13:01  robertj
- * Major upgrade of video conversion and grabbing classes.
- *
- * Revision 1.5  2001/01/11 13:26:39  rogerh
- * Add me in the Contributors section
- *
- * Revision 1.4  2001/01/05 18:12:30  rogerh
- * First fully working version of video4bsd.
- * Note that Start() and Stop() are not called, hence the first time hacks
- * in GetFrameData(). Also video is always grabbed in interlaced mode
- * so it does not look as good as it could.
- *
- * Revision 1.3  2001/01/05 14:52:36  rogerh
- * More work on the FreeBSD video capture code
- *
- * Revision 1.2  2001/01/04 18:02:16  rogerh
- * remove some old parts refering to linux
- *
- * Revision 1.1  2001/01/04 18:00:43  rogerh
- * Start to add support for video capture using on FreeBSD/NetBSD and OpenBSD
- * using the Meteor API (used by the Matrox Meteor and the bktr driver for
- * Bt848/Bt878 TV Tuner Cards). This is incomplete but it does compile.
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #pragma implementation "vidinput_bsd.h"
 
 #include "vidinput_bsd.h"
-#include <sys/mman.h>
 
 PCREATE_VIDINPUT_PLUGIN(BSDCAPTURE);
 
 ///////////////////////////////////////////////////////////////////////////////
-// PVideoInputDevice_BSDCAPTURE
+// PVideoInputBSDCAPTURE
 
 PVideoInputDevice_BSDCAPTURE::PVideoInputDevice_BSDCAPTURE()
 {
@@ -140,15 +48,16 @@ PVideoInputDevice_BSDCAPTURE::~PVideoInputDevice_BSDCAPTURE()
   Close();
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, BOOL startImmediate)
+PBoolean PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, PBoolean startImmediate)
 {
+  if (IsOpen())
   Close();
 
   deviceName = devName;
   videoFd = ::open((const char *)devName, O_RDONLY);
   if (videoFd < 0) {
     videoFd = -1;
-    return FALSE;
+    return PFalse;
   }
  
   // fill in a device capabilities structure
@@ -166,66 +75,66 @@ BOOL PVideoInputDevice_BSDCAPTURE::Open(const PString & devName, BOOL startImmed
   if (!SetChannel(channelNumber)) {
     ::close (videoFd);
     videoFd = -1;
-    return FALSE;
+    return PFalse;
   } 
   
   // select the video format (eg PAL, NTSC)
   if (!SetVideoFormat(videoFormat)) {
     ::close (videoFd);
     videoFd = -1;
-    return FALSE;
+    return PFalse;
   }
  
   // select the colpur format (eg YUV420, or RGB)
   if (!SetColourFormat(colourFormat)) {
     ::close (videoFd);
     videoFd = -1;
-    return FALSE;
+    return PFalse;
   }
 
   // select the image size
   if (!SetFrameSize(frameWidth, frameHeight)) {
     ::close (videoFd);
     videoFd = -1;
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;    
+  return PTrue;    
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::IsOpen() 
+PBoolean PVideoInputDevice_BSDCAPTURE::IsOpen() 
 {
     return videoFd >= 0;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::Close()
+PBoolean PVideoInputDevice_BSDCAPTURE::Close()
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   ClearMapping();
   ::close(videoFd);
   videoFd = -1;
   canMap  = -1;
   
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::Start()
+PBoolean PVideoInputDevice_BSDCAPTURE::Start()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::Stop()
+PBoolean PVideoInputDevice_BSDCAPTURE::Stop()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::IsCapturing()
+PBoolean PVideoInputDevice_BSDCAPTURE::IsCapturing()
 {
   return IsOpen();
 }
@@ -235,19 +144,23 @@ PStringList PVideoInputDevice_BSDCAPTURE::GetInputDeviceNames()
 {
   PStringList list;
 
-  list.AppendString("/dev/bktr0");
-  list.AppendString("/dev/bktr1");
-  list.AppendString("/dev/meteor0");
-  list.AppendString("/dev/meteor1");
+  if (PFile::Exists("/dev/bktr0"))
+    list.AppendString("/dev/bktr0");
+  if (PFile::Exists("/dev/bktr1"))
+    list.AppendString("/dev/bktr1");
+  if (PFile::Exists("/dev/meteor0"))
+    list.AppendString("/dev/meteor0");
+  if (PFile::Exists("/dev/meteor1"))
+    list.AppendString("/dev/meteor1");
 
   return list;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetVideoFormat(VideoFormat newFormat)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetVideoFormat(VideoFormat newFormat)
 {
   if (!PVideoDevice::SetVideoFormat(newFormat))
-    return FALSE;
+    return PFalse;
 
   // set channel information
   static int fmt[4] = { METEOR_FMT_PAL, METEOR_FMT_NTSC,
@@ -256,21 +169,21 @@ BOOL PVideoInputDevice_BSDCAPTURE::SetVideoFormat(VideoFormat newFormat)
 
   // set the information
   if (::ioctl(videoFd, METEORSFMT, &format) >= 0)
-    return TRUE;
+    return PTrue;
 
   // setting the format failed. Fall back trying other standard formats
 
   if (newFormat != Auto)
-    return FALSE;
+    return PFalse;
 
   if (SetVideoFormat(PAL))
-    return TRUE;
+    return PTrue;
   if (SetVideoFormat(NTSC))
-    return TRUE;
+    return PTrue;
   if (SetVideoFormat(SECAM))
-    return TRUE;
+    return PTrue;
 
-  return FALSE;  
+  return PFalse;  
 }
 
 
@@ -280,10 +193,10 @@ int PVideoInputDevice_BSDCAPTURE::GetNumChannels()
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
 {
   if (!PVideoDevice::SetChannel(newChannel))
-    return FALSE;
+    return PFalse;
 
   // set channel information
   static int chnl[5] = { METEOR_INPUT_DEV0, METEOR_INPUT_DEV1,
@@ -293,62 +206,62 @@ BOOL PVideoInputDevice_BSDCAPTURE::SetChannel(int newChannel)
 
   // set the information
   if (::ioctl(videoFd, METEORSINPUT, &channel) < 0)
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetColourFormat(const PString & newFormat)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetColourFormat(const PString & newFormat)
 {
   if (!PVideoDevice::SetColourFormat(newFormat))
-    return FALSE;
+    return PFalse;
 
   ClearMapping();
 
   frameBytes = CalculateFrameBytes(frameWidth, frameHeight, colourFormat);
 
-  return TRUE;
+  return PTrue;
 
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetFrameRate(unsigned rate)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetFrameRate(unsigned rate)
 {
   if (!PVideoDevice::SetFrameRate(rate))
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::GetFrameSizeLimits(unsigned & minWidth,
+PBoolean PVideoInputDevice_BSDCAPTURE::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   minWidth  = videoCapability.minwidth;
   minHeight = videoCapability.minheight;
   maxWidth  = videoCapability.maxwidth;
   maxHeight = videoCapability.maxheight;
-  return TRUE;
+  return PTrue;
 
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetFrameSize(unsigned width, unsigned height)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetFrameSize(unsigned width, unsigned height)
 {
   if (!PVideoDevice::SetFrameSize(width, height))
-    return FALSE;
+    return PFalse;
   
   ClearMapping();
 
   frameBytes = CalculateFrameBytes(frameWidth, frameHeight, colourFormat);
   
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -358,27 +271,14 @@ PINDEX PVideoInputDevice_BSDCAPTURE::GetMaxFrameBytes()
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_BSDCAPTURE::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 {
-  if(frameRate>0) {
-    frameTimeError += msBetweenFrames;
-
-    do {
-      if ( !GetFrameDataNoDelay(buffer, bytesReturned))
-        return FALSE;
-      PTime now;
-      PTimeInterval delay = now - previousFrameTime;
-      frameTimeError -= (int)delay.GetMilliSeconds();
-      previousFrameTime = now;
-    }  while(frameTimeError > 0) ;
-
-    return TRUE;
-  }
+  m_pacing.Delay(1000/GetFrameRate());
   return GetFrameDataNoDelay(buffer,bytesReturned);
 }
 
 
-BOOL PVideoInputDevice_BSDCAPTURE::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_BSDCAPTURE::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
 {
 
   // Hack time. It seems that the Start() and Stop() functions are not
@@ -403,13 +303,13 @@ BOOL PVideoInputDevice_BSDCAPTURE::GetFrameDataNoDelay(BYTE * buffer, PINDEX * b
 
     // set the new geometry
     if (ioctl(videoFd, METEORSETGEO, &geo) < 0) {
-      return FALSE;
+      return PFalse;
     }
 
     mmap_size = frameBytes;
     videoBuffer = (BYTE *)::mmap(0, mmap_size, PROT_READ, 0, videoFd, 0);
     if (videoBuffer < 0) {
-      return FALSE;
+      return PFalse;
     } else {
       canMap = 1;
     }
@@ -417,7 +317,7 @@ BOOL PVideoInputDevice_BSDCAPTURE::GetFrameDataNoDelay(BYTE * buffer, PINDEX * b
     // put the grabber into continuous capture mode
     int mode =  METEOR_CAP_CONTINOUS;
     if (ioctl(videoFd, METEORCAPTUR, &mode) < 0 ) {
-      return FALSE;
+      return PFalse;
     }
   }
 
@@ -435,7 +335,7 @@ BOOL PVideoInputDevice_BSDCAPTURE::GetFrameDataNoDelay(BYTE * buffer, PINDEX * b
     *bytesReturned = frameBytes;
 
   
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -458,11 +358,11 @@ void PVideoInputDevice_BSDCAPTURE::ClearMapping()
   }
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::VerifyHardwareFrameSize(unsigned width,
+PBoolean PVideoInputDevice_BSDCAPTURE::VerifyHardwareFrameSize(unsigned width,
                                                 unsigned height)
 {
 	// Assume the size is valid
-	return TRUE;
+	return PTrue;
 }
 
 
@@ -505,50 +405,50 @@ int PVideoInputDevice_BSDCAPTURE::GetHue()
   return frameHue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetBrightness(unsigned newBrightness)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetBrightness(unsigned newBrightness)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   unsigned char data = (newBrightness >> 8); // rescale for the ioctl
   if (::ioctl(videoFd, METEORSBRIG, &data) < 0)
-    return FALSE;
+    return PFalse;
 
   frameBrightness=newBrightness;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetContrast(unsigned newContrast)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetContrast(unsigned newContrast)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   unsigned char data = (newContrast >> 8); // rescale for the ioctl
   if (::ioctl(videoFd, METEORSCONT, &data) < 0)
-    return FALSE;
+    return PFalse;
 
   frameContrast = newContrast;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::SetHue(unsigned newHue)
+PBoolean PVideoInputDevice_BSDCAPTURE::SetHue(unsigned newHue)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   char data = (newHue >> 8) - 128; // ioctl takes a signed char
   if (::ioctl(videoFd, METEORSHUE, &data) < 0)
-    return FALSE;
+    return PFalse;
 
   frameHue=newHue;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::GetParameters (int *whiteness, int *brightness,
+PBoolean PVideoInputDevice_BSDCAPTURE::GetParameters (int *whiteness, int *brightness,
                                       int *colour, int *contrast, int *hue)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   unsigned char data;
   char signed_data;
@@ -575,11 +475,11 @@ BOOL PVideoInputDevice_BSDCAPTURE::GetParameters (int *whiteness, int *brightnes
   frameContrast   = *contrast;
   frameHue        = *hue;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BSDCAPTURE::TestAllFormats()
+PBoolean PVideoInputDevice_BSDCAPTURE::TestAllFormats()
 {
-  return TRUE;
+  return PTrue;
 }
 // End Of File ///////////////////////////////////////////////////////////////

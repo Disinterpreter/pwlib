@@ -8,30 +8,16 @@
  * Copied by Derek Smithies, 1)removed all the wxwidget stuff.
  *                           2)turned into a console application.
  *
- * $Log: main.h,v $
- * Revision 1.1  2005/08/04 03:29:12  dereksmithies
- * Initial release of a console application to test XMPP messages between running applications.
- * Thanks to Indranet Technologies ltd for sponsoring the work.
- * Thanks to Federico Pinna & Reitek S.p.A for the inital work of getting XMPP going.
- *
- *
- *
- *
- *
- *
- * Commit log from old XMPP Test application.
- * Revision 1.2  2004/05/09 07:23:49  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.1  2004/04/26 01:51:58  rjongbloed
- * More implementation of XMPP, thanks a lot to Federico Pinna & Reitek S.p.A.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _XMPPConsole_MAIN_H
 #define _XMPPConsole_MAIN_H
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 #include <ptlib/notifier_ext.h>
 #include <ptclib/xmpp_c2s.h>
 #include <ptclib/xmpp_roster.h>
@@ -66,13 +52,13 @@ public:
   PDECLARE_NOTIFIER(PTimer, XMPPFrame, OnReadyForUse);
   PTimer onReadyForUseTimer;
 
-  BOOL    LocalPartyIsEmpty() { return localParty.IsEmpty(); }
-  BOOL    OtherPartyIsEmpty() { return otherParty.IsEmpty(); }
+  PBoolean    LocalPartyIsEmpty() { return localParty.IsEmpty(); }
+  PBoolean    OtherPartyIsEmpty() { return otherParty.IsEmpty(); }
   PString GetOtherParty() { return otherParty; }
   PString GetLocalParty() { return localParty; }
-  BOOL    IsConnected() {  return isReadyForUse; }
+  PBoolean    IsConnected() {  return isReadyForUse; }
 
-  BOOL Send(XMPP::Stanza * stanza) { return m_Client->Send(stanza); }
+  PBoolean Send(XMPP::Stanza * stanza) { return m_Client->Send(stanza); }
 
   void OnConnect();
 
@@ -100,7 +86,7 @@ private:
 
   PString otherParty;
   PString localParty;
-  BOOL    isReadyForUse;
+  PBoolean    isReadyForUse;
 };
 
 

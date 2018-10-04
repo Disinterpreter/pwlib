@@ -26,310 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: socket.cxx,v $
- * Revision 1.117  2006/02/21 13:57:31  csoutheren
- * Second attempt at fixing problem with interfaces having multiple addresses
- *
- * Revision 1.116  2006/02/18 15:57:45  dsandras
- * Applied patch from Richard van der Hoff and Stephane Epardaud <stef lunatech
- * com> to fix infinite loop with IPv6 interfaces. Thanks!
- *
- * Revision 1.115  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.114  2005/11/23 11:47:03  shorne
- * Changed EnableQoS to EnableGQoS
- *
- * Revision 1.113  2005/07/15 12:45:13  rogerhardiman
- * Fix bug 1237508 (M Zygmuntowicz). Make IPV6 code use #if instead of #ifdef.
- *
- * Revision 1.112  2005/07/13 11:48:55  csoutheren
- * Backported QOS changes from isvo branch
- *
- * Revision 1.111  2005/02/07 12:12:31  csoutheren
- * Expanded interface list routines to include IPV6 addresses
- * Added IPV6 to GetLocalAddress
- *
- * Revision 1.110  2004/08/24 07:08:11  csoutheren
- * Added use of recvmsg to determine which interface UDP packets arrive on
- *
- * Revision 1.109  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.108  2004/07/08 00:57:29  csoutheren
- * Added check for EINTR on connect
- * Thanks to Alex Vishnev
- *
- * Revision 1.107  2004/07/03 23:50:42  csoutheren
- * Removed warnings under Solaris
- *
- * Revision 1.106  2004/05/06 11:28:30  rjongbloed
- * Changed P_fd_set to use malloc/free isntead of new/delete due to pedantry about [].
- *
- * Revision 1.105  2004/05/05 06:52:37  ykiryanov
- * Made BeOS changes
- *
- * Revision 1.104  2004/04/27 04:37:51  rjongbloed
- * Fixed ability to break of a PSocket::Select call under linux when a socket
- *   is closed by another thread.
- *
- * Revision 1.103  2004/04/24 06:28:12  rjongbloed
- * Fixed GCC 3.4.0 warnings about PAssertNULL and improved recoverability on
- *   NULL pointer usage in various bits of code.
- *
- * Revision 1.102  2004/04/18 07:46:32  rjongbloed
- * Fixed other unix builds after Yuri's BeOS changes.
- *
- * Revision 1.101  2004/04/18 00:21:35  ykiryanov
- * Cleaned up BeOS related code. Less ifdefs, more functionality
- *
- * Revision 1.100  2003/10/27 04:06:14  csoutheren
- * Added code to allow compilation of new QoS code on Unix
- *
- * Revision 1.99  2003/01/24 10:21:06  robertj
- * Fixed issues in RTEMS support, thanks Vladimir Nesic
- *
- * Revision 1.98  2002/11/22 10:14:07  robertj
- * QNX port, thanks Xiaodan Tang
- *
- * Revision 1.97  2002/11/02 00:32:21  robertj
- * Further fixes to VxWorks (Tornado) port, thanks Andreas Sikkema.
- *
- * Revision 1.96  2002/10/22 10:25:07  rogerh
- * Fix process_rtentry() following Thomas's patch.
- *
- * Revision 1.95  2002/10/22 07:42:52  robertj
- * Added extra debugging for file handle and thread leak detection.
- *
- * Revision 1.94  2002/10/22 06:53:38  craigs
- * Fixed signed/unsigned problem in GetRoutTable thanks to Thomas Jalsovsky
- *
- * Revision 1.93  2002/10/19 06:12:20  robertj
- * Moved P_fd_set::Zero() from platform independent to platform dependent
- *   code as Win32 implementation is completely different from Unix.
- *
- * Revision 1.92  2002/10/17 13:44:27  robertj
- * Port to RTEMS, thanks Vladimir Nesic.
- *
- * Revision 1.91  2002/10/17 12:57:24  robertj
- * Added ability to increase maximum file handles on a process.
- *
- * Revision 1.90  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.89  2002/10/08 14:31:43  robertj
- * Changed for IPv6 support, thanks Sébastien Josset.
- *
- * Revision 1.88  2002/06/05 12:29:16  craigs
- * Changes for gcc 3.1
- *
- * Revision 1.87  2002/04/18 06:16:06  robertj
- * Fixed Net BSD problem with RTF_CLONED flag, thanks Motoyuki OHMORI
- * Fixed operator precedence problem with bit mask tests in RTF_CLONE code.
- *
- * Revision 1.86  2002/04/12 07:57:41  robertj
- * Fixed bug introduced into Accept() by previous change.
- *
- * Revision 1.85  2002/04/12 01:42:41  robertj
- * Changed return value on os_connect() and os_accept() to make sure
- *   get the correct error codes propagated up under unix.
- *
- * Revision 1.84  2002/02/13 02:19:47  robertj
- * Fixed mistake in previous patch, is if not ifdef!
- *
- * Revision 1.83  2002/02/13 00:50:32  robertj
- * Fixed use of symbol in older versionsof Solaris, thanks Markus Storm
- *
- * Revision 1.82  2002/01/31 22:52:18  robertj
- * Added fix for buffer too small in Solaris GetRouteTable(), thanks Markus Storm.
- *
- * Revision 1.81  2001/12/17 23:33:50  robertj
- * Solaris 8 porting changes, thanks James Dugal
- *
- * Revision 1.80  2001/12/10 07:07:27  rogerh
- * Take out some #includes which were already in pachdep.h. Fixes openBSD 2.9
- *
- * Revision 1.79  2001/11/22 12:29:57  rogerh
- * Take out the cloned flag on OpenBSD so it compiles
- *
- * Revision 1.78  2001/11/14 10:37:32  rogerh
- * Define _SIZEOF_ADDR_IFREQ as OpenBSD does not have it
- *
- * Revision 1.77  2001/10/28 23:00:10  robertj
- * Fixed Solaris and IRIX compatibility issue, thanks Andre Schulze
- *
- * Revision 1.76  2001/10/11 02:20:54  robertj
- * Added IRIX support (no audio/video), thanks Andre Schulze.
- *
- * Revision 1.75  2001/10/03 19:31:56  rogerh
- * Add MAC OS X support to GetInterfaceTable
- *
- * Revision 1.74  2001/10/03 10:18:15  rogerh
- * Make Mac OS X (Darwin) use the new GetRouteTable() function.
- *
- * Revision 1.73  2001/09/24 15:37:35  rogerh
- * Add GetRouteTable() for BSD Unix. Based on FreeBSD's own networking code,
- * and from an implementation by Martin Nilsson <martin@gneto.com>
- *
- * Revision 1.72  2001/09/19 00:41:20  robertj
- * Fixed GetInterfaceTable so does not add duplicate interfaces into list.
- * Changed the loop condition to allow for BSD variable length records.
- *
- * Revision 1.71  2001/09/18 05:56:03  robertj
- * Fixed numerous problems with thread suspend/resume and signals handling.
- *
- * Revision 1.70  2001/09/10 03:03:36  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.69  2001/08/16 11:58:22  rogerh
- * Add more Mac OS X changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.68  2001/08/12 07:12:40  rogerh
- * More Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.67  2001/08/12 06:34:33  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.66  2001/08/07 02:27:22  robertj
- * Fixed some incorrect error values returned in Read() and Write() functions.
- *
- * Revision 1.65  2001/07/03 04:41:25  yurik
- * Corrections to Jac's submission from 6/28
- *
- * Revision 1.64  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.63  2001/06/19 12:09:13  rogerh
- * Mac OS X change
- *
- * Revision 1.62  2001/04/16 22:46:22  craigs
- * Fixed problem with os_connect not correctly reporting errors
- *
- * Revision 1.61  2001/03/26 03:31:53  robertj
- * Fixed Solaris compile error.
- *
- * Revision 1.60  2001/03/20 06:44:25  robertj
- * Lots of changes to fix the problems with terminating threads that are I/O
- *   blocked, especially when doing orderly shutdown of service via SIGTERM.
- *
- * Revision 1.59  2001/03/07 23:37:59  robertj
- * Fixed slow down in UDP packet send, thanks Dmitriy Reka
- *
- * Revision 1.58  2001/03/07 06:56:36  yurik
- * Made adjustment for BONE platforms as requested by Jac Goudsmit
- *
- * Revision 1.57  2001/03/06 00:16:59  robertj
- * Fixed BSD compatibility problem.
- *
- * Revision 1.56  2001/03/05 04:28:56  robertj
- * Added net mask to interface info returned by GetInterfaceTable()
- *
- * Revision 1.55  2001/02/02 23:31:30  robertj
- * Fixed enumeration of interfaces, thanks Bertrand Croq.
- *
- * Revision 1.54  2001/01/17 03:48:25  rogerh
- * Fix GetInterfaceTable so it actually works through all interfaces rather
- * than falling over after the first entry.
- *
- * Revision 1.53  2001/01/16 12:56:01  rogerh
- * On BeOS sa_data is 'unsigned char *'. Linux and BSD defines sa_data as 'char *'
- * Add typecast, submitted by Jac Goudsmit <jac_goudsmit@yahoo.com>
- *
- * Revision 1.52  2000/06/21 01:01:22  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.51  2000/04/19 00:13:53  robertj
- * BeOS port changes.
- *
- * Revision 1.50  2000/04/07 05:43:48  rogerh
- * Fix a compilation error in a non-pthreaded function. Found by Kevin Packard
- *
- * Revision 1.49  2000/03/17 03:45:40  craigs
- * Fixed problem with connect call hanging
- *
- * Revision 1.48  2000/02/17 23:47:40  robertj
- * Fixed error in check for SIOCGHWADDR define, thanks Markus Storm.
- *
- * Revision 1.47  2000/01/20 08:20:57  robertj
- * FreeBSD v3 compatibility changes, thanks Roger Hardiman & Motonori Shindo
- *
- * Revision 1.46  1999/11/18 13:45:21  craigs
- * Removed obsolete declaration of iostream semaphore
- *
- * Revision 1.45  1999/10/30 13:43:01  craigs
- * Added correct method of aborting socket operations asynchronously
- *
- * Revision 1.44  1999/09/27 01:04:42  robertj
- * BeOS support changes.
- *
- * Revision 1.43  1999/09/12 07:06:23  craigs
- * Added support for getting Solaris interface info
- *
- * Revision 1.42  1999/09/10 02:31:19  craigs
- * Added interface table routines
- *
- * Revision 1.41  1999/09/03 02:26:25  robertj
- * Changes to aid in breaking I/O locks on thread termination. Still needs more work esp in BSD!
- *
- * Revision 1.40  1999/05/01 03:52:20  robertj
- * Fixed various egcs warnings.
- *
- * Revision 1.39  1999/03/02 05:41:59  robertj
- * More BeOS changes
- *
- * Revision 1.38  1999/02/26 04:10:39  robertj
- * More BeOS port changes
- *
- * Revision 1.37  1999/02/22 13:26:54  robertj
- * BeOS port changes.
- *
- * Revision 1.36  1998/11/30 21:51:58  robertj
- * New directory structure.
- *
- * Revision 1.35  1998/11/24 09:39:22  robertj
- * FreeBSD port.
- *
- * Revision 1.34  1998/11/22 08:11:37  craigs
- * *** empty log message ***
- *
- * Revision 1.33  1998/11/14 10:37:38  robertj
- * Changed semantics of os_sendto to return TRUE if ANY bytes are sent.
- *
- * Revision 1.32  1998/10/16 01:16:55  craigs
- * Added Yield to help with cooperative multithreading.
- *
- * Revision 1.31  1998/10/11 02:23:16  craigs
- * Fixed problem with socket writes not correctly detecting EOF
- *
- * Revision 1.30  1998/09/24 08:21:11  robertj
- * Fixed warning on GNU 6 library.
- *
- * Revision 1.29  1998/09/24 07:55:51  robertj
- * Fixed warning on solaris build.
- *
- * Revision 1.28  1998/09/24 04:13:49  robertj
- * Added open software license.
- *
- * Revision 1.27  1998/09/18 05:46:00  robertj
- * Fixed incorrectly returning success on a connect() error other than a timeout.
- *
- * Revision 1.26  1998/09/08 11:31:51  robertj
- * Fixed ippp bug on very full packets.
- *
- * Revision 1.25  1998/09/08 09:54:31  robertj
- * Fixed ppp and ippp compatibility.
- *
- * Revision 1.24  1998/09/08 05:15:14  robertj
- * Fixed problem in Windows requiring snmpapi.dll for PEthSocket class.
- *
- * Revision 1.23  1998/08/27 01:13:20  robertj
- * Changes to resolve signedness in GNU C library v6
- * Remove Linux EthSocket stuff from Sun build, still needs implementing.
- *
- * Revision 1.22  1998/08/21 05:30:59  robertj
- * Ethernet socket implementation.
- *
+ * $Revision: 26406 $
+ * $Author: rjongbloed $
+ * $Date: 2011-09-12 02:15:55 -0500 (Mon, 12 Sep 2011) $
  */
 
 #pragma implementation "sockets.h"
@@ -341,10 +40,11 @@
 #pragma implementation "ethsock.h"
 #pragma implementation "qos.h"
 
-
 #include <ptlib.h>
 #include <ptlib/sockets.h>
 
+#include <map>
+#include <ptlib/pstring.h>
 
 #if defined(SIOCGENADDR)
 #define SIO_Get_MAC_Address SIOCGENADDR
@@ -358,12 +58,19 @@
 #define ifr_netmask ifr_addr
 
 #include <net/if_dl.h>
+
+#if !defined(P_IPHONEOS)
 #include <net/if_types.h>
 #include <net/route.h>
+#endif
 
 #include <netinet/in.h>
-#if !defined(P_QNX)
+#if !defined(P_QNX)  && !defined(P_IPHONEOS)
 #include <netinet/if_ether.h>
+#endif
+
+#if defined(P_NETBSD)
+#include <ifaddrs.h>
 #endif
 
 #define ROUNDUP(a) \
@@ -379,10 +86,20 @@
 #include <bsp.h>
 #endif
 
-#ifdef __BEOS__
+#ifdef P_BEOS
 #include <posix/sys/ioctl.h> // for FIONBIO
 #include <be/bone/net/if.h> // for ifconf
 #include <be/bone/sys/sockio.h> // for SIOCGI*
+#endif
+
+#if defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_VXWORKS) || defined(P_RTEMS) || defined(P_QNX)
+// Define _SIZEOF_IFREQ for platforms (eg OpenBSD) which do not have it.
+#ifndef _SIZEOF_ADDR_IFREQ
+#define _SIZEOF_ADDR_IFREQ(ifr) \
+  ((ifr).ifr_addr.sa_len > sizeof(struct sockaddr) ? \
+  (sizeof(struct ifreq) - sizeof(struct sockaddr) + \
+  (ifr).ifr_addr.sa_len) : sizeof(struct ifreq))
+#endif
 #endif
 
 int PX_NewHandle(const char *, int);
@@ -451,12 +168,21 @@ static int SetNonBlocking(int fd)
 
 int PSocket::os_socket(int af, int type, int protocol)
 {
+  int fd = ::socket(af, type, protocol);
+
+#if P_HAS_RECVMSG
+  if ((fd != -1) && (type == SOCK_DGRAM)) {
+    int v = 1;
+    setsockopt(fd, IPPROTO_IP, IP_RECVERR, &v, sizeof(v));
+  }
+#endif
+
   // attempt to create a socket
-  return SetNonBlocking(PX_NewHandle(GetClass(), ::socket(af, type, protocol)));
+  return SetNonBlocking(PX_NewHandle(GetClass(), fd));
 }
 
 
-BOOL PSocket::os_connect(struct sockaddr * addr, PINDEX size)
+PBoolean PSocket::os_connect(struct sockaddr * addr, PINDEX size)
 {
   int val;
   do {
@@ -466,7 +192,7 @@ BOOL PSocket::os_connect(struct sockaddr * addr, PINDEX size)
     return ConvertOSError(val);
 
   if (!PXSetIOBlock(PXConnectBlock, readTimeout))
-    return FALSE;
+    return PFalse;
 
   // A successful select() call does not necessarily mean the socket connected OK.
   int optval = -1;
@@ -477,33 +203,42 @@ BOOL PSocket::os_connect(struct sockaddr * addr, PINDEX size)
     return ConvertOSError(-1);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSocket::os_accept(PSocket & listener, struct sockaddr * addr, PINDEX * size)
+PBoolean PSocket::os_accept(PSocket & listener, struct sockaddr * addr, PINDEX * size)
 {
-  if (!listener.PXSetIOBlock(PXAcceptBlock, listener.GetReadTimeout()))
-    return SetErrorValues(listener.GetErrorCode(), listener.GetErrorNumber());
+  int new_fd;
+  while ((new_fd = ::accept(listener.GetHandle(), addr, (socklen_t *)size)) < 0) {
+    switch (errno) {
+      case EINTR :
+        break;
 
 #if defined(E_PROTO)
-  for (;;) {
-    int new_fd = ::accept(listener.GetHandle(), addr, (socklen_t *)size);
-    if (new_fd >= 0)
-      return ConvertOSError(os_handle = SetNonBlocking(new_fd));
-
-    if (errno != EPROTO)
-      return ConvertOSError(-1);
-
-    PTRACE(3, "PWLib\tAccept on " << sock << " failed with EPROTO - retrying");
-  }
-#else
-  return ConvertOSError(os_handle = SetNonBlocking(::accept(listener.GetHandle(), addr, (socklen_t *)size)));
+      case EPROTO :
+        PTRACE(3, "PTLib\tAccept on " << listener << " failed with EPROTO - retrying");
+        break;
 #endif
+
+      case EWOULDBLOCK :
+        if (listener.GetReadTimeout() > 0) {
+          if (listener.PXSetIOBlock(PXAcceptBlock, listener.GetReadTimeout()))
+            break;
+          return SetErrorValues(listener.GetErrorCode(), listener.GetErrorNumber());
+        }
+        // Next case
+
+      default :
+        return ConvertOSError(-1, LastReadError);
+    }
+  }
+
+  return ConvertOSError(os_handle = SetNonBlocking(new_fd));
 }
 
 
-#if !defined(P_PTHREADS) && !defined(P_MAC_MPTHREADS) && !defined(__BEOS__)
+#if !defined(P_PTHREADS) && !defined(P_MAC_MPTHREADS) && !defined(P_BEOS)
 
 PChannel::Errors PSocket::Select(SelectList & read,
                                  SelectList & write,
@@ -530,8 +265,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
         if (h > maxfds)
           maxfds = h;
       }
-      socket.px_selectMutex.Wait();
-      socket.px_selectThread = unblockThread;
+      socket.px_selectMutex[i].Wait();
+      socket.px_selectThread[i] = unblockThread;
     }
   }
 
@@ -550,8 +285,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
   for (i = 0; i < 3; i++) {
     for (j = 0; j < list[i]->GetSize(); j++) {
       PSocket & socket = (*list[i])[j];
-      socket.px_selectThread = NULL;
-      socket.px_selectMutex.Signal();
+      socket.px_selectThread[i] = NULL;
+      socket.px_selectMutex[i].Signal();
       if (lastError == NoError) {
         int h = socket.GetHandle();
         if (h < 0)
@@ -592,8 +327,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
         if (h > maxfds)
           maxfds = h;
       }
-      socket.px_selectMutex.Wait();
-      socket.px_selectThread = unblockThread;
+      socket.px_selectMutex[i].Wait();
+      socket.px_selectThread[i] = unblockThread;
     }
   }
 
@@ -613,8 +348,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
       if (fds[0].IsPresent(unblockPipe)) {
         PTRACE(6, "PWLib\tSelect unblocked fd=" << unblockPipe);
         BYTE ch;
-        ::read(unblockPipe, &ch, 1);
-        lastError = Interrupted;
+        if (ConvertOSError(::read(unblockPipe, &ch, 1), lastError, osError))
+          lastError = Interrupted;
       }
     }
   }
@@ -622,8 +357,8 @@ PChannel::Errors PSocket::Select(SelectList & read,
   for (i = 0; i < 3; i++) {
     for (j = 0; j < list[i]->GetSize(); j++) {
       PSocket & socket = (*list[i])[j];
-      socket.px_selectThread = NULL;
-      socket.px_selectMutex.Signal();
+      socket.px_selectThread[i] = NULL;
+      socket.px_selectMutex[i].Signal();
       if (lastError == NoError) {
         int h = socket.GetHandle();
         if (h < 0)
@@ -696,23 +431,23 @@ PIPSocket::Address::Address(BYTE b1, BYTE b2, BYTE b3, BYTE b4)
   p[3] = b4;
 }
 
-BOOL PIPSocket::IsLocalHost(const PString & hostname)
+PBoolean PIPSocket::IsLocalHost(const PString & hostname)
 {
   if (hostname.IsEmpty())
-    return TRUE;
+    return PTrue;
 
   if (hostname *= "localhost")
-    return TRUE;
+    return PTrue;
 
   // lookup the host address using inet_addr, assuming it is a "." address
   Address addr = hostname;
   if (addr.IsLoopback())  // Is 127.0.0.1
-    return TRUE;
+    return PTrue;
   if (!addr.IsValid())
-    return FALSE;
+    return PFalse;
 
   if (!GetHostAddress(hostname, addr))
-    return FALSE;
+    return PFalse;
 
 #if P_HAS_IPV6
   {
@@ -720,7 +455,7 @@ BOOL PIPSocket::IsLocalHost(const PString & hostname)
     int dummy;
     int addr6[16];
     char ifaceName[255];
-    BOOL found = FALSE;
+    PBoolean found = PFalse;
     if ((file = fopen("/proc/net/if_inet6", "r")) != NULL) {
       while (!found && (fscanf(file, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x %x %x %x %x %255s\n",
               &addr6[0],  &addr6[1],  &addr6[2],  &addr6[3], 
@@ -741,48 +476,68 @@ BOOL PIPSocket::IsLocalHost(const PString & hostname)
       fclose(file);
     }
     if (found)
-      return TRUE;
+      return PTrue;
   }
 #endif
 
-  PUDPSocket sock;
-
   // check IPV4 addresses
-  int ifNum;
-#ifdef SIOCGIFNUM
-  PAssert(::ioctl(sock.GetHandle(), SIOCGIFNUM, &ifNum) >= 0, "could not do ioctl for ifNum");
-#else
-  ifNum = 100;
-#endif
-
+  PUDPSocket sock;
+  
   PBYTEArray buffer;
   struct ifconf ifConf;
-  ifConf.ifc_len  = ifNum * sizeof(ifreq);
+
+#if defined(P_NETBSD)
+  struct ifaddrs *ifap, *ifa;
+
+  PAssert(getifaddrs(&ifap) == 0, "getifaddrs failed");
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+#else
+#ifdef SIOCGIFNUM
+  int ifNum;
+  PAssert(::ioctl(sock.GetHandle(), SIOCGIFNUM, &ifNum) >= 0, "could not do ioctl for ifNum");
+  ifConf.ifc_len = ifNum * sizeof(ifreq);
+#else
+  ifConf.ifc_len = 100 * sizeof(ifreq); // That's a LOT of interfaces!
+#endif
+
   ifConf.ifc_req = (struct ifreq *)buffer.GetPointer(ifConf.ifc_len);
   
   if (ioctl(sock.GetHandle(), SIOCGIFCONF, &ifConf) >= 0) {
-#ifndef SIOCGIFNUM
-    ifNum = ifConf.ifc_len / sizeof(ifreq);
+    void * ifEndList = (char *)ifConf.ifc_req + ifConf.ifc_len;
+    ifreq * ifName = ifConf.ifc_req;
+
+    while (ifName < ifEndList) {
 #endif
-
-    int num = 0;
-    for (num = 0; num < ifNum; num++) {
-
-      ifreq * ifName = ifConf.ifc_req + num;
       struct ifreq ifReq;
-      strcpy(ifReq.ifr_name, ifName->ifr_name);
-
+#if !defined(P_NETBSD)
+      memcpy(&ifReq, ifName, sizeof(ifreq));
+#else
+      memset(&ifReq, 0, sizeof(ifReq));
+      strncpy(ifReq.ifr_name, ifa->ifa_name, sizeof(ifReq.ifr_name) - 1);
+#endif
+      
       if (ioctl(sock.GetHandle(), SIOCGIFFLAGS, &ifReq) >= 0) {
         int flags = ifReq.ifr_flags;
-        if (ioctl(sock.GetHandle(), SIOCGIFADDR, &ifReq) >= 0) {
-          if ((flags & IFF_UP) && (addr *= Address(((sockaddr_in *)&ifReq.ifr_addr)->sin_addr)))
-            return TRUE;
+        if ((flags & IFF_UP) && ioctl(sock.GetHandle(), SIOCGIFADDR, &ifReq) >= 0) {
+          sockaddr_in * sin = (sockaddr_in *)&ifReq.ifr_addr;
+          PIPSocket::Address address = sin->sin_addr;
+          if (addr *= address)
+            return PTrue;
         }
       }
+      
+#if defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_MACOSX) || defined(P_VXWORKS) || defined(P_RTEMS) || defined(P_QNX)
+      // move the ifName pointer along to the next ifreq entry
+      ifName = (struct ifreq *)((char *)ifName + _SIZEOF_ADDR_IFREQ(*ifName));
+#elif !defined(P_NETBSD)
+      ifName++;
+#endif
     }
+#if !defined(P_NETBSD)
   }
+#endif
   
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -790,7 +545,7 @@ BOOL PIPSocket::IsLocalHost(const PString & hostname)
 //
 //  PTCPSocket
 //
-BOOL PTCPSocket::Read(void * buf, PINDEX maxLen)
+PBoolean PTCPSocket::Read(void * buf, PINDEX maxLen)
 
 {
   lastReadCount = 0;
@@ -798,7 +553,7 @@ BOOL PTCPSocket::Read(void * buf, PINDEX maxLen)
   // wait until select indicates there is data to read, or until
   // a timeout occurs
   if (!PXSetIOBlock(PXReadBlock, readTimeout))
-    return FALSE;
+    return PFalse;
 
   // attempt to read out of band data
   char buffer[32];
@@ -809,7 +564,7 @@ BOOL PTCPSocket::Read(void * buf, PINDEX maxLen)
   // attempt to read non-out of band data
   int r = ::recv(os_handle, (char *)buf, maxLen, 0);
   if (!ConvertOSError(r, LastReadError))
-    return FALSE;
+    return PFalse;
 
   lastReadCount = r;
   return lastReadCount > 0;
@@ -818,27 +573,17 @@ BOOL PTCPSocket::Read(void * buf, PINDEX maxLen)
 
 #if P_HAS_RECVMSG
 
-int PSocket::os_recvfrom(
-      void * buf,     // Data to be written as URGENT TCP data.
-      PINDEX len,     // Number of bytes pointed to by <CODE>buf</CODE>.
+PBoolean PSocket::os_recvfrom(
+      void * buf,
+      PINDEX len,
       int    flags,
-      sockaddr * addr, // Address from which the datagram was received.
+      sockaddr * addr,
       PINDEX * addrlen)
 {
   lastReadCount = 0;
 
   if (!PXSetIOBlock(PXReadBlock, readTimeout))
-    return FALSE;
-
-  // if we don't care what interface the packet arrives on, then don't bother getting the information
-  if (!catchReceiveToAddr) {
-    int r = ::recvfrom(os_handle, (char *)buf, len, flags, (sockaddr *)addr, (socklen_t *)addrlen);
-    if (!ConvertOSError(r, LastReadError))
-      return FALSE;
-
-    lastReadCount = r;
-    return lastReadCount > 0;
-  }
+    return PFalse;
 
   msghdr readData;
   memset(&readData, 0, sizeof(readData));
@@ -857,9 +602,14 @@ int PSocket::os_recvfrom(
   readData.msg_controllen = sizeof(auxdata);
 
   // read a packet 
-  int r = ::recvmsg(os_handle, &readData, 0);
+  int r = ::recvmsg(os_handle, &readData, flags);
+  if (r == -1) {
+    PTRACE(5, "PTLIB\trecvmsg returned error " << errno);
+    ::recvmsg(os_handle, &readData, MSG_ERRQUEUE);
+  }
+
   if (!ConvertOSError(r, LastReadError))
-    return FALSE;
+    return PFalse;
 
   lastReadCount = r;
 
@@ -869,7 +619,6 @@ int PSocket::os_recvfrom(
       if (cmsg->cmsg_level == SOL_IP && cmsg->cmsg_type == IP_PKTINFO) {
         in_pktinfo * info = (in_pktinfo *)CMSG_DATA(cmsg);
         SetLastReceiveAddr(&info->ipi_spec_dst, sizeof(in_addr));
-        break;
       }
     }
   }
@@ -879,7 +628,7 @@ int PSocket::os_recvfrom(
 
 #else
 
-BOOL PSocket::os_recvfrom(
+PBoolean PSocket::os_recvfrom(
       void * buf,     // Data to be written as URGENT TCP data.
       PINDEX len,     // Number of bytes pointed to by <CODE>buf</CODE>.
       int    flags,
@@ -889,12 +638,12 @@ BOOL PSocket::os_recvfrom(
   lastReadCount = 0;
 
   if (!PXSetIOBlock(PXReadBlock, readTimeout))
-    return FALSE;
+    return PFalse;
 
   // attempt to read non-out of band data
   int r = ::recvfrom(os_handle, (char *)buf, len, flags, (sockaddr *)addr, (socklen_t *)addrlen);
   if (!ConvertOSError(r, LastReadError))
-    return FALSE;
+    return PFalse;
 
   lastReadCount = r;
   return lastReadCount > 0;
@@ -903,7 +652,7 @@ BOOL PSocket::os_recvfrom(
 #endif
 
 
-BOOL PSocket::os_sendto(
+PBoolean PSocket::os_sendto(
       const void * buf,   // Data to be written as URGENT TCP data.
       PINDEX len,         // Number of bytes pointed to by <CODE>buf</CODE>.
       int flags,
@@ -930,7 +679,7 @@ BOOL PSocket::os_sendto(
       return ConvertOSError(-1, LastWriteError);
 
     if (!PXSetIOBlock(PXWriteBlock, writeTimeout))
-      return FALSE;
+      return PFalse;
   }
 
 #if !defined(P_PTHREADS) && !defined(P_MAC_MPTHREADS)
@@ -942,19 +691,21 @@ BOOL PSocket::os_sendto(
 }
 
 
-BOOL PSocket::Read(void * buf, PINDEX len)
+PBoolean PSocket::Read(void * buf, PINDEX len)
 {
   if (os_handle < 0)
     return SetErrorValues(NotOpen, EBADF, LastReadError);
 
   if (!PXSetIOBlock(PXReadBlock, readTimeout)) 
-    return FALSE;
+    return PFalse;
 
-  if (ConvertOSError(lastReadCount = ::recv(os_handle, (char *)buf, len, 0)))
+  int lastReadCount = ::recv(os_handle, (char *)buf, len, 0);
+    return lastReadCount > 0;
+  if (ConvertOSError(lastReadCount))
     return lastReadCount > 0;
 
   lastReadCount = 0;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -969,8 +720,8 @@ PEthSocket::PEthSocket(PINDEX, PINDEX, PINDEX)
   medium = MediumUnknown;
   filterMask = FilterDirected|FilterBroadcast;
   filterType = TypeAll;
-  fakeMacHeader = FALSE;
-  ipppInterface = FALSE;
+  fakeMacHeader = PFalse;
+  ipppInterface = PFalse;
 }
 
 
@@ -980,35 +731,27 @@ PEthSocket::~PEthSocket()
 }
 
 
-BOOL PEthSocket::Connect(const PString & interfaceName)
+PBoolean PEthSocket::Connect(const PString & interfaceName)
 {
   Close();
 
-  fakeMacHeader = FALSE;
-  ipppInterface = FALSE;
+  fakeMacHeader = PFalse;
+  ipppInterface = PFalse;
 
-  if (strncmp("eth", interfaceName, 3) == 0)
-    medium = Medium802_3;
-  else if (strncmp("lo", interfaceName, 2) == 0)
+  if (strncmp("lo", interfaceName, 2) == 0)
     medium = MediumLoop;
-  else if (strncmp("sl", interfaceName, 2) == 0) {
+  else if (strncmp("sl", interfaceName, 2) == 0 ||
+           strncmp("wlan", interfaceName, 4) == 0 ||
+           strncmp("ppp", interfaceName, 3) == 0) {
     medium = MediumWan;
-    fakeMacHeader = TRUE;
-  }
-  else if (strncmp("ppp", interfaceName, 3) == 0) {
-    medium = MediumWan;
-    fakeMacHeader = TRUE;
+    fakeMacHeader = PTrue;
   }
   else if (strncmp("ippp", interfaceName, 4) == 0) {
     medium = MediumWan;
-    ipppInterface = TRUE;
+    ipppInterface = PTrue;
   }
-#ifdef P_RTEMS
-  else if (strncmp(RTEMS_BSP_NETWORK_DRIVER_NAME, interfaceName, 3) == 0)
-    medium = Medium802_3;
-#endif
   else
-    return SetErrorValues(NotFound, ENOENT);
+    medium = Medium802_3;
 
 #if defined(SIO_Get_MAC_Address) 
   PUDPSocket ifsock;
@@ -1016,7 +759,7 @@ BOOL PEthSocket::Connect(const PString & interfaceName)
   ifr.ifr_addr.sa_family = AF_INET;
   strcpy(ifr.ifr_name, interfaceName);
   if (!ConvertOSError(ioctl(ifsock.GetHandle(), SIO_Get_MAC_Address, &ifr)))
-    return FALSE;
+    return PFalse;
 
   memcpy(&macAddress, ifr.ifr_macaddr, sizeof(macAddress));
 #endif
@@ -1026,11 +769,11 @@ BOOL PEthSocket::Connect(const PString & interfaceName)
 }
 
 
-BOOL PEthSocket::OpenSocket()
+PBoolean PEthSocket::OpenSocket()
 {
 #ifdef SOCK_PACKET
   if (!ConvertOSError(os_handle = os_socket(AF_INET, SOCK_PACKET, htons(filterType))))
-    return FALSE;
+    return PFalse;
 
   struct sockaddr addr;
   memset(&addr, 0, sizeof(addr));
@@ -1039,22 +782,22 @@ BOOL PEthSocket::OpenSocket()
   if (!ConvertOSError(bind(os_handle, &addr, sizeof(addr)))) {
     os_close();
     os_handle = -1;
-    return FALSE;
+    return PFalse;
   }
 #endif
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PEthSocket::Close()
+PBoolean PEthSocket::Close()
 {
   SetFilter(FilterDirected, filterType);  // Turn off promiscuous mode
   return PSocket::Close();
 }
 
 
-BOOL PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
+PBoolean PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
 {
   PUDPSocket ifsock;
 
@@ -1063,7 +806,7 @@ BOOL PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
   ifc.ifc_len = sizeof(ifreqs);
   ifc.ifc_buf = (caddr_t)ifreqs;
   if (!ConvertOSError(ioctl(ifsock.GetHandle(), SIOCGIFCONF, &ifc)))
-    return FALSE;
+    return PFalse;
 
   int ifcount = ifc.ifc_len/sizeof(ifreq);
   int ifidx;
@@ -1075,31 +818,31 @@ BOOL PEthSocket::EnumInterfaces(PINDEX idx, PString & name)
           (ifr.ifr_flags & IFF_UP) != 0 &&
            idx-- == 0) {
         name = ifreqs[ifidx].ifr_name;
-        return TRUE;
+        return PTrue;
       }
     }
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PEthSocket::GetAddress(Address & addr)
+PBoolean PEthSocket::GetAddress(Address & addr)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   addr = macAddress;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PEthSocket::EnumIpAddress(PINDEX idx,
+PBoolean PEthSocket::EnumIpAddress(PINDEX idx,
                                PIPSocket::Address & addr,
                                PIPSocket::Address & net_mask)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   PUDPSocket ifsock;
   struct ifreq ifr;
@@ -1109,29 +852,29 @@ BOOL PEthSocket::EnumIpAddress(PINDEX idx,
   else
     sprintf(ifr.ifr_name, "%s:%u", (const char *)channelName, (int)(idx-1));
   if (!ConvertOSError(ioctl(os_handle, SIOCGIFADDR, &ifr)))
-    return FALSE;
+    return PFalse;
 
   sockaddr_in *sin = (struct sockaddr_in *)&ifr.ifr_addr;
   addr = sin->sin_addr;
 
   if (!ConvertOSError(ioctl(os_handle, SIOCGIFNETMASK, &ifr)))
-    return FALSE;
+    return PFalse;
 
   net_mask = sin->sin_addr;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PEthSocket::GetFilter(unsigned & mask, WORD & type)
+PBoolean PEthSocket::GetFilter(unsigned & mask, WORD & type)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
   strcpy(ifr.ifr_name, channelName);
   if (!ConvertOSError(ioctl(os_handle, SIOCGIFFLAGS, &ifr)))
-    return FALSE;
+    return PFalse;
 
   if ((ifr.ifr_flags&IFF_PROMISC) != 0)
     filterMask |= FilterPromiscuous;
@@ -1140,27 +883,27 @@ BOOL PEthSocket::GetFilter(unsigned & mask, WORD & type)
 
   mask = filterMask;
   type = filterType;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PEthSocket::SetFilter(unsigned filter, WORD type)
+PBoolean PEthSocket::SetFilter(unsigned filter, WORD type)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   if (filterType != type) {
     os_close();
     filterType = type;
     if (!OpenSocket())
-      return FALSE;
+      return PFalse;
   }
 
   ifreq ifr;
   memset(&ifr, 0, sizeof(ifr));
   strcpy(ifr.ifr_name, channelName);
   if (!ConvertOSError(ioctl(os_handle, SIOCGIFFLAGS, &ifr)))
-    return FALSE;
+    return PFalse;
 
   if ((filter&FilterPromiscuous) != 0)
     ifr.ifr_flags |= IFF_PROMISC;
@@ -1168,11 +911,11 @@ BOOL PEthSocket::SetFilter(unsigned filter, WORD type)
     ifr.ifr_flags &= ~IFF_PROMISC;
 
   if (!ConvertOSError(ioctl(os_handle, SIOCSIFFLAGS, &ifr)))
-    return FALSE;
+    return PFalse;
 
   filterMask = filter;
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1182,14 +925,14 @@ PEthSocket::MediumTypes PEthSocket::GetMedium()
 }
 
 
-BOOL PEthSocket::ResetAdaptor()
+PBoolean PEthSocket::ResetAdaptor()
 {
   // No implementation
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PEthSocket::Read(void * buf, PINDEX len)
+PBoolean PEthSocket::Read(void * buf, PINDEX len)
 {
   static const BYTE macHeader[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 0, 0, 0, 8, 0 };
 
@@ -1199,7 +942,7 @@ BOOL PEthSocket::Read(void * buf, PINDEX len)
     if (len <= (PINDEX)sizeof(macHeader)) {
       memcpy(bufptr, macHeader, len);
       lastReadCount = len;
-      return TRUE;
+      return PTrue;
     }
 
     memcpy(bufptr, macHeader, sizeof(macHeader));
@@ -1211,14 +954,14 @@ BOOL PEthSocket::Read(void * buf, PINDEX len)
     sockaddr from;
     PINDEX fromlen = sizeof(from);
     if (!os_recvfrom(bufptr, len, 0, &from, &fromlen))
-      return FALSE;
+      return PFalse;
 
     if (channelName != from.sa_data)
       continue;
 
     if (ipppInterface) {
       if (lastReadCount <= 10)
-        return FALSE;
+        return PFalse;
       if (memcmp(bufptr+6, "\xff\x03\x00\x21", 4) != 0) {
         memmove(bufptr+sizeof(macHeader), bufptr, lastReadCount);
         lastReadCount += sizeof(macHeader);
@@ -1251,7 +994,7 @@ BOOL PEthSocket::Read(void * buf, PINDEX len)
 }
 
 
-BOOL PEthSocket::Write(const void * buf, PINDEX len)
+PBoolean PEthSocket::Write(const void * buf, PINDEX len)
 {
   sockaddr to;
   strcpy((char *)to.sa_data, channelName);
@@ -1261,23 +1004,23 @@ BOOL PEthSocket::Write(const void * buf, PINDEX len)
 
 ///////////////////////////////////////////////////////////////////////////////
 
-BOOL PIPSocket::GetGatewayAddress(Address & addr)
+PBoolean PIPSocket::GetGatewayAddress(Address & addr, int version)
 {
   RouteTable table;
   if (GetRouteTable(table)) {
     for (PINDEX i = 0; i < table.GetSize(); i++) {
       if (table[i].GetNetwork() == 0) {
         addr = table[i].GetDestination();
-        return TRUE;
+        return PTrue;
       }
     }
   }
-  return FALSE;
+  return PFalse;
 }
 
 
 
-PString PIPSocket::GetGatewayInterface()
+PString PIPSocket::GetGatewayInterface(int version)
 {
   RouteTable table;
   if (GetRouteTable(table)) {
@@ -1291,43 +1034,79 @@ PString PIPSocket::GetGatewayInterface()
 
 #if defined(P_LINUX) || defined (P_AIX)
 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
+  table.RemoveAll();
+
+  PString strLine;
   PTextFile procfile;
-  if (!procfile.Open("/proc/net/route", PFile::ReadOnly))
-    return FALSE;
 
-  for (;;) {
-    // Ignore heading line or remainder of route line
-    procfile.ignore(1000, '\n');
-    if (procfile.eof())
-      return TRUE;
-
-    char iface[20];
-    unsigned long net_addr, dest_addr, net_mask;
-    int flags, refcnt, use, metric;
-    procfile >> iface >> ::hex >> net_addr >> dest_addr >> flags 
-                      >> ::dec >> refcnt >> use >> metric 
-                      >> ::hex >> net_mask;
-    if (procfile.bad())
-      return FALSE;
-
-    RouteEntry * entry = new RouteEntry(net_addr);
-    entry->net_mask = net_mask;
-    entry->destination = dest_addr;
-    entry->interfaceName = iface;
-    entry->metric = metric;
-    table.Append(entry);
+  if (procfile.Open("/proc/net/route", PFile::ReadOnly) && procfile.ReadLine(strLine)) {
+    // Ignore heading line above
+    while (procfile.ReadLine(strLine)) {
+      char iface[20];
+      uint32_t net_addr, dest_addr, net_mask;
+      int flags, refcnt, use, metric;
+      if (sscanf(strLine, "%s%x%x%x%u%u%u%x",
+                 iface, &net_addr, &dest_addr, &flags, &refcnt, &use, &metric, &net_mask) == 8) {
+        RouteEntry * entry = new RouteEntry(net_addr);
+        entry->net_mask = net_mask;
+        entry->destination = dest_addr;
+        entry->interfaceName = iface;
+        entry->metric = metric;
+        table.Append(entry);
+      }
+    }
   }
+
+#if P_HAS_IPV6
+  if (procfile.Open("/proc/net/ipv6_route", PFile::ReadOnly)) {
+    while (procfile.ReadLine(strLine)) {
+      PStringArray tokens = strLine.Tokenise(" \t", false);
+      if (tokens.GetSize() == 10) {
+        // 0 = dest_addr
+        // 1 = net_mask (cidr in hex)
+        // 2 = src_addr
+        // 4 = next_hop
+        // 5 = metric
+        // 6 = refcnt
+        // 7 = use
+        // 8 = flags
+        // 9 = device name
+
+        BYTE net_addr[16];
+        for (size_t i = 0; i < sizeof(net_addr); ++i)
+          net_addr[i] = tokens[0].Mid(i*2, 2).AsUnsigned(16);
+
+        BYTE dest_addr[16];
+        for (size_t i = 0; i < sizeof(dest_addr); ++i)
+          dest_addr[i] = tokens[4].Mid(i*2, 2).AsUnsigned(16);
+
+        RouteEntry * entry = new RouteEntry(Address(sizeof(net_addr), net_addr));
+        entry->destination = Address(sizeof(dest_addr), dest_addr);
+        entry->interfaceName = tokens[9];
+        entry->metric = tokens[5].AsUnsigned(16);
+		BYTE net_mask[16];
+		bzero(net_mask, sizeof(net_mask));
+		for(size_t i = 0; i < tokens[1].AsUnsigned(16) / 4; ++i)
+			net_mask[i/2] = (i % 2 == 0) ? 0xf0 : 0xff;
+        entry->net_mask = Address(sizeof(net_mask), net_mask);
+        table.Append(entry);
+      }
+    }
+  }
+#endif
+
+  return !table.IsEmpty();
 }
 
-#elif defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_QNX) 
+#elif (defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_QNX)) && !defined(P_IPHONEOS)
 
-BOOL process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr,
+PBoolean process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr,
                      unsigned long *p_net_mask, unsigned long *p_dest_addr, int *p_metric);
-BOOL get_ifname(int index, char *name);
+PBoolean get_ifname(int index, char *name);
 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
   int mib[6];
   size_t space_needed;
@@ -1347,26 +1126,26 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
 
   if (sysctl(mib, 6, NULL, &space_needed, NULL, 0) < 0) {
     printf("sysctl: net.route.0.0.dump estimate");
-    return FALSE;
+    return PFalse;
   }
 
   if ((buf = (char *)malloc(space_needed)) == NULL) {
     printf("malloc(%lu)", (unsigned long)space_needed);
-    return FALSE;
+    return PFalse;
   }
 
   // read the routing table data
   if (sysctl(mib, 6, buf, &space_needed, NULL, 0) < 0) {
     printf("sysctl: net.route.0.0.dump");
     free(buf);
-    return FALSE;
+    return PFalse;
   }
 
 
   // Read the interface table
   if (!GetInterfaceTable(if_table)) {
     printf("Interface Table Invalid\n");
-    return FALSE;
+    return PFalse;
   }
 
 
@@ -1395,10 +1174,10 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
   } // end for loop
 
   free(buf);
-  return TRUE;
+  return PTrue;
 }
 
-BOOL process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr,
+PBoolean process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr,
                      unsigned long *p_net_mask, unsigned long *p_dest_addr, int *p_metric) {
 
   struct sockaddr_in *sa_in;
@@ -1412,16 +1191,16 @@ BOOL process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr
   // Check for zero length entry
   if (rtm->rtm_msglen == 0) {
     printf("zero length message\n");
-    return FALSE;
+    return PFalse;
   }
 
   if ((~rtm->rtm_flags&RTF_LLINFO)
 #if defined(P_NETBSD) || defined(P_QNX)
         && (~rtm->rtm_flags&RTF_CLONED)     // Net BSD has flag one way
-#elif !defined(P_OPENBSD)
-        && (~rtm->rtm_flags&RTF_WASCLONED)  // Free BSD/MAC has it another
+#elif !defined(P_OPENBSD) && !defined(P_FREEBSD)
+        && (~rtm->rtm_flags&RTF_WASCLONED)  // MAC has it another
 #else
-                                            // Open BSD does not have it at all!
+                                            // Open/Free BSD does not have it at all!
 #endif
      ) {
 
@@ -1458,15 +1237,15 @@ BOOL process_rtentry(struct rt_msghdr *rtm, char *ptr, unsigned long *p_net_addr
     *p_dest_addr = dest_addr;
     *p_net_mask = net_mask;
 
-    return TRUE;
+    return PTrue;
 
   } else {
-    return FALSE;
+    return PFalse;
   }
 
 }
 
-BOOL get_ifname(int index, char *name) {
+PBoolean get_ifname(int index, char *name) {
   int mib[6];
   size_t needed;
   char *lim, *buf, *next;
@@ -1482,18 +1261,18 @@ BOOL get_ifname(int index, char *name) {
 
   if (sysctl(mib, 6, NULL, &needed, NULL, 0) < 0) {
     printf("ERR route-sysctl-estimate");
-    return FALSE;
+    return PFalse;
   }
 
   if ((buf = (char *)malloc(needed)) == NULL) {
     printf("ERR malloc");
-    return FALSE;
+    return PFalse;
   }
 
   if (sysctl(mib, 6, buf, &needed, NULL, 0) < 0) {
     printf("ERR actual retrieval of routing table");
     free(buf);
-    return FALSE;
+    return PFalse;
   }
 
   lim = buf + needed;
@@ -1507,7 +1286,7 @@ BOOL get_ifname(int index, char *name) {
       sdl = (struct sockaddr_dl *)(ifm + 1);
     } else {
       printf("out of sync parsing NET_RT_IFLIST\n");
-      return FALSE;
+      return PFalse;
     }
     next += ifm->ifm_msglen;
 
@@ -1515,11 +1294,11 @@ BOOL get_ifname(int index, char *name) {
     name[sdl->sdl_nlen] = '\0';
 
     free(buf);
-    return TRUE;
+    return PTrue;
 
   } else {
     free(buf);
-    return FALSE;
+    return PFalse;
   }
 
 }
@@ -1541,7 +1320,7 @@ BOOL get_ifname(int index, char *name) {
 #define T_CURRENT       MI_T_CURRENT
 #endif
 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
 #define task_pagesize 512
     char buf[task_pagesize];  /* = task_block_malloc(task_pagesize);*/
@@ -1712,15 +1491,15 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
     errno = i;
     /*task_block_reclaim(task_pagesize, buf);*/
     if (errno)
-      return (FALSE);
+      return (PFalse);
     else
-      return (TRUE);
+      return (PTrue);
 }
 
 
 #elif defined(P_VXWORKS)
 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
   PAssertAlways("PIPSocket::GetRouteTable()");
   for(;;){
@@ -1733,14 +1512,14 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
     entry->interfaceName = iface;
     entry->metric = metric;
     table.Append(entry);
-    return TRUE;
+    return PTrue;
   }
 }
 
 #else // unsupported platform
 
 #if 0 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
         // Most of this code came from the source code for the "route" command 
         // so it should work on other platforms too. 
@@ -1753,7 +1532,7 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
         ret = get_route_table(&reqtable); 
         if (ret < 0) 
         { 
-                return FALSE; 
+                return PFalse; 
         } 
         
         for (i=reqtable.cnt, rrtp = reqtable.rrtp;i>0;i--, rrtp++) 
@@ -1780,60 +1559,331 @@ BOOL PIPSocket::GetRouteTable(RouteTable & table)
         
         free(reqtable.rrtp); 
                 
-        return TRUE; 
+        return PTrue; 
 #endif // 0
 
-BOOL PIPSocket::GetRouteTable(RouteTable & table)
+PBoolean PIPSocket::GetRouteTable(RouteTable & table)
 {
 #warning Platform requires implemetation of GetRouteTable()
-  return FALSE;
+  return PFalse;
 }
 #endif
 
 
-// fe800000000000000202e3fffe1ee330 02 40 20 80     eth0
-// 00000000000000000000000000000001 01 80 10 80       lo
 
-BOOL PIPSocket::GetInterfaceTable(InterfaceTable & list)
+#ifdef P_HAS_NETLINK
+
+#include <asm/types.h>
+#include <sys/socket.h>
+#include <linux/netlink.h>
+#include <linux/rtnetlink.h>
+#include <linux/genetlink.h>
+
+#include <memory.h>
+#include <errno.h>
+
+class NetLinkRouteTableDetector : public PIPSocket::RouteTableDetector
 {
-#if P_HAS_IPV6
-  // build a table of IPV6 interface addresses
-  typedef std::map<PString, PString> IP6ListType;
-  IP6ListType ip6Ifaces;
-  {
-    FILE * file;
-    int dummy;
-    int addr[16];
-    char ifaceName[255];
-    if ((file = fopen("/proc/net/if_inet6", "r")) != NULL) {
-      while (fscanf(file, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x %x %x %x %x %255s\n",
-              &addr[0],  &addr[1],  &addr[2],  &addr[3], 
-              &addr[4],  &addr[5],  &addr[6],  &addr[7], 
-              &addr[8],  &addr[9],  &addr[10], &addr[11], 
-              &addr[12], &addr[13], &addr[14], &addr[15], 
-             &dummy, &dummy, &dummy, &dummy, ifaceName) != EOF) {
-        PString addrStr(
-          psprintf("%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-              addr[0],  addr[1],  addr[2],  addr[3], 
-              addr[4],  addr[5],  addr[6],  addr[7], 
-              addr[8],  addr[9],  addr[10], addr[11], 
-              addr[12], addr[13], addr[14], addr[15]
-          )
-        );
-        PString iface(ifaceName);
-        ip6Ifaces.insert(IP6ListType::value_type(ifaceName, addrStr));
-      }
-      fclose(file);
-    }
-  }
-#endif
+  public:
+    int m_fdLink;
+    int m_fdCancel[2];
 
+    NetLinkRouteTableDetector()
+    {
+      m_fdLink = socket(AF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
+
+      if (m_fdLink != -1) {
+        struct sockaddr_nl sanl;
+        memset(&sanl, 0, sizeof(sanl));
+        sanl.nl_family = AF_NETLINK;
+        sanl.nl_groups = RTMGRP_LINK | RTMGRP_IPV4_IFADDR;
+
+        bind(m_fdLink, (struct sockaddr *)&sanl, sizeof(sanl));
+      }
+
+      if (pipe(m_fdCancel) == -1)
+        m_fdCancel[0] = m_fdCancel[1] = -1;
+
+      PTRACE(3, "PTLIB\tOpened NetLink socket");
+    }
+
+    ~NetLinkRouteTableDetector()
+    {
+      if (m_fdLink != -1)
+        close(m_fdLink);
+      if (m_fdCancel[0] != -1)
+        close(m_fdCancel[0]);
+      if (m_fdCancel[1] != -1)
+        close(m_fdCancel[1]);
+    }
+
+    bool Wait(const PTimeInterval & timeout)
+    {
+      if (m_fdCancel[0] == -1)
+        return false;
+
+      bool ok = true;
+      while (ok) {
+        fd_set fds;
+        FD_ZERO(&fds);
+        FD_SET(m_fdCancel[0], &fds);
+
+        struct timeval tval;
+        struct timeval * ptval = NULL;
+        if (m_fdLink != -1) {
+          tval.tv_sec  = timeout.GetMilliSeconds() / 1000;
+          tval.tv_usec = (timeout.GetMilliSeconds() % 1000) * 1000;
+          ptval = &tval;
+
+          FD_SET(m_fdLink, &fds);
+        }
+
+        int result = select(std::max(m_fdLink, m_fdCancel[0])+1, &fds, NULL, NULL, ptval);
+        if (result < 0)
+          return false;
+        if (result == 0)
+          return true;
+
+        if (FD_ISSET(m_fdCancel[0], &fds))
+          return false;
+
+        struct sockaddr_nl snl;
+        char buf[4096];
+        struct iovec iov = { buf, sizeof buf };
+        struct msghdr msg = { (void*)&snl, sizeof snl, &iov, 1, NULL, 0, 0};
+
+        int status = recvmsg(m_fdLink, &msg, 0);
+        if (status < 0)
+          return false;
+
+        for (struct nlmsghdr * nlmsg = (struct nlmsghdr *)buf;
+             NLMSG_OK(nlmsg, (unsigned)status);
+             nlmsg = NLMSG_NEXT(nlmsg, status)) {
+          if (nlmsg->nlmsg_len < sizeof(struct nlmsghdr))
+            break;
+
+          switch (nlmsg->nlmsg_type) {
+            case RTM_NEWADDR :
+            case RTM_DELADDR :
+              PTRACE(3, "PTLIB\tInterface table change detected via NetLink");
+              return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    void Cancel()
+    {
+      PAssert(write(m_fdCancel[1], "", 1) == 1, POperatingSystemError);
+    }
+};
+
+PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()
+{
+  return new NetLinkRouteTableDetector();
+}
+
+#elif defined(P_IPHONEOS)
+
+#include <netdb.h>
+#include <sys/time.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
+#include <SystemConfiguration/SystemConfiguration.h>
+#include <SystemConfiguration/SCNetworkReachability.h>
+
+#define kSCNetworkReachabilityOptionNodeName	CFSTR("nodename")
+
+/*!
+	@constant kSCNetworkReachabilityOptionServName
+	@discussion A CFString that will be passed to getaddrinfo(3).  An acceptable
+		value is either a decimal port number or a service name listed in
+		services(5).
+ */
+#define kSCNetworkReachabilityOptionServName	CFSTR("servname")
+
+/*!
+	@constant kSCNetworkReachabilityOptionHints
+	@discussion A CFData wrapping a "struct addrinfo" that will be passed to
+		getaddrinfo(3).  The caller can supply any of the ai_family,
+		ai_socktype, ai_protocol, and ai_flags structure elements.  All
+		other elements must be 0 or the null pointer.
+ */
+#define kSCNetworkReachabilityOptionHints	CFSTR("hints")
+
+class ReachabilityRouteTableDetector : public PIPSocket::RouteTableDetector
+{
+	SCNetworkReachabilityRef	target_async;
+
+   public:
+	SCNetworkReachabilityRef _setupReachability(SCNetworkReachabilityContext *context)
+	{
+		struct sockaddr_in		sin;
+		struct sockaddr_in6		sin6;
+		SCNetworkReachabilityRef	target	= NULL;
+
+		bzero(&sin, sizeof(sin));
+		sin.sin_len    = sizeof(sin);
+		sin.sin_family = AF_INET;
+
+		bzero(&sin6, sizeof(sin6));
+		sin6.sin6_len    = sizeof(sin6);
+		sin6.sin6_family = AF_INET6;
+
+		const char *anchor = "apple.com";
+
+		if (inet_aton(anchor, &sin.sin_addr) == 1) {
+
+			target = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&sin);
+			
+		} else if (inet_pton(AF_INET6, anchor, &sin6.sin6_addr) == 1) {
+			char	*p;
+
+			p = strchr(anchor, '%');
+			if (p != NULL) {
+				sin6.sin6_scope_id = if_nametoindex(p + 1);
+			}
+
+			target = SCNetworkReachabilityCreateWithAddress(NULL, (struct sockaddr *)&sin6);
+			
+		} else {
+			
+		target = SCNetworkReachabilityCreateWithName(NULL, anchor);
+				
+#if	!TARGET_OS_IPHONE
+		if (CFDictionaryGetCount(options) > 0) {
+
+			target = SCNetworkReachabilityCreateWithOptions(NULL, options);
+
+		} else {
+
+			SCPrint(TRUE, stderr, CFSTR("Must specify nodename or servname\n"));
+			return NULL;
+		}
+		CFRelease(options);
+#endif			
+		}
+
+		return target;
+	}
+	  
+	static void callout(SCNetworkReachabilityRef target, SCNetworkReachabilityFlags flags, void *info)
+	{
+		struct tm	tm_now;
+		struct timeval	tv_now;
+
+		(void)gettimeofday(&tv_now, NULL);
+		(void)localtime_r(&tv_now.tv_sec, &tm_now);
+
+		PTRACE(1, psprintf("Reachability changed at: %2d:%02d:%02d.%03d, now it is %sreachable",
+			tm_now.tm_hour,
+			tm_now.tm_min,
+			tm_now.tm_sec,
+			tv_now.tv_usec / 1000,
+			flags & kSCNetworkReachabilityFlagsReachable? "" : "not ")
+			);
+
+		ReachabilityRouteTableDetector* d = (ReachabilityRouteTableDetector*) info;	
+		d->Cancel();
+	}
+
+	ReachabilityRouteTableDetector()
+		: RouteTableDetector(),
+		target_async(NULL)
+	{
+		SCNetworkReachabilityContext	context	= { 0, NULL, NULL, NULL, NULL };
+		
+		target_async = _setupReachability(&context);
+		if (target_async == NULL) {
+			PTRACE(1, psprintf("  Could not determine status: %s\n", SCErrorString(SCError())));
+			return;
+		}
+		
+		context.info = (void*) this;
+		
+		if (!SCNetworkReachabilitySetCallback(target_async, ReachabilityRouteTableDetector::callout, &context)) {
+			PTRACE(1, psprintf("SCNetworkReachabilitySetCallback() failed: %s\n", SCErrorString(SCError())));
+			return;
+		}
+
+		if (!SCNetworkReachabilityScheduleWithRunLoop(target_async, CFRunLoopGetCurrent(), kCFRunLoopDefaultMode)) {
+			PTRACE(1, psprintf("SCNetworkReachabilityScheduleWithRunLoop() failed: %s\n", SCErrorString(SCError()) ) );
+			return;
+		}
+	}
+   
+	~ReachabilityRouteTableDetector()
+	{
+		if(target_async != NULL)
+			CFRelease(target_async);
+	}
+
+    bool Wait(const PTimeInterval & timeout)
+    {
+		m_cancel.Wait(timeout);
+		return PTrue;
+    }
+
+    void Cancel()
+    {
+      m_cancel.Signal();
+    }
+
+  private:
+    PSyncPoint m_cancel;
+	PBoolean m_continue;
+};
+
+PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()
+{
+	return new ReachabilityRouteTableDetector();
+}
+
+#else // P_HAS_NETLINK, elif defined(P_IPHONEOS)
+
+class DummyRouteTableDetector : public PIPSocket::RouteTableDetector
+{
+  public:
+    bool Wait(const PTimeInterval & timeout)
+    {
+      return !m_cancel.Wait(timeout);
+    }
+
+    void Cancel()
+    {
+      m_cancel.Signal();
+    }
+
+  private:
+    PSyncPoint m_cancel;
+};
+
+
+PIPSocket::RouteTableDetector * PIPSocket::CreateRouteTableDetector()
+{
+  return new DummyRouteTableDetector();
+}
+
+#endif // P_HAS_NETLINK, elif defined(P_IPHONEOS)
+
+
+PBoolean PIPSocket::GetInterfaceTable(InterfaceTable & list, PBoolean includeDown)
+{
   PUDPSocket sock;
 
   PBYTEArray buffer;
   struct ifconf ifConf;
   
+#if defined(P_NETBSD)
+  struct ifaddrs *ifap, *ifa;
 
+  PAssert(getifaddrs(&ifap) == 0, "getifaddrs failed");
+
+  for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
+#else
   // HERE
 #if defined(SIOCGIFNUM)
   int ifNum;
@@ -1849,38 +1899,53 @@ BOOL PIPSocket::GetInterfaceTable(InterfaceTable & list)
     void * ifEndList = (char *)ifConf.ifc_req + ifConf.ifc_len;
     ifreq * ifName = ifConf.ifc_req;
     while (ifName < ifEndList) {
-
+#endif
       struct ifreq ifReq;
-      memcpy(&ifReq, ifName, sizeof(ifreq));
+#if !defined(P_NETBSD)
+          memcpy(&ifReq, ifName, sizeof(ifreq));
+#else
+          memset(&ifReq, 0, sizeof(ifReq));
+          strncpy(ifReq.ifr_name, ifa->ifa_name, sizeof(ifReq.ifr_name) - 1);
+#endif
 
       if (ioctl(sock.GetHandle(), SIOCGIFFLAGS, &ifReq) >= 0) {
         int flags = ifReq.ifr_flags;
-        if (flags & IFF_UP) {
+        if (includeDown || (flags & IFF_UP) != 0) {
           PString name(ifReq.ifr_name);
 
           PString macAddr;
 #if defined(SIO_Get_MAC_Address)
           memcpy(&ifReq, ifName, sizeof(ifreq));
-          if (ioctl(sock.GetHandle(), SIO_Get_MAC_Address, &ifReq) >= 0) {
-            PEthSocket::Address a((BYTE *)ifReq.ifr_macaddr);
-            macAddr = (PString)a;
-          }
+          if (ioctl(sock.GetHandle(), SIO_Get_MAC_Address, &ifReq) >= 0)
+            macAddr = PEthSocket::Address((BYTE *)ifReq.ifr_macaddr);
 #endif
 
+#if !defined(P_NETBSD)
           memcpy(&ifReq, ifName, sizeof(ifreq));
+#else
+          memset(&ifReq, 0, sizeof(ifReq));
+          strncpy(ifReq.ifr_name, ifa->ifa_name, sizeof(ifReq.ifr_name) - 1);
+#endif
+
           if (ioctl(sock.GetHandle(), SIOCGIFADDR, &ifReq) >= 0) {
 
             sockaddr_in * sin = (sockaddr_in *)&ifReq.ifr_addr;
             PIPSocket::Address addr = sin->sin_addr;
 
+#if !defined(P_NETBSD)
             memcpy(&ifReq, ifName, sizeof(ifreq));
+#else
+            memset(&ifReq, 0, sizeof(ifReq));
+            strncpy(ifReq.ifr_name, ifa->ifa_name, sizeof(ifReq.ifr_name) - 1);
+#endif
+
             if (ioctl(sock.GetHandle(), SIOCGIFNETMASK, &ifReq) >= 0) {
               PIPSocket::Address mask = 
-#ifndef __BEOS__
+#ifndef P_BEOS
     ((sockaddr_in *)&ifReq.ifr_netmask)->sin_addr;
 #else
     ((sockaddr_in *)&ifReq.ifr_mask)->sin_addr;
-#endif // !__BEOS__
+#endif // !P_BEOS
               PINDEX i;
               for (i = 0; i < list.GetSize(); i++) {
 #ifdef P_TORNADO
@@ -1894,41 +1959,60 @@ BOOL PIPSocket::GetInterfaceTable(InterfaceTable & list)
 #endif
                   break;
               }
-#if P_HAS_IPV6
-              PString ip6Addr;
-              IP6ListType::const_iterator r = ip6Ifaces.find(name);
-              if (r != ip6Ifaces.end())
-                ip6Addr = r->second;
-#endif
               if (i >= list.GetSize())
-                list.Append(PNEW InterfaceEntry(name, addr, mask, macAddr
-#if P_HAS_IPV6
-                , ip6Addr
-#endif
-                ));
+                list.Append(PNEW InterfaceEntry(name, addr, mask, macAddr));
             }
           }
         }
       }
 
-#if defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_VXWORKS) || defined(P_RTEMS) || defined(P_QNX)
-// Define _SIZEOF_IFREQ for platforms (eg OpenBSD) which do not have it.
-#ifndef _SIZEOF_ADDR_IFREQ
-#define _SIZEOF_ADDR_IFREQ(ifr) \
-        ((ifr).ifr_addr.sa_len > sizeof(struct sockaddr) ? \
-         (sizeof(struct ifreq) - sizeof(struct sockaddr) + \
-          (ifr).ifr_addr.sa_len) : sizeof(struct ifreq))
-#endif
-
+#if defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_MACOSX) || defined(P_VXWORKS) || defined(P_RTEMS) || defined(P_QNX)
       // move the ifName pointer along to the next ifreq entry
       ifName = (struct ifreq *)((char *)ifName + _SIZEOF_ADDR_IFREQ(*ifName));
-#else
+#elif !defined(P_NETBSD)
       ifName++;
 #endif
 
     }
+#if !defined(P_NETBSD)
   }
-  return TRUE;
+#endif
+
+#if P_HAS_IPV6
+  // build a table of IPV6 interface addresses
+  // fe800000000000000202e3fffe1ee330 02 40 20 80     eth0
+  // 00000000000000000000000000000001 01 80 10 80       lo
+  FILE * file;
+  int dummy;
+  int addr[16];
+  char ifaceName[255];
+  if ((file = fopen("/proc/net/if_inet6", "r")) != NULL) {
+    while (fscanf(file, "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x %x %x %x %x %255s\n",
+            &addr[0],  &addr[1],  &addr[2],  &addr[3], 
+            &addr[4],  &addr[5],  &addr[6],  &addr[7], 
+            &addr[8],  &addr[9],  &addr[10], &addr[11], 
+            &addr[12], &addr[13], &addr[14], &addr[15], 
+           &dummy, &dummy, &dummy, &dummy, ifaceName) != EOF) {
+      BYTE bytes[16];
+      for (PINDEX i = 0; i < 16; i++)
+        bytes[i] = addr[i];
+
+      PString macAddr;
+#if defined(SIO_Get_MAC_Address)
+      struct ifreq ifReq;
+      memset(&ifReq, 0, sizeof(ifReq));
+      strncpy(ifReq.ifr_name, ifaceName, sizeof(ifReq.ifr_name) - 1);
+      if (ioctl(sock.GetHandle(), SIO_Get_MAC_Address, &ifReq) >= 0)
+        macAddr = PEthSocket::Address((BYTE *)ifReq.ifr_macaddr);
+#endif
+
+      list.Append(PNEW InterfaceEntry(ifaceName, Address(16, bytes), Address::GetAny(6), macAddr));
+    }
+    fclose(file);
+  }
+#endif
+
+  return PTrue;
 }
 
 #ifdef P_VXWORKS
@@ -1989,9 +2073,9 @@ void PUDPSocket::EnableGQoS()
 {
 }
 
-BOOL PUDPSocket::SupportQoS(const PIPSocket::Address & )
+PBoolean PUDPSocket::SupportQoS(const PIPSocket::Address & )
 {
-  return FALSE;
+  return PFalse;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

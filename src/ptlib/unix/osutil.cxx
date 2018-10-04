@@ -26,177 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: osutil.cxx,v $
- * Revision 1.85  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.84  2005/11/25 02:29:54  csoutheren
- * Applied patch #1353487 by Hannes Friederich
- * Mac OS X update
- *
- * Revision 1.83  2004/09/23 05:00:10  csoutheren
- * Extra proofing against possible NULL pointers
- *
- * Revision 1.82  2004/04/03 23:53:10  csoutheren
- * Added various changes to improce compatibility with the Sun Forte compiler
- *   Thanks to Brian Cameron
- * Added detection of readdir_r version
- *
- * Revision 1.81  2004/04/01 12:51:11  csoutheren
- * Fixed problem with args to access, thanks to Borko Jandras
- *
- * Revision 1.80  2004/01/07 21:30:30  dsandras
- * Applied patch from Miguel Rodriguez Perez <migrax@terra.es> to remove problematic PAssert failing in cases where it shouldn't.
- *
- * Revision 1.79  2003/09/17 01:18:04  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.78  2003/05/01 06:08:36  robertj
- * Fixed concurrency problem with some time functions, thanks chad@broadmind.com
- *
- * Revision 1.77  2003/01/24 10:21:06  robertj
- * Fixed issues in RTEMS support, thanks Vladimir Nesic
- *
- * Revision 1.76  2002/11/22 10:14:07  robertj
- * QNX port, thanks Xiaodan Tang
- *
- * Revision 1.75  2002/11/20 01:55:06  robertj
- * Fixed to follow new semantics of GetPath(), first entry is volume which on
- *   UNix machines is always an empty string. Also collapses consecutive
- *   slashes as they are meaningless.
- *
- * Revision 1.74  2002/11/19 11:21:30  robertj
- * Changed PFilePath so can be empty string, indicating illegal path.
- * Added function to extract a path as an array of directories components.
- *
- * Revision 1.73  2002/10/22 07:42:52  robertj
- * Added extra debugging for file handle and thread leak detection.
- *
- * Revision 1.72  2002/10/17 13:44:27  robertj
- * Port to RTEMS, thanks Vladimir Nesic.
- *
- * Revision 1.71  2002/10/17 12:57:24  robertj
- * Added ability to increase maximum file handles on a process.
- *
- * Revision 1.70  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.69  2002/06/06 09:28:42  robertj
- * Fixed problems with canonicalising directories now PINDEX is signed.
- *
- * Revision 1.68  2002/02/11 02:26:54  craigs
- * Fixed problem with reading lines of length > 100 chares from text files
- * Thanks to Ohnuma Masato
- *
- * Revision 1.67  2002/01/26 23:58:15  craigs
- * Changed for GCC 3.0 compatibility, thanks to manty@manty.net
- *
- * Revision 1.66  2001/10/11 02:20:54  robertj
- * Added IRIX support (no audio/video), thanks Andre Schulze.
- *
- * Revision 1.65  2001/09/18 05:56:03  robertj
- * Fixed numerous problems with thread suspend/resume and signals handling.
- *
- * Revision 1.64  2001/09/04 04:15:44  robertj
- * Fixed PFileInfo (stat) of file name that is dangling symlink.
- *
- * Revision 1.63  2001/08/11 15:38:43  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.62  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.61  2001/05/29 03:35:16  craigs
- * Changed to not tempnam to avoid linker warning on new Linux systems
- *
- * Revision 1.60  2001/03/12 02:35:20  robertj
- * Fixed PDirectory::Exists so only returns TRUE if a directory and not file.
- *
- * Revision 1.59  2001/02/23 07:16:36  rogerh
- * Darwin (MACOS X) does not have thread safe localtime_t() and gmtime_r()
- * functions. Use the unsafe localtime() and gmtime() calls for now.
- *
- * Revision 1.58  2001/02/13 06:59:57  robertj
- * Fixed problem with operator= in PDirectory class, part of larger change previously made.
- *
- * Revision 1.57  2001/02/13 05:15:31  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.56  2000/09/11 22:49:31  robertj
- * Fixed bug where last char was always removed in mkdir() instead of only if '/'.
- *
- * Revision 1.55  2000/06/21 01:01:22  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.54  2000/04/19 00:13:53  robertj
- * BeOS port changes.
- *
- * Revision 1.53  2000/04/09 18:19:23  rogerh
- * Add my changes for NetBSD support.
- *
- * Revision 1.52  2000/04/06 12:11:32  rogerh
- * MacOS X support submitted by Kevin Packard
- *
- * Revision 1.51  2000/04/05 02:55:11  robertj
- * Added microseconds to PTime class.
- *
- * Revision 1.50  2000/03/08 12:17:09  rogerh
- * Add OpenBSD support
- *
- * Revision 1.49  2000/02/24 11:03:49  robertj
- * Fixed warning on Linux systems about _REENTRANT
- *
- * Revision 1.48  1999/08/17 07:37:36  robertj
- * Fixed inlines so are inlined for optimised version
- *
- * Revision 1.47  1999/06/28 09:28:02  robertj
- * Portability issues, especially n BeOS (thanks Yuri!)
- *
- * Revision 1.46  1999/06/26 08:21:12  robertj
- * Fixed bug in PFilePath::SetType finding dots outside of file name in path.
- *
- * Revision 1.45  1999/06/14 08:39:57  robertj
- * Added PConsoleChannel class for access to stdin/stdout/stderr
- *
- * Revision 1.44  1999/06/09 04:08:46  robertj
- * Added support for opening stdin/stdout/stderr as PFile objects.
- *
- * Revision 1.43  1999/02/22 13:26:53  robertj
- * BeOS port changes.
- *
- * Revision 1.42  1998/12/12 01:06:24  robertj
- * Fixed off by one error in month on FreeBSD platform
- *
- * Revision 1.41  1998/11/30 21:51:43  robertj
- * New directory structure.
- *
- * Revision 1.40  1998/11/26 11:54:16  robertj
- * Fixed error return on PFile::GetInfo
- *
- * Revision 1.39  1998/11/24 09:39:09  robertj
- * FreeBSD port.
- *
- * Revision 1.38  1998/11/10 13:00:52  robertj
- * Fixed strange problems with readdir_r usage.
- *
- * Revision 1.37  1998/11/06 04:44:46  robertj
- * Solaris compatibility
- *
- * Revision 1.36  1998/11/05 12:03:13  robertj
- * Fixed solaris compatibility and Linux warning on readdir_r function.
- *
- * Revision 1.35  1998/11/05 09:05:55  craigs
- * Changed directory routines to use reenttrant functions, and added PDirectory::GetParent
- *
- * Revision 1.34  1998/09/24 07:39:49  robertj
- * Removed file that only had #pragma implmentation for PTextFile and nothing else.
- *
- * Revision 1.33  1998/09/24 04:12:12  robertj
- * Added open software license.
- *
+ * $Revision: 28201 $
+ * $Author: rjongbloed $
+ * $Date: 2012-08-14 21:30:31 -0500 (Tue, 14 Aug 2012) $
  */
 
 #define _OSUTIL_CXX
@@ -216,11 +48,11 @@
 #pragma implementation "object.h"
 #pragma implementation "contain.h"
 
-#if defined(P_LINUX)
+#if defined(P_LINUX) || defined(P_GNU_HURD)
 #ifndef _REENTRANT
 #define _REENTRANT
 #endif
-#elif defined(P_SOLARIS) 
+#elif defined(P_SOLARIS)
 #define _POSIX_PTHREAD_SEMANTICS
 #endif
 
@@ -233,10 +65,11 @@
 #else
 #include <time.h>
 #include <sys/time.h>
+#include <termios.h>
 #endif
 #include <ctype.h>
 
-#if defined(P_LINUX)
+#if defined(P_LINUX) || defined(P_GNU_HURD)
 
 #include <mntent.h>
 #include <sys/vfs.h>
@@ -252,6 +85,12 @@
 
 #include <sys/param.h>
 #include <sys/mount.h>
+#include <sys/timeb.h>
+
+#if defined(P_NETBSD)
+#include <sys/statvfs.h>
+#define statfs statvfs
+#endif
 
 #elif defined(P_HPUX9) 
 #define P_USE_LANGINFO
@@ -261,7 +100,6 @@
 
 #include <fstab.h>
 #include <sys/stat.h>
-#include <sys/statfs.h>
 
 #elif defined(P_SOLARIS) 
 #define P_USE_LANGINFO
@@ -306,6 +144,8 @@
 
 #define  DEFAULT_FILE_MODE  (S_IRUSR|S_IWUSR|S_IROTH|S_IRGRP)
 
+#include <ptlib/pprocess.h>
+
 #if !P_USE_INLINES
 #include "ptlib/osutil.inl"
 #ifdef _WIN32
@@ -329,13 +169,17 @@ static char *tzname[2] = { "STD", "DST" };
 #define new PNEW
 
 
+static PMutex waterMarkMutex;
+static int lowWaterMark = INT_MAX;
+static int highWaterMark = 0;
+  
 int PX_NewHandle(const char * clsName, int fd)
 {
   if (fd < 0)
     return fd;
 
-  static int lowWaterMark = INT_MAX;
-  static int highWaterMark = 0;
+  PWaitAndSignal m(waterMarkMutex);
+
   if (fd > highWaterMark) {
     highWaterMark = fd;
     lowWaterMark = fd;
@@ -459,19 +303,18 @@ PUInt64 PString::AsUnsigned64(unsigned base) const
 
 
 PTimeInterval PTimer::Tick()
-
 {
-#ifdef P_VXWORKS
+#if defined(_POSIX_MONOTONIC_CLOCK) && !defined(P_MACOSX)
   struct timespec ts;
-  clock_gettime(0,&ts);
-  return (int)(ts.tv_sec*10000) + ts.tv_nsec/100000L;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec*1000LL + ts.tv_nsec/1000000LL;
 #else
+  #warning System does not have clock_gettime with CLOCK_MONOTONIC, using gettimeofday
   struct timeval tv;
-  ::gettimeofday (&tv, NULL);
-  return (PInt64)(tv.tv_sec) * 1000 + tv.tv_usec/1000L;
+  gettimeofday(&tv, NULL);
+  return tv.tv_sec*1000LL + tv.tv_usec/1000LL;
 #endif // P_VXWORKS
 }
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -518,7 +361,7 @@ void PDirectory::Construct ()
   PString::AssignContents(CanonicaliseDirectory(*this));
 }
 
-BOOL PDirectory::Open(int ScanMask)
+PBoolean PDirectory::Open(int ScanMask)
 
 {
   if (directory != NULL)
@@ -527,23 +370,23 @@ BOOL PDirectory::Open(int ScanMask)
   scanMask = ScanMask;
 
   if ((directory = opendir(theArray)) == NULL)
-    return FALSE;
+    return PFalse;
 
   entryBuffer = (struct dirent *)malloc(sizeof(struct dirent) + P_MAX_PATH);
   entryInfo   = new PFileInfo;
 
   if (Next())
-    return TRUE;
+    return PTrue;
 
   Close();
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PDirectory::Next()
+PBoolean PDirectory::Next()
 {
   if (directory == NULL)
-    return FALSE;
+    return PFalse;
 
   do {
     do {
@@ -551,16 +394,16 @@ BOOL PDirectory::Next()
       entryBuffer->d_name[0] = '\0';
 #if P_HAS_POSIX_READDIR_R == 3
       if (::readdir_r(directory, entryBuffer, &entryPtr) != 0)
-        return FALSE;
+        return PFalse;
       if (entryPtr != entryBuffer)
-        return FALSE;
+        return PFalse;
 #elif P_HAS_POSIX_READDIR_R == 2
       entryPtr = ::readdir_r(directory, entryBuffer);
       if (entryPtr == NULL)
-        return FALSE;
+        return PFalse;
 #else
       if ((entryPtr = ::readdir(directory)) == NULL)
-        return FALSE;
+        return PFalse;
       *entryBuffer = *entryPtr;
       strcpy(entryBuffer->d_name, entryPtr->d_name);
 #endif
@@ -571,27 +414,27 @@ BOOL PDirectory::Next()
       continue;
     
     if (scanMask == PFileInfo::AllPermissions)
-      return TRUE;
+      return PTrue;
   } while ((entryInfo->type & scanMask) == 0);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PDirectory::IsSubDir() const
+PBoolean PDirectory::IsSubDir() const
 {
   if (entryInfo == NULL)
-    return FALSE;
+    return PFalse;
 
   return entryInfo->type == PFileInfo::SubDirectory;
 }
 
-BOOL PDirectory::Restart(int newScanMask)
+PBoolean PDirectory::Restart(int newScanMask)
 {
   scanMask = newScanMask;
   if (directory != NULL)
     rewinddir(directory);
-  return TRUE;
+  return PTrue;
 }
 
 PString PDirectory::GetEntryName() const
@@ -603,27 +446,27 @@ PString PDirectory::GetEntryName() const
 }
 
 
-BOOL PDirectory::GetInfo(PFileInfo & info) const
+PBoolean PDirectory::GetInfo(PFileInfo & info) const
 {
   if (entryInfo == NULL)
-    return FALSE;
+    return PFalse;
 
   info = *entryInfo;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PDirectory::Exists(const PString & p)
+PBoolean PDirectory::Exists(const PString & p)
 {
   struct stat sbuf;
   if (stat((const char *)p, &sbuf) != 0)
-    return FALSE;
+    return PFalse;
 
   return S_ISDIR(sbuf.st_mode);
 }
 
 
-BOOL PDirectory::Create(const PString & p, int perm)
+PBoolean PDirectory::Create(const PString & p, int perm)
 {
   PAssert(!p.IsEmpty(), "attempt to create dir with empty name");
   PINDEX last = p.GetLength()-1;
@@ -637,7 +480,7 @@ BOOL PDirectory::Create(const PString & p, int perm)
 #endif
 }
 
-BOOL PDirectory::Remove(const PString & p)
+PBoolean PDirectory::Remove(const PString & p)
 {
   PAssert(!p.IsEmpty(), "attempt to remove dir with empty name");
   PString str = p.Left(p.GetLength()-1);
@@ -664,7 +507,7 @@ PString PDirectory::GetVolume() const
   if (stat(operator+("."), &status) != -1) {
     dev_t my_dev = status.st_dev;
 
-#if defined(P_LINUX) || defined(P_IRIX)
+#if defined(P_LINUX) || defined(P_IRIX) || defined(P_GNU_HURD)
 
     FILE * fp = setmntent(MOUNTED, "r");
     if (fp != NULL) {
@@ -730,71 +573,71 @@ PString PDirectory::GetVolume() const
   return volume;
 }
 
-BOOL PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSize) const
+PBoolean PDirectory::GetVolumeSpace(PInt64 & total, PInt64 & free, DWORD & clusterSize) const
 {
-#if defined(P_LINUX) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS)
+#if defined(P_LINUX) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS) || defined(P_GNU_HURD)
 
   struct statfs fs;
 
   if (statfs(operator+("."), &fs) == -1)
-    return FALSE;
+    return PFalse;
 
   clusterSize = fs.f_bsize;
   total = fs.f_blocks*(PInt64)fs.f_bsize;
   free = fs.f_bavail*(PInt64)fs.f_bsize;
-  return TRUE;
+  return PTrue;
 
 #elif defined(P_AIX) || defined(P_VXWORKS)
 
   struct statfs fs;
   if (statfs((char *) ((const char *)operator+(".") ), &fs) == -1)
-    return FALSE;
+    return PFalse;
 
   clusterSize = fs.f_bsize;
   total = fs.f_blocks*(PInt64)fs.f_bsize;
   free = fs.f_bavail*(PInt64)fs.f_bsize;
-  return TRUE;
+  return PTrue;
 
 #elif defined(P_SOLARIS)
 
   struct statvfs buf;
   if (statvfs(operator+("."), &buf) != 0)
-    return FALSE;
+    return PFalse;
 
   clusterSize = buf.f_frsize;
   total = buf.f_blocks * buf.f_frsize;
   free  = buf.f_bfree  * buf.f_frsize;
 
-  return TRUE;
+  return PTrue;
   
 #elif defined(P_IRIX)
 
   struct statfs fs;
 
   if (statfs(operator+("."), &fs, sizeof(struct statfs), 0) == -1)
-    return FALSE;
+    return PFalse;
 
   clusterSize = fs.f_bsize;
   total = fs.f_blocks*(PInt64)fs.f_bsize;
   free = fs.f_bfree*(PInt64)fs.f_bsize;
-  return TRUE;
+  return PTrue;
 
 #elif defined(P_QNX)
 
   struct statvfs fs;
 
   if (statvfs(operator+("."), &fs) == -1)
-    return FALSE;
+    return PFalse;
 
   clusterSize = fs.f_bsize;
   total = fs.f_blocks*(PInt64)fs.f_bsize;
   free = fs.f_bavail*(PInt64)fs.f_bsize;
-  return TRUE;
+  return PTrue;
 
 #else
 
 #warning Platform requires implemetation of GetVolumeSpace()
-  return FALSE;
+  return PFalse;
 
 #endif
 }
@@ -846,7 +689,7 @@ void PFile::SetFilePath(const PString & newName)
 }
 
 
-BOOL PFile::Open(OpenMode mode, int opt)
+PBoolean PFile::Open(OpenMode mode, int opt)
 
 {
   Close();
@@ -857,7 +700,7 @@ BOOL PFile::Open(OpenMode mode, int opt)
 
   if (path.IsEmpty()) {
     char templateStr[3+6+1];
-    strcpy(templateStr, "PWL");
+    strcpy(templateStr, "PWLXXXXXX");
 #ifndef P_VXWORKS
 #ifdef P_RTEMS
     _reent _reent_data;
@@ -867,8 +710,8 @@ BOOL PFile::Open(OpenMode mode, int opt)
     os_handle = mkstemp(templateStr);
 #endif // P_RTEMS
     if (!ConvertOSError(os_handle))
-      return FALSE;
-
+      return PFalse;
+    path = templateStr;
   } else {
 #else
     static int number = 0;
@@ -907,72 +750,72 @@ BOOL PFile::Open(OpenMode mode, int opt)
 
 
     if (!ConvertOSError(os_handle = PX_NewHandle(GetClass(), ::open(path, oflags, DEFAULT_FILE_MODE))))
-      return FALSE;
+      return PFalse;
   }
 
 #ifndef P_VXWORKS
   return ConvertOSError(::fcntl(os_handle, F_SETFD, 1));
 #else
-  return TRUE;
+  return PTrue;
 #endif
 }
 
 
-BOOL PFile::SetLength(off_t len)
+PBoolean PFile::SetLength(off_t len)
 {
   return ConvertOSError(ftruncate(GetHandle(), len));
 }
 
 
-BOOL PFile::Rename(const PFilePath & oldname, const PString & newname, BOOL force)
+PBoolean PFile::Rename(const PFilePath & oldname, const PString & newname, PBoolean force)
 {
   if (newname.Find('/') != P_MAX_INDEX) {
     errno = EINVAL;
-    return FALSE;
+    return PFalse;
   }
 
   if (rename(oldname, oldname.GetPath() + newname) == 0)
-    return TRUE;
+    return PTrue;
 
   if (!force || errno == ENOENT || !Exists(newname))
-    return FALSE;
+    return PFalse;
 
-  if (!Remove(newname, TRUE))
-    return FALSE;
+  if (!Remove(newname, PTrue))
+    return PFalse;
 
   return rename(oldname, oldname.GetPath() + newname) == 0;
 }
 
 
-BOOL PFile::Move(const PFilePath & oldname, const PFilePath & newname, BOOL force)
+PBoolean PFile::Move(const PFilePath & oldname, const PFilePath & newname, PBoolean force)
 {
   PFilePath from = oldname.GetDirectory() + oldname.GetFileName();
   PFilePath to = newname.GetDirectory() + newname.GetFileName();
 
   if (rename(from, to) == 0)
-    return TRUE;
+    return PTrue;
 
   if (errno == EXDEV)
     return Copy(from, to, force) && Remove(from);
 
   if (force && errno == EEXIST)
-    if (Remove(to, TRUE))
+    if (Remove(to, PTrue))
       if (rename(from, to) == 0)
-  return TRUE;
+  return PTrue;
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PFile::Exists(const PFilePath & name)
+PBoolean PFile::Exists(const PFilePath & name)
 { 
 #ifdef P_VXWORKS
   // access function not defined for VxWorks
   // as workaround, open the file in read-only mode
   // if it succeeds, the file exists
   PFile file(name, ReadOnly, MustExist);
-  BOOL exists = file.IsOpen();
-  if(exists == TRUE)
+  PBoolean exists = file.IsOpen();
+  if(exists == PTrue)
     file.Close();
   return exists;
 #else
@@ -981,15 +824,15 @@ BOOL PFile::Exists(const PFilePath & name)
 }
 
 
-BOOL PFile::Access(const PFilePath & name, OpenMode mode)
+PBoolean PFile::Access(const PFilePath & name, OpenMode mode)
 {
 #ifdef P_VXWORKS
   // access function not defined for VxWorks
   // as workaround, open the file in specified mode
   // if it succeeds, the access is allowed
   PFile file(name, mode, ModeDefault);
-  BOOL access = file.IsOpen();
-  if(access == TRUE)
+  PBoolean access = file.IsOpen();
+  if(access == PTrue)
     file.Close();
   return access;
 #else  
@@ -1013,7 +856,7 @@ BOOL PFile::Access(const PFilePath & name, OpenMode mode)
 }
 
 
-BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & status)
+PBoolean PFile::GetInfo(const PFilePath & name, PFileInfo & status)
 {
   status.type = PFileInfo::UnknownFileType;
 
@@ -1023,7 +866,7 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & status)
 #else  
   if (lstat(name, &s) != 0)
 #endif // P_VXWORKS
-    return FALSE;
+    return PFalse;
 
 #ifndef P_VXWORKS
   if (S_ISLNK(s.st_mode)) {
@@ -1034,7 +877,7 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & status)
       status.accessed    = 0;
       status.size        = 0;
       status.permissions = PFileInfo::AllPermissions;
-      return TRUE;
+      return PTrue;
     }
   } 
   else 
@@ -1060,11 +903,11 @@ BOOL PFile::GetInfo(const PFilePath & name, PFileInfo & status)
   status.size        = s.st_size;
   status.permissions = s.st_mode & PFileInfo::AllPermissions;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFile::SetPermissions(const PFilePath & name, int permissions)
+PBoolean PFile::SetPermissions(const PFilePath & name, int permissions)
 
 {
   mode_t mode = 0;
@@ -1098,7 +941,7 @@ BOOL PFile::SetPermissions(const PFilePath & name, int permissions)
   if (file.IsOpen())
     return (::ioctl(file.GetHandle(), FIOATTRIBSET, mode) >= 0);
 
-  return FALSE;
+  return PFalse;
 #else  
   return chmod ((const char *)name, mode) == 0;
 #endif // P_VXWORKS
@@ -1107,40 +950,25 @@ BOOL PFile::SetPermissions(const PFilePath & name, int permissions)
 ///////////////////////////////////////////////////////////////////////////////
 // PTextFile
 
-BOOL PTextFile::WriteLine (const PString & line)
-
+PBoolean PTextFile::WriteLine(const PString & str)
 {
-  if (!Write((const char *)line, line.GetLength()))
-    return FALSE;
-
-  char ch = '\n';
-  return Write(&ch, 1);
+  return WriteString(str) && WriteChar('\n');
 }
 
-
-BOOL PTextFile::ReadLine (PString & line)
+PBoolean PTextFile::ReadLine (PString & str)
 
 {
-  int len    = 0;
-  int ch;
-  char * base, * ptr;
-
-  while (1) {
-    len += LINE_SIZE_STEP;
-    ptr = base = line.GetPointer(len) + len - LINE_SIZE_STEP;
-    while ((ptr - base) < LINE_SIZE_STEP-1) {
-      if ((ch = ReadChar()) < 0) {
-        ConvertOSError(errno);
-        return FALSE;
-      }
-      if (ch == '\n') {
-        *ptr = '\0';
-        line.MakeMinimumSize();
-        return TRUE;
-      }
-      *ptr++ = ch;
-    }
-  } 
+  char * ptr = str.GetPointer(100);
+  PINDEX len = 0;
+  int c;
+  while ((c = ReadChar()) >= 0 && c != '\n') {
+    *ptr++ = (char)c;
+    if (++len >= str.GetSize())
+      ptr = str.GetPointer(len + 100) + len;
+  }
+  *ptr = '\0';
+  PAssert(str.MakeMinimumSize(), POutOfMemory);
+  return c >= 0 || len > 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1258,16 +1086,23 @@ PDirectory PFilePath::GetDirectory() const
 }
 
 
-BOOL PFilePath::IsValid(char c)
+PBoolean PFilePath::IsValid(char c)
 {
   return c != '/';
 }
 
 
-BOOL PFilePath::IsValid(const PString & str)
+PBoolean PFilePath::IsValid(const PString & str)
 {
   return str.Find('/') == P_MAX_INDEX;
 }
+
+
+bool PFilePath::IsAbsolutePath(const PString & path)
+{
+  return path[0] == '/';
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1284,23 +1119,23 @@ PConsoleChannel::PConsoleChannel(ConsoleType type)
 }
 
 
-BOOL PConsoleChannel::Open(ConsoleType type)
+PBoolean PConsoleChannel::Open(ConsoleType type)
 {
   switch (type) {
     case StandardInput :
       os_handle = 0;
-      return TRUE;
+      return PTrue;
 
     case StandardOutput :
       os_handle = 1;
-      return TRUE;
+      return PTrue;
 
     case StandardError :
       os_handle = 2;
-      return TRUE;
+      return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -1315,10 +1150,32 @@ PString PConsoleChannel::GetName() const
 }
 
 
-BOOL PConsoleChannel::Close()
+PBoolean PConsoleChannel::Close()
 {
   os_handle = -1;
-  return TRUE;
+  return PTrue;
+}
+
+
+bool PConsoleChannel::SetLocalEcho(bool localEcho)
+{
+  if (!IsOpen())
+    return ConvertOSError(-2, LastReadError);
+
+#ifdef P_VXWORKS
+  PAssertAlways("PConsoleChannel::GetName - Not implemented for VxWorks");
+  return PString("Not Implemented");
+#else
+  struct termios ios;
+  if (!ConvertOSError(tcgetattr(os_handle, &ios)))
+    return false;
+
+  if (localEcho)
+    ios.c_lflag |= ECHO;
+  else
+    ios.c_lflag &= ~ECHO;
+  return ConvertOSError(tcsetattr(os_handle, TCSANOW, &ios));
+#endif
 }
 
 
@@ -1327,7 +1184,7 @@ BOOL PConsoleChannel::Close()
 //  PTime
 //
 
-PTime::PTime()
+void PTime::SetCurrentTime()
 {
 #ifdef P_VXWORKS
   struct timespec ts;
@@ -1343,7 +1200,7 @@ PTime::PTime()
 }
 
 
-BOOL PTime::GetTimeAMPM()
+PBoolean PTime::GetTimeAMPM()
 {
 #if defined(P_USE_LANGINFO)
   return strstr(nl_langinfo(T_FMT), "%p") != NULL;
@@ -1358,7 +1215,7 @@ BOOL PTime::GetTimeAMPM()
   return strstr(buf, "20") != NULL;
 #else
 #warning No AMPM implementation
-  return FALSE;
+  return PFalse;
 #endif
 }
 
@@ -1405,10 +1262,10 @@ PString PTime::GetTimePM()
 
 PString PTime::GetTimeSeparator()
 {
-#if defined(P_LINUX) || defined(P_HPUX9) || defined(P_SOLARIS) || defined(P_IRIX)
+#if defined(P_LINUX) || defined(P_HPUX9) || defined(P_SOLARIS) || defined(P_IRIX) || defined(P_GNU_HURD)
 #  if defined(P_USE_LANGINFO)
      char * p = nl_langinfo(T_FMT);
-#  elif defined(P_LINUX)
+#  elif defined(P_LINUX) || defined(P_GNU_HURD)
      char * p = _time_info->time; 
 #  endif
   char buffer[2];
@@ -1438,7 +1295,7 @@ PString PTime::GetTimeSeparator()
 
 PTime::DateOrder PTime::GetDateOrder()
 {
-#if defined(P_USE_LANGINFO) || defined(P_LINUX)
+#if defined(P_USE_LANGINFO) || defined(P_LINUX) || defined(P_GNU_HURD)
 #  if defined(P_USE_LANGINFO)
      char * p = nl_langinfo(D_FMT);
 #  else
@@ -1482,7 +1339,7 @@ PTime::DateOrder PTime::GetDateOrder()
 
 PString PTime::GetDateSeparator()
 {
-#if defined(P_USE_LANGINFO) || defined(P_LINUX)
+#if defined(P_USE_LANGINFO) || defined(P_LINUX) || defined(P_GNU_HURD)
 #  if defined(P_USE_LANGINFO)
      char * p = nl_langinfo(D_FMT);
 #  else
@@ -1521,7 +1378,7 @@ PString PTime::GetDayName(PTime::Weekdays day, NameType type)
                    nl_langinfo((nl_item)(DAY_1+(int)day))
                 );
 
-#elif defined(P_LINUX)
+#elif defined(P_LINUX) || defined(P_GNU_HURD)
   return (type == Abbreviated) ? PString(_time_info->abbrev_wkday[(int)day]) :
                        PString(_time_info->full_wkday[(int)day]);
 
@@ -1554,7 +1411,7 @@ PString PTime::GetMonthName(PTime::Months month, NameType type)
      (type == Abbreviated) ? nl_langinfo((nl_item)(ABMON_1+(int)month-1)) :
                    nl_langinfo((nl_item)(MON_1+(int)month-1))
                 );
-#elif defined(P_LINUX)
+#elif defined(P_LINUX) || defined(P_GNU_HURD)
   return (type == Abbreviated) ? PString(_time_info->abbrev_month[(int)month-1]) :
                        PString(_time_info->full_month[(int)month-1]);
 #elif defined(P_USE_STRFTIME)
@@ -1580,7 +1437,7 @@ PString PTime::GetMonthName(PTime::Months month, NameType type)
 }
 
 
-BOOL PTime::IsDaylightSavings()
+PBoolean PTime::IsDaylightSavings()
 {
   time_t theTime = ::time(NULL);
   struct tm ts;
@@ -1589,13 +1446,13 @@ BOOL PTime::IsDaylightSavings()
 
 int PTime::GetTimeZone(PTime::TimeZoneType type) 
 {
-#if defined(P_LINUX) || defined(P_SOLARIS) || defined (P_AIX) || defined(P_IRIX)
+#if defined(P_LINUX) || defined(P_SOLARIS) || defined (P_AIX) || defined(P_IRIX) || defined(P_GNU_HURD)
   long tz = -::timezone/60;
   if (type == StandardTime)
     return tz;
   else
     return tz + ::daylight*60;
-#elif defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS) || defined(__BEOS__) || defined(P_QNX)
+#elif defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS) || defined(__BEOS__) || defined(P_QNX) || defined(P_GNU_HURD)
   time_t t;
   time(&t);
   struct tm ts;

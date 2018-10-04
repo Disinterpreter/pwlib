@@ -23,157 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: cypher.cxx,v $
- * Revision 1.47  2005/01/26 05:37:57  csoutheren
- * Added ability to remove config file support
- *
- * Revision 1.46  2004/07/06 10:12:52  csoutheren
- * Added static integer o factory template to assist in ensuring factories are instantiated
- *
- * Revision 1.45  2004/06/29 12:22:22  rjongbloed
- * Fixed incorrect usage of result (now object rather than scalar), thanks Michal Zygmuntowicz
- *
- * Revision 1.44  2004/04/09 06:52:17  rjongbloed
- * Removed #pargma linker command for /delayload of DLL as documentations sais that
- *   you cannot do this.
- *
- * Revision 1.43  2004/04/03 23:53:09  csoutheren
- * Added various changes to improce compatibility with the Sun Forte compiler
- *   Thanks to Brian Cameron
- * Added detection of readdir_r version
- *
- * Revision 1.42  2004/03/23 05:59:17  csoutheren
- * Moved the Base64 routines into cypher.cxx, which is a more sensible
- * place and reduces the inclusion of unrelated code
- *
- * Revision 1.41  2004/03/14 10:03:47  rjongbloed
- * Fixed "security patch" that cleared entire object (including the vtable!) isntead of
- *   clearing the "sensitive" information it was supposed to clear.
- *
- * Revision 1.40  2004/03/02 12:08:27  rjongbloed
- * Added missing pragmas to automatically include libraries for OpenSSL
- *
- * Revision 1.39  2004/02/23 23:52:19  csoutheren
- * Added pragmas to avoid every Windows application needing to include libs explicitly
- *
- * Revision 1.38  2003/04/27 23:52:57  craigs
- * Fixed problem with SHA1 not calling Start
- *
- * Revision 1.37  2003/04/17 12:12:59  robertj
- * Added windows library inclusion for optional openssl.
- *
- * Revision 1.36  2003/04/17 07:34:46  robertj
- * Fixed correct test for P_SSL
- *
- * Revision 1.35  2003/04/17 01:21:55  craigs
- * Fixed problem with delete'ing a void *
- *
- * Revision 1.33  2003/04/10 07:14:27  craigs
- * Fixed link problem in MD5 class
- *
- * Revision 1.32  2003/04/10 06:16:09  craigs
- * Added SHA-1 digest
- *
- * Revision 1.31  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.30  2002/06/05 12:29:15  craigs
- * Changes for gcc 3.1
- *
- * Revision 1.29  2001/03/01 03:55:59  robertj
- * Fixed MSVC warnings.
- *
- * Revision 1.28  2001/02/28 21:10:47  craigs
- * Fixed problem in Decode function
- * Added randomizer to fill data in Decode
- *
- * Revision 1.27  2000/02/17 12:05:02  robertj
- * Added better random number generator after finding major flaws in MSVCRT version.
- *
- * Revision 1.26  1998/11/30 04:50:45  robertj
- * New directory structure
- *
- * Revision 1.25  1998/09/23 06:21:56  robertj
- * Added open source copyright license.
- *
- * Revision 1.24  1998/07/24 06:58:13  robertj
- * Improved robustness of encrypted data decoding, error on illegal tail block size.
- *
- * Revision 1.23  1998/02/16 00:14:36  robertj
- * Fixed ability to register in one stage instead of always having to use 2.
- *
- * Revision 1.22  1998/01/26 02:49:14  robertj
- * GNU support.
- *
- * Revision 1.21  1997/10/30 10:19:19  robertj
- * Fixed bug with having empty string in encrypted text.
- *
- * Revision 1.20  1997/10/10 10:43:41  robertj
- * Fixed bug in password encryption, missing string terminator.
- *
- * Revision 1.19  1997/08/04 10:39:53  robertj
- * Fixed bug for decoding empty string.
- *
- * Revision 1.18  1997/07/26 11:35:38  robertj
- * Fixed bug where illegal data errors were not propagated.
- *
- * Revision 1.17  1996/11/16 10:50:26  robertj
- * ??
- *
- * Revision 1.16  1996/08/17 09:56:02  robertj
- * Fixed big endian processor platform conformance.
- *
- * Revision 1.15  1996/07/15 10:33:42  robertj
- * Changed memory block base64 conversion functions to be void *.
- * Changed memory block cypher conversion functions to be void *.
- * Changed endian classes to be memory mapped.
- *
- * Revision 1.14  1996/06/18 12:35:49  robertj
- * Fixed bug in registration when language is not English.
- *
- * Revision 1.13  1996/06/10 10:01:23  robertj
- * Fixed bug in getting cypher key, not copying all the bytes.
- *
- * Revision 1.12  1996/05/26 03:46:31  robertj
- * Compatibility to GNU 2.7.x
- *
- * Revision 1.11  1996/04/09 03:32:45  robertj
- * Fixed bug in registration so now works in time zones other than Eastern Australia.
- *
- * Revision 1.11  1996/04/08 05:18:38  robertj
- * Fixed bug in registering programs in a different time zone.
- *
- * Revision 1.10  1996/03/17 05:47:19  robertj
- * Changed secured config to allow for expiry dates.
- *
- * Revision 1.9  1996/03/16 04:37:20  robertj
- * Redesign of secure config to accommodate expiry dates and option values passed in security key code.
- *
- * Revision 1.8  1996/03/11 10:28:53  robertj
- * Fixed bug in C++ optimising compiler.
- *
- * Revision 1.7  1996/03/02 03:20:52  robertj
- * Fixed secured config parameters so leading/trailing blanks not significant.
- *
- * Revision 1.6  1996/02/25 11:22:42  robertj
- * Added assertion if try and SetValidation when not pending.
- *
- * Revision 1.5  1996/02/25 02:53:05  robertj
- * Further secure config development.
- *
- * Revision 1.4  1996/02/15 14:43:28  robertj
- * Allowed no secured config data at all to be "valid". All vars will then be guarenteed to default.
- *
- * Revision 1.3  1996/01/28 14:14:12  robertj
- * Further implementation of secure config.
- *
- * Revision 1.2  1996/01/28 02:49:00  robertj
- * Removal of MemoryPointer classes as usage didn't work for GNU.
- * Added the secure configuration mechanism for protecting applications.
- *
- * Revision 1.1  1996/01/23 13:05:58  robertj
- * Initial revision
- *
+ * $Revision: 24983 $
+ * $Author: rjongbloed $
+ * $Date: 2010-12-22 23:23:23 -0600 (Wed, 22 Dec 2010) $
  */
 
 #ifdef __GNUC__
@@ -199,11 +51,19 @@ PBase64::PBase64()
 }
 
 
-void PBase64::StartEncoding(BOOL useCRLF)
+void PBase64::StartEncoding(bool useCRLF)
 {
   encodedString = "";
   encodeLength = nextLine = saveCount = 0;
-  useCRLFs = useCRLF;
+  endOfLine = useCRLF ? "\r\n" : "\n";
+}
+
+
+void PBase64::StartEncoding(const char * eol)
+{
+  encodedString = "";
+  encodeLength = nextLine = saveCount = 0;
+  endOfLine = eol;
 }
 
 
@@ -215,7 +75,7 @@ void PBase64::ProcessEncoding(const PString & str)
 
 void PBase64::ProcessEncoding(const char * cstr)
 {
-  ProcessEncoding((const BYTE *)cstr, strlen(cstr));
+  ProcessEncoding((const BYTE *)cstr, (int)strlen(cstr));
 }
 
 
@@ -237,10 +97,10 @@ void PBase64::OutputBase64(const BYTE * data)
   out[encodeLength++] = Binary2Base64[((data[1]&15)<<2) | (data[2]>>6)];
   out[encodeLength++] = Binary2Base64[data[2]&0x3f];
 
-  if (++nextLine > 18) { // 76 columns
-    if (useCRLFs)
-      out[encodeLength++] = '\r';
-    out[encodeLength++] = '\n';
+  PINDEX len = endOfLine.GetLength();
+  if (++nextLine > (76-len)/4) {
+    for (PINDEX i = 0; i < len; ++i)
+      out[encodeLength++] = endOfLine[i];
     nextLine = 0;
   }
 }
@@ -254,8 +114,13 @@ void PBase64::ProcessEncoding(const void * dataPtr, PINDEX length)
   const BYTE * data = (const BYTE *)dataPtr;
   while (saveCount < 3) {
     saveTriple[saveCount++] = *data++;
-    if (--length == 0)
+    if (--length == 0) {
+      if (saveCount == 3) {
+        OutputBase64(saveTriple);
+        saveCount = 0;
+      }
       return;
+    }
   }
 
   OutputBase64(saveTriple);
@@ -308,27 +173,28 @@ PString PBase64::CompleteEncoding()
 }
 
 
-PString PBase64::Encode(const PString & str)
+PString PBase64::Encode(const PString & str, const char * endOfLine)
 {
-  return Encode((const char *)str);
+  return Encode((const char *)str, str.GetLength(), endOfLine);
 }
 
 
-PString PBase64::Encode(const char * cstr)
+PString PBase64::Encode(const char * cstr, const char * endOfLine)
 {
-  return Encode((const BYTE *)cstr, strlen(cstr));
+  return Encode((const BYTE *)cstr, (PINDEX)strlen(cstr), endOfLine);
 }
 
 
-PString PBase64::Encode(const PBYTEArray & data)
+PString PBase64::Encode(const PBYTEArray & data, const char * endOfLine)
 {
-  return Encode(data, data.GetSize());
+  return Encode(data, data.GetSize(), endOfLine);
 }
 
 
-PString PBase64::Encode(const void * data, PINDEX length)
+PString PBase64::Encode(const void * data, PINDEX length, const char * endOfLine)
 {
   PBase64 encoder;
+  encoder.StartEncoding(endOfLine);
   encoder.ProcessEncoding(data, length);
   return encoder.CompleteEncoding();
 }
@@ -336,20 +202,20 @@ PString PBase64::Encode(const void * data, PINDEX length)
 
 void PBase64::StartDecoding()
 {
-  perfectDecode = TRUE;
+  perfectDecode = PTrue;
   quadPosition = 0;
   decodedData.SetSize(0);
   decodeSize = 0;
 }
 
 
-BOOL PBase64::ProcessDecoding(const PString & str)
+PBoolean PBase64::ProcessDecoding(const PString & str)
 {
   return ProcessDecoding((const char *)str);
 }
 
 
-BOOL PBase64::ProcessDecoding(const char * cstr)
+PBoolean PBase64::ProcessDecoding(const char * cstr)
 {
   static const BYTE Base642Binary[256] = {
     96, 99, 99, 99, 99, 99, 99, 99, 99, 99, 98, 99, 99, 98, 99, 99,
@@ -374,21 +240,21 @@ BOOL PBase64::ProcessDecoding(const char * cstr)
     BYTE value = Base642Binary[(BYTE)*cstr++];
     switch (value) {
       case 96 : // end of string
-        return FALSE;
+        return PFalse;
 
       case 97 : // '=' sign
         if (quadPosition == 3 || (quadPosition == 2 && *cstr == '=')) {
           quadPosition = 0;  // Reset this to zero, as have a perfect decode
-          return TRUE; // Stop decoding now as must be at end of data
+          return PTrue; // Stop decoding now as must be at end of data
         }
-        perfectDecode = FALSE;  // Ignore '=' sign but flag decode as suspect
+        perfectDecode = PFalse;  // Ignore '=' sign but flag decode as suspect
         break;
 
       case 98 : // CRLFs
         break;  // Ignore totally
 
       case 99 :  // Illegal characters
-        perfectDecode = FALSE;  // Ignore rubbish but flag decode as suspect
+        perfectDecode = PFalse;  // Ignore rubbish but flag decode as suspect
         break;
 
       default : // legal value from 0 to 63
@@ -427,10 +293,10 @@ PBYTEArray PBase64::GetDecodedData()
 }
 
 
-BOOL PBase64::GetDecodedData(void * dataBlock, PINDEX length)
+PBoolean PBase64::GetDecodedData(void * dataBlock, PINDEX length)
 {
   perfectDecode = quadPosition == 0;
-  BOOL bigEnough = length >= decodeSize;
+  PBoolean bigEnough = length >= decodeSize;
   memcpy(dataBlock, decodedData, bigEnough ? decodeSize : length);
   decodedData.SetSize(0);
   decodeSize = 0;
@@ -446,7 +312,7 @@ PString PBase64::Decode(const PString & str)
 }
 
 
-BOOL PBase64::Decode(const PString & str, PBYTEArray & data)
+PBoolean PBase64::Decode(const PString & str, PBYTEArray & data)
 {
   PBase64 decoder;
   decoder.ProcessDecoding(str);
@@ -455,7 +321,7 @@ BOOL PBase64::Decode(const PString & str, PBYTEArray & data)
 }
 
 
-BOOL PBase64::Decode(const PString & str, void * dataBlock, PINDEX length)
+PBoolean PBase64::Decode(const PString & str, void * dataBlock, PINDEX length)
 {
   PBase64 decoder;
   decoder.ProcessDecoding(str);
@@ -478,7 +344,7 @@ void PMessageDigest::Process(const PString & str)
 
 void PMessageDigest::Process(const char * cstr)
 {
-  Process(cstr, strlen(cstr));
+  Process(cstr, (int)strlen(cstr));
 }
 
 
@@ -740,13 +606,13 @@ void PMessageDigest5::Encode(const PString & str, Result & result)
 
 PString PMessageDigest5::Encode(const char * cstr)
 {
-  return Encode((const BYTE *)cstr, strlen(cstr));
+  return Encode((const BYTE *)cstr, (int)strlen(cstr));
 }
 
 
 void PMessageDigest5::Encode(const char * cstr, Result & result)
 {
-  Encode((const BYTE *)cstr, strlen(cstr), result);
+  Encode((const BYTE *)cstr, (int)strlen(cstr), result);
 }
 
 
@@ -786,7 +652,7 @@ void PMessageDigest5::Encode(const PString & str, Code & result)
 
 void PMessageDigest5::Encode(const char * cstr, Code & result)
 {
-  Encode((const BYTE *)cstr, strlen(cstr), result);
+  Encode((const BYTE *)cstr, (int)strlen(cstr), result);
 }
 
 void PMessageDigest5::Encode(const PBYTEArray & data, Code & result)
@@ -970,7 +836,7 @@ void PCypher::Encode(const void * data, PINDEX length, PBYTEArray & coded)
 {
   PAssert((blockSize%8) == 0, PUnsupportedFeature);
 
-  Initialise(TRUE);
+  Initialise(PTrue);
 
   const BYTE * in = (const BYTE *)data;
   BYTE * out = coded.GetPointer(
@@ -1007,28 +873,28 @@ PString PCypher::Decode(const PString & cypher)
 }
 
 
-BOOL PCypher::Decode(const PString & cypher, PString & clear)
+PBoolean PCypher::Decode(const PString & cypher, PString & clear)
 {
   clear = PString();
 
   PBYTEArray clearText;
   if (!Decode(cypher, clearText))
-    return FALSE;
+    return PFalse;
 
   if (clearText.IsEmpty())
-    return TRUE;
+    return PTrue;
 
   PINDEX sz = clearText.GetSize();
   memcpy(clear.GetPointer(sz+1), (const BYTE *)clearText, sz);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PCypher::Decode(const PString & cypher, PBYTEArray & clear)
+PBoolean PCypher::Decode(const PString & cypher, PBYTEArray & clear)
 {
   PBYTEArray coded;
   if (!PBase64::Decode(cypher, coded))
-    return FALSE;
+    return PFalse;
   return Decode(coded, clear);
 }
 
@@ -1055,13 +921,13 @@ PINDEX PCypher::Decode(const PBYTEArray & coded, void * data, PINDEX length)
 }
 
 
-BOOL PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
+PBoolean PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
 {
   PAssert((blockSize%8) == 0, PUnsupportedFeature);
   if (coded.IsEmpty() || (coded.GetSize()%blockSize) != 0)
-    return FALSE;
+    return PFalse;
 
-  Initialise(FALSE);
+  Initialise(PFalse);
 
   const BYTE * in = coded;
   PINDEX length = coded.GetSize();
@@ -1075,11 +941,11 @@ BOOL PCypher::Decode(const PBYTEArray & coded, PBYTEArray & clear)
 
   if (blockSize != 1) {
     if (*--out >= blockSize)
-      return FALSE;
+      return PFalse;
     clear.SetSize(length - blockSize + *out);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1122,7 +988,7 @@ void PTEACypher::GenerateKey(Key & newKey)
 
 static const DWORD TEADelta = 0x9e3779b9;    // Magic number for key schedule
 
-void PTEACypher::Initialise(BOOL)
+void PTEACypher::Initialise(PBoolean)
 {
   k0 = ((const PUInt32l *)(const BYTE *)key)[0];
   k1 = ((const PUInt32l *)(const BYTE *)key)[1];
@@ -1138,8 +1004,8 @@ void PTEACypher::EncodeBlock(const void * in, void * out)
   DWORD sum = 0;
   for (PINDEX count = 32; count > 0; count--) {
     sum += TEADelta;    // Magic number for key schedule
-    y += (z<<4)+k0 ^ z+sum ^ (z>>5)+k1;
-    z += (y<<4)+k2 ^ y+sum ^ (y>>5)+k3;   /* end cycle */
+    y += ((z<<4)+k0) ^ (z+sum) ^ ((z>>5)+k1);
+    z += ((y<<4)+k2) ^ (y+sum) ^ ((y>>5)+k3);   /* end cycle */
   }
   ((PUInt32b*)out)[0] = y;
   ((PUInt32b*)out)[1] = z;
@@ -1152,8 +1018,8 @@ void PTEACypher::DecodeBlock(const void * in, void * out)
   DWORD z = ((PUInt32b*)in)[1];
   DWORD sum = TEADelta<<5;
   for (PINDEX count = 32; count > 0; count--) {
-    z -= (y<<4)+k2 ^ y+sum ^ (y>>5)+k3; 
-    y -= (z<<4)+k0 ^ z+sum ^ (z>>5)+k1;
+    z -= ((y<<4)+k2) ^ (y+sum) ^ ((y>>5)+k3); 
+    y -= ((z<<4)+k0) ^ (z+sum) ^ ((z>>5)+k1);
     sum -= TEADelta;    // Magic number for key schedule
   }
   ((PUInt32b*)out)[0] = y;
@@ -1210,24 +1076,24 @@ void PSecureConfig::GetProductKey(PTEACypher::Key & prodKey) const
 PSecureConfig::ValidationState PSecureConfig::GetValidation() const
 {
   PString str;
-  BOOL allEmpty = TRUE;
+  PBoolean allEmpty = PTrue;
   PMessageDigest5 digestor;
   for (PINDEX i = 0; i < securedKeys.GetSize(); i++) {
     str = GetString(securedKeys[i]);
     if (!str.IsEmpty()) {
       digestor.Process(str.Trim());
-      allEmpty = FALSE;
+      allEmpty = PFalse;
     }
   }
   str = GetString(expiryDateKey);
   if (!str.IsEmpty()) {
     digestor.Process(str);
-    allEmpty = FALSE;
+    allEmpty = PFalse;
   }
   str = GetString(optionBitsKey);
   if (!str.IsEmpty()) {
     digestor.Process(str);
-    allEmpty = FALSE;
+    allEmpty = PFalse;
   }
 
   PString vkey = GetString(securityKey);
@@ -1256,20 +1122,20 @@ PSecureConfig::ValidationState PSecureConfig::GetValidation() const
 }
 
 
-BOOL PSecureConfig::ValidatePending()
+PBoolean PSecureConfig::ValidatePending()
 {
   if (GetValidation() != Pending)
-    return FALSE;
+    return PFalse;
 
   PString vkey = GetString(securityKey);
   if (vkey.IsEmpty())
-    return TRUE;
+    return PTrue;
 
   PMessageDigest5::Code code;
   BYTE info[sizeof(code)+1+sizeof(DWORD)];
   PTEACypher crypt(productKey);
   if (crypt.Decode(vkey, info, sizeof(info)) != sizeof(info))
-    return FALSE;
+    return PFalse;
 
   PTime expiryDate(0, 0, 0,
             1, info[sizeof(code)]&15, (info[sizeof(code)]>>4)+1996, PTime::GMT);
@@ -1291,7 +1157,7 @@ BOOL PSecureConfig::ValidatePending()
   digestor.Complete(code);
 
   if (memcmp(info, &code, sizeof(code)) != 0)
-    return FALSE;
+    return PFalse;
 
   SetString(expiryDateKey, expiry);
   SetString(optionBitsKey, options);
@@ -1304,7 +1170,7 @@ BOOL PSecureConfig::ValidatePending()
   }
   DeleteKey(pendingPrefix + securityKey);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1315,7 +1181,7 @@ void PSecureConfig::ResetPending()
       DeleteKey(securedKeys[i]);
   }
   else {
-    SetBoolean(pendingPrefix + securityKey, TRUE);
+    SetBoolean(pendingPrefix + securityKey, PTrue);
 
     for (PINDEX i = 0; i < securedKeys.GetSize(); i++) {
       PString str = GetString(securedKeys[i]);

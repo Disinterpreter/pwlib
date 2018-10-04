@@ -4,37 +4,15 @@
  * PWLib application header file for sound test.
  *
  *
- * $Log: audio.h,v $
- * Revision 1.4  2006/04/09 07:08:13  dereksmithies
- * Add reporting functions.
- * Use the selected device to open the sound card for volume levels.
- *
- * Revision 1.3  2006/04/09 05:13:06  dereksmithies
- * add a means to write the collected audio to disk (as a wav file),
- *    or to the trace log (as text data)
- *
- * Revision 1.2  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.1  2005/08/18 22:29:15  dereksmithies
- * Add a full duplex sound card test (which was excised from ohphone).
- * Add copyright header and cvs log statements.
- * Fix startup and closedown segfaults.
- * Add safety mechanism so it can never fill up all computer memory.
- *
- *
- *
- *
- *
- *
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
  
 #ifndef _AUDIO_MAIN_H
 #define _AUDIO_MAIN_H
 
-
+#include <ptlib/sound.h>
 
 class Audio : public PProcess
 {
@@ -64,14 +42,14 @@ PDECLARE_LIST(TestAudioDevice, PBYTEArray *)
   virtual ~TestAudioDevice();
   
   void Test(const PString & captureFileName);
-  BOOL DoEndNow();
+  PBoolean DoEndNow();
   
   void WriteAudioFrame(PBYTEArray *data);
   PBYTEArray *GetNextAudioFrame();
   
  protected:
   PMutex access;
-  BOOL endNow;
+  PBoolean endNow;
 
 };
 
@@ -84,7 +62,7 @@ class TestAudio : public PThread
     TestAudio(TestAudioDevice &master);
     virtual ~TestAudio();
 
-    virtual void Terminate() { keepGoing = FALSE; }
+    virtual void Terminate() { keepGoing = PFalse; }
     void LowerVolume();
     void RaiseVolume();
     
@@ -92,12 +70,12 @@ class TestAudio : public PThread
 
   protected:
     PString name;
-    BOOL OpenAudio(enum PSoundChannel::Directions dir);
+    PBoolean OpenAudio(enum PSoundChannel::Directions dir);
 
     PINDEX             currentVolume;
     TestAudioDevice    &controller;
     PSoundChannel      sound;
-    BOOL               keepGoing;
+    PBoolean               keepGoing;
     PINDEX             iterations;
 };
 

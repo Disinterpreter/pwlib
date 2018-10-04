@@ -3,7 +3,7 @@
  *
  * Thread synchronisation semaphore class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -26,87 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: semaphor.h,v $
- * Revision 1.21  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.20  2005/11/14 22:29:13  csoutheren
- * Reverted Wait and Signal to non-const - there is no way we can guarantee that all
- * descendant classes everywhere will be changed over, so we have to keep the
- * original  API
- *
- * Revision 1.19  2005/11/04 06:34:20  csoutheren
- * Added new class PSync as abstract base class for all mutex/sempahore classes
- * Changed PCriticalSection to use Wait/Signal rather than Enter/Leave
- * Changed Wait/Signal to be const member functions
- * Renamed PMutex to PTimedMutex and made PMutex synonym for PCriticalSection.
- * This allows use of very efficient mutex primitives in 99% of cases where timed waits
- * are not needed
- *
- * Revision 1.18  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.17  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.16  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.15  2002/01/23 04:26:36  craigs
- * Added copy constructors for PSemaphore, PMutex and PSyncPoint to allow
- * use of default copy constructors for objects containing instances of
- * these classes
- *
- * Revision 1.14  2001/11/23 00:55:18  robertj
- * Changed PWaitAndSignal so works inside const functions.
- *
- * Revision 1.13  2001/06/01 04:00:21  yurik
- * Removed dependency on obsolete function
- *
- * Revision 1.12  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.11  2001/04/23 00:34:29  robertj
- * Added ability for PWaitAndSignal to not wait on semaphore.
- *
- * Revision 1.10  2001/01/27 23:40:09  yurik
- * WinCE port-related - CreateEvent used instead of CreateSemaphore
- *
- * Revision 1.9  2000/12/19 22:20:26  dereks
- * Add video channel classes to connect to the PwLib PVideoInputDevice class.
- * Add PFakeVideoInput class to generate test images for video.
- *
- * Revision 1.8  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.7  1999/02/16 08:11:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.6  1998/11/19 05:17:37  robertj
- * Added PWaitAndSignal class for easier mutexing.
- *
- * Revision 1.5  1998/09/23 06:21:19  robertj
- * Added open source copyright license.
- *
- * Revision 1.4  1998/03/20 03:16:11  robertj
- * Added special classes for specific sepahores, PMutex and PSyncPoint.
- *
- * Revision 1.3  1995/12/10 11:34:50  robertj
- * Fixed incorrect order of parameters in semaphore constructor.
- *
- * Revision 1.2  1995/11/21 11:49:42  robertj
- * Added timeout on semaphore wait.
- *
- * Revision 1.1  1995/08/01 21:41:24  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PSEMAPHORE
-#define _PSEMAPHORE
+#ifndef PTLIB_SEMAPHORE_H
+#define PTLIB_SEMAPHORE_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -114,24 +40,25 @@
 
 #include <ptlib/psync.h>
 #include <limits.h>
+#include <ptlib/critsec.h>
 
-/**This class defines a thread synchonisation object. This is in the form of a
+/**This class defines a thread synchronisation object. This is in the form of a
    integer semaphore. The semaphore has a count and a maximum value. The
-   various combinations of count and usage of the #Wait()# and
-   #Signal()# functions determine the type of synchronisation mechanism
+   various combinations of count and usage of the Wait() and
+   Signal() functions determine the type of synchronisation mechanism
    to be employed.
 
-   The #Wait()# operation is that if the semaphore count is > 0,
+   The Wait() operation is that if the semaphore count is > 0,
    decrement the semaphore and return. If it is = 0 then wait (block).
 
-   The #Signal()# operation is that if there are waiting threads then
+   The Signal() operation is that if there are waiting threads then
    unblock the first one that was blocked. If no waiting threads and the count
    is less than the maximum then increment the semaphore.
 
    The most common is to create a mutual exclusion zone. A mutex is where a
    piece of code or data cannot be accessed by more than one thread at a time.
    To prevent this the PSemaphore is used in the following manner:
-\begin{verbatim}
+<pre><code>
       PSemaphore mutex(1, 1);  // Maximum value of 1 and initial value of 1.
 
       ...
@@ -143,10 +70,10 @@
       mutex.Signal();
 
       ...
-\end{verbatim}
-    The first thread will pass through the #Wait()# function, a second
+</code></pre>
+    The first thread will pass through the Wait() function, a second
     thread will block on that function until the first calls the
-    #Signal()# function, releasing the second thread.
+    Signal() function, releasing the second thread.
  */
 class PSemaphore : public PSync
 {
@@ -164,7 +91,7 @@ class PSemaphore : public PSync
       unsigned maximum  ///< Maximum value for semaphore count.
     );
 
-    /** Create a new Semaphore with the same initial and maximum values as the original
+    /** Create a new semaphore with the same initial and maximum values as the original.
      */
     PSemaphore(const PSemaphore &);
 
@@ -185,9 +112,9 @@ class PSemaphore : public PSync
        if is = 0 then wait (block) for the specified amount of time.
 
        @return
-       TRUE if semaphore was signalled, FALSE if timed out.
+       true if semaphore was signalled, false if timed out.
      */
-    virtual BOOL Wait(
+    virtual PBoolean Wait(
       const PTimeInterval & timeout // Amount of time to wait for semaphore.
     );
 
@@ -197,13 +124,13 @@ class PSemaphore : public PSync
      */
     virtual void Signal();
 
-    /**Determine if the semaphore would block if the #Wait()# function
+    /**Determine if the semaphore would block if the Wait() function
        were called.
 
        @return
-       TRUE if semaphore will block when Wait() is called.
+       true if semaphore will block when Wait() is called.
      */
-    virtual BOOL WillBlock() const;
+    virtual PBoolean WillBlock() const;
   //@}
 
   private:
@@ -218,6 +145,8 @@ class PSemaphore : public PSync
 #endif
 };
 
-#endif
+
+#endif // PTLIB_SEMAPHORE_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

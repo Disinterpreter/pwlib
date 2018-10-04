@@ -26,84 +26,9 @@
  *
  * Contributor(s): Yuri Kiryanov, ykiryanov at users.sourceforge.net
  *
- * $Log: tlibbe.cxx,v $
- * Revision 1.33  2004/10/26 18:29:41  ykiryanov
- * Added ostream::write and istream::read with 2nd param as streamsize to please
- * New toolchain
- *
- * Revision 1.32  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.31  2004/05/30 04:48:15  ykiryanov
- * Sync point is better when semaphore based
- *
- * Revision 1.30  2004/05/24 04:17:16  ykiryanov
- * Made PSyncPoint::Wait to return FALSE if called with timeout 0
- *
- * Revision 1.29  2004/05/23 22:20:37  ykiryanov
- * Got rid of 2 housekeeper thread problem
- *
- * Revision 1.28  2004/05/21 00:49:16  csoutheren
- * Added PreShutdown to ~PProcess
- *
- * Revision 1.27  2004/05/02 18:00:54  ykiryanov
- * Renamed unblock pipe to make code compatible with socket code
- *
- * Revision 1.26  2004/05/02 16:59:09  ykiryanov
- * Fixed assert in setting priority to threads
- *
- * Revision 1.25  2004/04/30 16:10:20  ykiryanov
- * Added PMutex code based on BLocker to support recursive locks
- *
- * Revision 1.24  2004/04/25 21:51:37  ykiryanov
- * Cleaned up thread termination act. Very cool
- *
- * Revision 1.23  2004/04/25 04:32:37  ykiryanov
- * Fixed very old bug - no get thread id code in InitialiseProcessThread
- *
- * Revision 1.22  2004/04/18 00:23:40  ykiryanov
- * Rearranged code to be more reliable. We nearly there
- *
- * Revision 1.21  2004/04/02 03:17:19  ykiryanov
- * New version, improved
- *
- * Revision 1.20  2004/02/23 23:40:42  ykiryanov
- * Added missing constructor for PMutex
- *
- * Revision 1.19  2004/02/23 21:23:09  ykiryanov
- * Removed assert line to enable semaphore constructor
- *
- * Revision 1.18  2004/02/23 20:37:17  ykiryanov
- * Changed function definition PXBlockIO to prototype one
- *
- * Revision 1.17  2004/02/23 18:10:39  ykiryanov
- * Added a parameter to semaphore constructor to avoid ambiguity
- *
- * Revision 1.16  2004/02/23 00:02:20  ykiryanov
- * Changed my e-mail to ykiryanov at users.sourceforge.net. Just in case someone wants to collaborate
- *
- * Revision 1.15  2004/02/22 23:59:28  ykiryanov
- * Added missing functions: PProcess::SetMaxHandles(), PThread::GetCurrentThreadId(), 
- * PThread::PXAbortBlock(), PSyncPoint::Signal(), ::Wait(), ::Wait(timeout), ::WillBlock()
- *
- * Revision 1.14  2004/02/22 04:35:04  ykiryanov
- * Removed PMutex desctructor
- *
- * Revision 1.13  2003/02/26 01:13:18  robertj
- * Fixed race condition where thread can terminatebefore an IsSuspeded() call
- *   occurs and cause an assert, thanks Sebastian Meyer
- *
- * Revision 1.12  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.11  2001/03/07 06:57:32  yurik
- * Changed email to current one
- *
- * Revision 1.10  2001/01/16 12:32:06  rogerh
- * Remove duplicate SetAutoDelete() function. Submitted by
- * Jac Goudsmit <jac_goudsmit@yahoo.com>
- *
- *
+ * $Revision: 27623 $
+ * $Author: rjongbloed $
+ * $Date: 2012-05-14 19:03:37 -0500 (Mon, 14 May 2012) $
  */
 
 class PThread;
@@ -144,39 +69,42 @@ int32 PThread::ThreadFunction(void * threadPtr)
 
   PProcess & process = PProcess::Current();
 
-  process.threadMutex.Wait();
+  process.activeThreadMutex.Wait();
   process.activeThreads.SetAt((unsigned) thread->mId, thread);
-  process.threadMutex.Signal();
+  process.activeThreadMutex.Signal();
+
+  process.OnThreadStart(*thread);
 
   thread->Main();
+
+  process.OnThreadEnded(*thread);
 
   return 0;
 }
 
 PThread::PThread()
- : autoDelete(TRUE),
-   mId(B_BAD_THREAD_ID),
-   mPriority(B_NORMAL_PRIORITY),
-   mStackSize(0),
-   mSuspendCount(0)
+ : autoDelete(false)
+ , mId(find_thread(NULL))
+ , mPriority(B_NORMAL_PRIORITY)
+ , mStackSize(0)
+ , mSuspendCount(1)
 {
-}
-
-void PThread::InitialiseProcessThread()
-{
-  autoDelete = FALSE;
-
-  mId = find_thread(NULL);
-  mPriority = B_NORMAL_PRIORITY;
-  mStackSize = 0;
-  mSuspendCount = 1;
-  
-  PAssert(::pipe(unblockPipe) == 0, "Pipe creation failed in InitialiseProcessThread!");
+  PAssert(::pipe(unblockPipe) == 0, "Pipe creation failed in PThread::PThread()!");
   PAssertOS(unblockPipe[0]);
   PAssertOS(unblockPipe[1]);
-  
-  ((PProcess *)this)->activeThreads.DisallowDeleteObjects();
-  ((PProcess *)this)->activeThreads.SetAt(mId, this);
+
+  if (!PProcess::IsInitialised())
+    return;
+
+  autoDelete = true;
+
+  PProcess & process = PProcess::Current();
+
+  process.activeThreadMutex.Wait();
+  process.activeThreads.SetAt(PX_threadId, this);
+  process.activeThreadMutex.Signal();
+
+  process.SignalTimerChange();
 }
 
 PThread::PThread(PINDEX stackSize,
@@ -209,24 +137,15 @@ PThread::PThread(PINDEX stackSize,
   PX_NewHandle("Thread unblock pipe", PMAX(unblockPipe[0], unblockPipe[1]));
 }
 
-PThread * PThread::Current()
-{
-  PProcess & process = PProcess::Current();
-  process.threadMutex.Wait();
-  PThread * thread = process.activeThreads.GetAt((unsigned)find_thread(NULL));
-  process.threadMutex.Signal();
-  return thread;    
-}
-
 PThread::~PThread()
 {
   // if we are not process, remove this thread from the active thread list
   PProcess & process = PProcess::Current();
   if(process.GetThreadId() != GetThreadId())
   {
-    process.threadMutex.Wait();
+    process.activeThreadMutex.Wait();
     process.activeThreads.RemoveAt((unsigned) mId);
-    process.threadMutex.Signal();
+    process.activeThreadMutex.Signal();
   }
 
   if (!IsTerminated())
@@ -274,7 +193,7 @@ void PThread::Terminate()
    ::kill_thread(0);
 }
 
-BOOL PThread::IsTerminated() const
+PBoolean PThread::IsTerminated() const
 {
   return mId == B_BAD_THREAD_ID;
 }
@@ -286,32 +205,32 @@ void PThread::WaitForTermination() const
 }
 
 
-BOOL PThread::WaitForTermination(const PTimeInterval & /*maxWait*/) const // Fix timeout
+PBoolean PThread::WaitForTermination(const PTimeInterval & /*maxWait*/) const // Fix timeout
 {
   status_t result = B_NO_ERROR;
   status_t exit_value = B_NO_ERROR;
 
   result = ::wait_for_thread(mId, &exit_value);
   if ( result == B_INTERRUPTED ) { // thread was killed.
-    return TRUE;
+    return PTrue;
   }
 
   if ( result == B_OK ) { // thread is dead
     #ifdef DEBUG_THREADS
     PError << "B_OK" << endl;
     #endif
-    return TRUE;
+    return PTrue;
   }
 
   if ( result == B_BAD_THREAD_ID ) { // thread has invalid id
-    return TRUE;
+    return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-void PThread::Suspend(BOOL susp)
+void PThread::Suspend(PBoolean susp)
 {
 
   PAssert(!IsTerminated(), "Operation on terminated thread");
@@ -339,7 +258,7 @@ void PThread::Resume()
 }
 
 
-BOOL PThread::IsSuspended() const
+PBoolean PThread::IsSuspended() const
 {
   return (mSuspendCount > 0);
 }
@@ -504,22 +423,20 @@ void PThread::PXAbortBlock(void) const
 PDECLARE_CLASS(PHouseKeepingThread, PThread)
   public:
     PHouseKeepingThread()
-      : PThread(1000, NoAutoDeleteThread, NormalPriority, "Housekeeper")
-      { closing = FALSE; Resume(); }
+      : PThread(1000, NoAutoDeleteThread, HighestPriority, "Housekeeper")
+      { closing = PFalse; Resume(); }
 
     void Main();
-    void SetClosing() { closing = TRUE; }
+    void SetClosing() { closing = PTrue; }
 
   protected:
-    BOOL closing;
+    PBoolean closing;
 };
 
 void PProcess::Construct()
 {
   maxHandles = FOPEN_MAX;
   PTRACE(4, "PWLib\tMaximum per-process file handles is " << maxHandles);
-
-  ::pipe(timerChangePipe);
 
   // initialise the housekeeping thread
   housekeepingThread = NULL;
@@ -534,14 +451,7 @@ void PHouseKeepingThread::Main()
   while (!closing) {
     PTimeInterval delay = process.timers.Process();
 
-    int fd = process.timerChangePipe[0];
-
-    P_fd_set read_fds = fd;
-    P_timeval tval = delay;
-    if (::select(fd+1, read_fds, NULL, NULL, tval) == 1) {
-      BYTE ch;
-      ::read(fd, &ch, 1);
-    }
+    globalBreakBlock.Wait(delay);
 
     process.PXCheckSignals();
   }    
@@ -549,18 +459,20 @@ void PHouseKeepingThread::Main()
 
 void PProcess::SignalTimerChange()
 {
+  if (!PAssert(IsInitialised(), PLogicError) || m_shuttingDown) 
+    return false;
+
   if (housekeepingThread == NULL)
   {  
     housekeepingThread = new PHouseKeepingThread;
   }
 
-  BYTE ch;
-  write(timerChangePipe[1], &ch, 1);
+  globalBreakBlock.Signal();
 }
 
-BOOL PProcess::SetMaxHandles(int newMax)
+PBoolean PProcess::SetMaxHandles(int newMax)
 {
-  return FALSE;
+  return PFalse;
 }
 
 PProcess::~PProcess()
@@ -576,11 +488,12 @@ PProcess::~PProcess()
   }
 
   CommonDestruct();
+  PostShutdown();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // PSemaphore
-PSemaphore::PSemaphore(BOOL fNested) : mfNested(fNested)
+PSemaphore::PSemaphore(PBoolean fNested) : mfNested(fNested)
 {
 }
 
@@ -674,7 +587,7 @@ void PSemaphore::Wait()
   }
 }
 
-BOOL PSemaphore::Wait(const PTimeInterval & timeout)
+PBoolean PSemaphore::Wait(const PTimeInterval & timeout)
 {
   PInt64 ms = timeout.GetMilliSeconds();
   bigtime_t microseconds = ms * 1000;
@@ -704,7 +617,7 @@ BOOL PSemaphore::Wait(const PTimeInterval & timeout)
     result = ((BLocker*)semId)->LockWithTimeout(microseconds); // Using BLocker class to support recursive locks 
   }
 
-  return ms == 0 ? FALSE : result == B_OK;
+  return ms == 0 ? PFalse : result == B_OK;
 }
 
 void PSemaphore::Signal()
@@ -726,7 +639,7 @@ void PSemaphore::Signal()
    }		
 }
 
-BOOL PSemaphore::WillBlock() const
+PBoolean PSemaphore::WillBlock() const
 {
   if(!mfNested)
   {
@@ -751,7 +664,7 @@ BOOL PSemaphore::WillBlock() const
 // PSyncPoint
 
 PSyncPoint::PSyncPoint()
- : PSemaphore(FALSE) // FALSE is semaphore based, TRUE means implemented through BLocker
+ : PSemaphore(PFalse) // PFalse is semaphore based, PTrue means implemented through BLocker
 {
    PSemaphore::Create(0);
 }
@@ -766,12 +679,12 @@ void PSyncPoint::Wait()
   PSemaphore::Wait();
 }
                                                                                                       
-BOOL PSyncPoint::Wait(const PTimeInterval & timeout)
+PBoolean PSyncPoint::Wait(const PTimeInterval & timeout)
 {
   return PSemaphore::Wait(timeout);
 }
                                                                                                       
-BOOL PSyncPoint::WillBlock() const
+PBoolean PSyncPoint::WillBlock() const
 {
   return PSemaphore::WillBlock();
 }
@@ -780,13 +693,13 @@ BOOL PSyncPoint::WillBlock() const
 // PMutex, derived from BLightNestedLocker  
 
 PMutex::PMutex() 
-  : PSemaphore(TRUE) // TRUE means implemented through BLocker
+  : PSemaphore(PTrue) // PTrue means implemented through BLocker
 {
   PSemaphore::Create(0);
 }
 
 PMutex::PMutex(const PMutex&) 
- : PSemaphore(TRUE)
+ : PSemaphore(PTrue)
 {
   PAssertAlways("PMutex copy constructor not supported");
 } 
@@ -801,12 +714,12 @@ void PMutex::Wait()
   PSemaphore::Wait();
 }
                                                                                                       
-BOOL PMutex::Wait(const PTimeInterval & timeout)
+PBoolean PMutex::Wait(const PTimeInterval & timeout)
 {
   return PSemaphore::Wait(timeout);
 }
                                                                                                       
-BOOL PMutex::WillBlock() const
+PBoolean PMutex::WillBlock() const
 {
   return PSemaphore::WillBlock();
 }

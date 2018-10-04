@@ -23,36 +23,9 @@
  *
  * Contributor(s): Roger Hardiman <roger@freebsd.org>
  *
- * $Log: dummyvideo.cxx,v $
- * Revision 1.8  2004/01/02 23:30:18  rjongbloed
- * Removed extraneous static function for getting input device names that has been deprecated during the plug ins addition.
- *
- * Revision 1.7  2002/04/10 08:40:36  rogerh
- * Simplify the SetVideoChannelFormat() code. Use the implementation in the
- * ancestor class.
- *
- * Revision 1.6  2002/04/05 06:41:54  rogerh
- * Apply video changes from Damien Sandras <dsandras@seconix.com>.
- * The Video Channel and Format are no longer set in Open(). Instead
- * call the new SetVideoChannelFormat() method. This makes video capture
- * and GnomeMeeting more stable with certain Linux video capture devices.
- *
- * Revision 1.5  2002/01/14 11:52:44  rogerh
- * Add TestAllFormats
- *
- * Revision 1.4  2001/12/05 08:34:41  rogerh
- * Add more dummy functions
- *
- * Revision 1.3  2001/09/24 09:11:07  rogerh
- * Add dummy methods, submitted by Andreas Wrede <awrede@mac.com>
- *
- * Revision 1.2  2001/06/27 17:43:32  rogerh
- * MakeOpen to return FALSE. Also change every things else to return failure.
- *
- * Revision 1.1  2001/06/27 17:27:23  rogerh
- * Dummy video allows code dependent on PVideoInputDevice to compile and link.
- * It has no functionality.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #pragma implementation "videoio.h"
@@ -70,45 +43,45 @@ PVideoInputDevice::PVideoInputDevice()
 }
 
 
-BOOL PVideoInputDevice::Open(const PString & devName, BOOL startImmediate)
+PBoolean PVideoInputDevice::Open(const PString & devName, PBoolean startImmediate)
 {
-  return FALSE;    
+  return PFalse;    
 }
 
 
-BOOL PVideoInputDevice::IsOpen() 
+PBoolean PVideoInputDevice::IsOpen() 
 {
-  return FALSE;    
+  return PFalse;    
 }
 
 
-BOOL PVideoInputDevice::Close()
+PBoolean PVideoInputDevice::Close()
 {
-  return FALSE;    
+  return PFalse;    
 }
 
 
-BOOL PVideoInputDevice::Start()
+PBoolean PVideoInputDevice::Start()
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::Stop()
+PBoolean PVideoInputDevice::Stop()
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::IsCapturing()
+PBoolean PVideoInputDevice::IsCapturing()
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::SetVideoFormat(VideoFormat newFormat)
+PBoolean PVideoInputDevice::SetVideoFormat(VideoFormat newFormat)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -118,9 +91,9 @@ int PVideoInputDevice::GetBrightness()
 }
 
 
-BOOL PVideoInputDevice::SetBrightness(unsigned newBrightness)
+PBoolean PVideoInputDevice::SetBrightness(unsigned newBrightness)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -130,9 +103,9 @@ int PVideoInputDevice::GetHue()
 }
 
 
-BOOL PVideoInputDevice::SetHue(unsigned newHue)
+PBoolean PVideoInputDevice::SetHue(unsigned newHue)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -142,16 +115,16 @@ int PVideoInputDevice::GetContrast()
 }
 
 
-BOOL PVideoInputDevice::SetContrast(unsigned newContrast)
+PBoolean PVideoInputDevice::SetContrast(unsigned newContrast)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::GetParameters (int *whiteness, int *brightness,
+PBoolean PVideoInputDevice::GetParameters (int *whiteness, int *brightness,
                                        int *colour, int *contrast, int *hue)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -161,36 +134,36 @@ int PVideoInputDevice::GetNumChannels()
 }
 
 
-BOOL PVideoInputDevice::SetChannel(int newChannel)
+PBoolean PVideoInputDevice::SetChannel(int newChannel)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::SetColourFormat(const PString & newFormat)
+PBoolean PVideoInputDevice::SetColourFormat(const PString & newFormat)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::SetFrameRate(unsigned rate)
+PBoolean PVideoInputDevice::SetFrameRate(unsigned rate)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::GetFrameSizeLimits(unsigned & minWidth,
+PBoolean PVideoInputDevice::GetFrameSizeLimits(unsigned & minWidth,
                                            unsigned & minHeight,
                                            unsigned & maxWidth,
                                            unsigned & maxHeight) 
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::SetFrameSize(unsigned width, unsigned height)
+PBoolean PVideoInputDevice::SetFrameSize(unsigned width, unsigned height)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -201,15 +174,15 @@ PINDEX PVideoInputDevice::GetMaxFrameBytes()
 
 
 
-BOOL PVideoInputDevice::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PVideoInputDevice::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -217,16 +190,16 @@ void PVideoInputDevice::ClearMapping()
 {
 }
 
-BOOL PVideoInputDevice::VerifyHardwareFrameSize(unsigned width,
+PBoolean PVideoInputDevice::VerifyHardwareFrameSize(unsigned width,
                                                 unsigned height)
 {
 	// Assume the size is valid
-	return TRUE;
+	return PTrue;
 }
 
-BOOL PVideoInputDevice::TestAllFormats()
+PBoolean PVideoInputDevice::TestAllFormats()
 {
-  return TRUE;
+  return PTrue;
 }
     
 // End Of File ///////////////////////////////////////////////////////////////

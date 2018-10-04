@@ -23,98 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: html.h,v $
- * Revision 1.27  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.26  2005/10/30 23:25:51  csoutheren
- * Fixed formatting
- * Removed throw() declarations (PWLib does not do exceptions)
- * Removed duplicate destructor declarations and definitions
- *
- * Revision 1.25  2005/10/30 19:41:53  dominance
- * fixed most of the warnings occuring during compilation
- *
- * Revision 1.24  2005/03/19 02:52:53  csoutheren
- * Fix warnings from gcc 4.1-20050313 shapshot
- *
- * Revision 1.23  2002/11/06 22:47:23  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.22  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.21  2001/02/13 04:39:08  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.20  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.19  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.18  1998/09/23 06:19:27  robertj
- * Added open source copyright license.
- *
- * Revision 1.17  1997/07/08 13:15:31  robertj
- * DLL support.
- *
- * Revision 1.16  1997/06/16 13:18:02  robertj
- * Set Is() function to be const as it should have been.
- *
- * Revision 1.15  1996/08/17 10:00:18  robertj
- * Changes for Windows DLL support.
- *
- * Revision 1.14  1996/06/28 13:08:41  robertj
- * Changed PHTML class so can create html fragments.
- * Fixed nesting problem in tables.
- *
- * Revision 1.13  1996/06/01 04:18:40  robertj
- * Fixed bug in RadioButton, having 2 VALUE fields
- *
- * Revision 1.12  1996/04/14 02:52:02  robertj
- * Added hidden fields to HTML.
- *
- * Revision 1.11  1996/03/12 11:30:00  robertj
- * Fixed resetting of HTML output using operator=.
- *
- * Revision 1.10  1996/03/10 13:14:53  robertj
- * Simplified some of the classes and added catch all string for attributes.
- *
- * Revision 1.9  1996/03/03 07:36:44  robertj
- * Added missing public's to standard character attribute classes.
- *
- * Revision 1.8  1996/02/25 11:14:19  robertj
- * Radio button support for forms.
- *
- * Revision 1.7  1996/02/19 13:18:25  robertj
- * Removed MSC_VER test as now completely removed from WIN16 library.
- *
- * Revision 1.6  1996/02/08 11:50:38  robertj
- * More implementation.
- *
- * Revision 1.5  1996/02/03 11:01:25  robertj
- * Further implementation.
- *
- * Revision 1.4  1996/01/28 14:15:56  robertj
- * More comments.
- *
- * Revision 1.3  1996/01/28 02:45:38  robertj
- * Further implementation.
- *
- * Revision 1.2  1996/01/26 02:24:24  robertj
- * Further implemetation.
- *
- * Revision 1.1  1996/01/24 23:45:37  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PHTML
-#define _PHTML
+#ifndef PTLIB_HTML_H
+#define PTLIB_HTML_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -126,7 +41,7 @@
 // PHTML
 
 /** This class describes a HyperText markup Language string as used by the
-   World Wide Web and the #PURL# and #PHTTPSocket# class.
+   World Wide Web and the <code>PURL</code> and <code>PHTTP</code> class.
    
    All of the standard stream I/O operators, manipulators etc will operate on
    the PString class.
@@ -218,7 +133,7 @@ class PHTML : public PStringStream
 
 
   // New functions for class.
-    BOOL Is(ElementInSet elmt) const;
+    PBoolean Is(ElementInSet elmt) const;
     void Set(ElementInSet elmt);
     void Clr(ElementInSet elmt);
     void Toggle(ElementInSet elmt);
@@ -667,7 +582,7 @@ class PHTML : public PStringStream
         virtual void Output(PHTML & html) const;
         virtual void AddAttr(PHTML & html) const;
       private:
-        BOOL borderFlag;
+        PBoolean borderFlag;
     };
     friend class TableStart;
 
@@ -733,7 +648,7 @@ class PHTML : public PStringStream
         virtual ~FieldElement() {}
         virtual void AddAttr(PHTML & html) const;
       private:
-        BOOL disabledFlag;
+        PBoolean disabledFlag;
     };
 
     class Select : public FieldElement {
@@ -780,7 +695,7 @@ class PHTML : public PStringStream
       protected:
         virtual void AddAttr(PHTML & html) const;
       private:
-        BOOL selectedFlag;
+        PBoolean selectedFlag;
     };
 
     class FormField : public FieldElement {
@@ -962,7 +877,7 @@ class PHTML : public PStringStream
         virtual void AddAttr(PHTML & html) const;
       private:
         const char * valueString;
-        BOOL checkedFlag;
+        PBoolean checkedFlag;
     };
 
     class CheckBox : public RadioButton {
@@ -986,7 +901,32 @@ class PHTML : public PStringStream
     };
 
 
-    class InputRange : public InputField {
+    class InputNumber : public InputField {
+      public:
+        InputNumber(
+          const char * fname,
+          int min, int max,
+          int value = 0,
+          DisableCodes disabled = Enabled,
+          const char * attr = NULL
+        );
+        virtual ~InputNumber() {}
+      protected:
+        InputNumber(
+          const char * type,
+          const char * fname,
+          int min, int max,
+          int value,
+          DisableCodes disabled,
+          const char * attr
+        );
+        virtual void AddAttr(PHTML & html) const;
+      private:
+        void Construct(int min, int max, int value);
+        int minValue, maxValue, initValue;
+    };
+
+    class InputRange : public InputNumber {
       public:
         InputRange(
           const char * fname,
@@ -996,10 +936,6 @@ class PHTML : public PStringStream
           const char * attr = NULL
         );
         virtual ~InputRange() {}
-      protected:
-        virtual void AddAttr(PHTML & html) const;
-      private:
-        int minValue, maxValue, initValue;
     };
 
     class InputFile : public InputField {
@@ -1097,7 +1033,7 @@ class PHTML : public PStringStream
 };
 
 
-#endif
+#endif // PTLIB_HTML_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

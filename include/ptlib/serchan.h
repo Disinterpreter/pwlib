@@ -26,68 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: serchan.h,v $
- * Revision 1.18  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.17  2005/02/20 21:18:30  dereksmithies
- * Fix documentation typos.
- *
- * Revision 1.16  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.15  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.14  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.13  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.12  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.11  1999/02/16 08:11:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.10  1998/09/23 06:21:21  robertj
- * Added open source copyright license.
- *
- * Revision 1.9  1995/07/31 12:15:46  robertj
- * Removed PContainer from PChannel ancestor.
- *
- * Revision 1.8  1995/06/17 11:13:18  robertj
- * Documentation update.
- *
- * Revision 1.7  1995/03/14 12:42:33  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.6  1995/01/14  06:19:37  robertj
- * Documentation
- *
- * Revision 1.5  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.4  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.3  1994/07/17  10:46:06  robertj
- * Moved data to PChannel class.
- *
- * Revision 1.2  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.1  1994/04/20  12:17:44  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PSERIALCHANNEL
-#define _PSERIALCHANNEL
+#ifndef PTLIB_SERIALCHANNEL_H
+#define PTLIB_SERIALCHANNEL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -148,7 +93,7 @@ class PSerialChannel : public PChannel
     PSerialChannel(
       /**The name of the serial port to connect to. This is a platform
          dependent string and woiuld rarely be a literal. The static function
-         #GetPortNames()# can be used to find the platforms serial ports.
+         <code>GetPortNames()</code> can be used to find the platforms serial ports.
        */
       const PString & port,
       /**Serial port speed or baud rate. The actual values possible here are
@@ -161,8 +106,8 @@ class PSerialChannel : public PChannel
        */
       BYTE data = 0,
       /**Parity for serial port. The actual values possible here are platform
-         dependent, but #NoParity#, #OddParity# and
-         #EvenParity# should always be legal.
+         dependent, but <code>NoParity</code>, <code>OddParity</code> and
+         <code>EvenParity</code> should always be legal.
        */
       Parity parity = DefaultParity,
       /**Number of stop bits for serial port. The actual values possible here
@@ -175,6 +120,7 @@ class PSerialChannel : public PChannel
       FlowControl outputFlow = DefaultFlowControl      
     );
 
+#if P_CONFIG_FILE
     /**Create a serial channal.
        The channel is opened using attributes obtained from standard variables
        in the configuration file. Note that it assumed that the correct
@@ -183,6 +129,7 @@ class PSerialChannel : public PChannel
     PSerialChannel(
       PConfig & cfg  ///< Configuration file to read serial port attributes from.
     );
+#endif // P_CONFIG_FILE
 
     /// Close the serial channel on destruction.
     ~PSerialChannel();
@@ -195,10 +142,10 @@ class PSerialChannel : public PChannel
        The channel is opened it on the specified port and with the specified
        attributes.
      */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       /**The name of the serial port to connect to. This is a platform
          dependent string and woiuld rarely be a literal. The static function
-         #GetPortNames()# can be used to find the platforms serial ports.
+         <code>GetPortNames()</code> can be used to find the platforms serial ports.
        */
       const PString & port,
       /**Serial port speed or baud rate. The actual values possible here are
@@ -211,8 +158,8 @@ class PSerialChannel : public PChannel
        */
       BYTE data = 0,
       /**Parity for serial port. The actual values possible here are platform
-         dependent, but #NoParity#, #OddParity# and
-         #EvenParity# should always be legal.
+         dependent, but <code>NoParity</code>, <code>OddParity</code> and
+         <code>EvenParity</code> should always be legal.
        */
       Parity parity = DefaultParity,
       /**Number of stop bits for serial port. The actual values possible here
@@ -225,14 +172,16 @@ class PSerialChannel : public PChannel
       FlowControl outputFlow = DefaultFlowControl      
     );
 
+#if P_CONFIG_FILE
     /**Open a serial channal.
        The channel is opened using attributes obtained from standard variables
        in the configuration file. Note that it assumed that the correct
        configuration file section is already set.
      */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       PConfig & cfg  ///< Configuration file to read serial port attributes from.
     );
+#endif // P_CONFIG_FILE
 
     /**Get a list of the available serial ports. This returns a set of
        platform dependent strings which describe the serial ports of the
@@ -251,9 +200,9 @@ class PSerialChannel : public PChannel
     /**Set the speed (baud rate) of the serial channel.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetSpeed(
+    PBoolean SetSpeed(
       DWORD speed   ///< New speed for serial channel.
     );
 
@@ -267,9 +216,9 @@ class PSerialChannel : public PChannel
     /**Set the data bits (5, 6, 7 or 8) of the serial port.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetDataBits(
+    PBoolean SetDataBits(
       BYTE data   ///< New number of data bits for serial channel.
     );
 
@@ -283,9 +232,9 @@ class PSerialChannel : public PChannel
     /**Set the parity of the serial port.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetParity(
+    PBoolean SetParity(
       Parity parity   ///< New parity option for serial channel.
     );
 
@@ -299,9 +248,9 @@ class PSerialChannel : public PChannel
     /**Set the stop bits (1 or 2) of the serial port.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetStopBits(
+    PBoolean SetStopBits(
       BYTE stop   ///< New number of stop bits for serial channel.
     );
 
@@ -316,9 +265,9 @@ class PSerialChannel : public PChannel
        port.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetInputFlowControl(
+    PBoolean SetInputFlowControl(
       FlowControl flowControl   ///< New flow control for serial channel input.
     );
 
@@ -334,9 +283,9 @@ class PSerialChannel : public PChannel
        port.
 
        @return
-       TRUE if the change was successfully made.
+       true if the change was successfully made.
      */
-    BOOL SetOutputFlowControl(
+    PBoolean SetOutputFlowControl(
       FlowControl flowControl   ///< New flow control for serial channel output.
     );
 
@@ -348,12 +297,14 @@ class PSerialChannel : public PChannel
      */
     FlowControl GetOutputFlowControl() const;
 
+#if P_CONFIG_FILE
     /**Save the current port settings into the configuration file. Note that
        it assumed that the correct configuration file section is already set.
      */
     virtual void SaveSettings(
       PConfig & cfg   ///< Configuration file to save setting into.
     );
+#endif // P_CONFIG_FILE
   //@}
 
 
@@ -361,61 +312,61 @@ class PSerialChannel : public PChannel
   //@{
     /** Set the Data Terminal Ready signal of the serial port. */
     void SetDTR(
-      BOOL state = TRUE   ///< New state of the DTR signal.
+      PBoolean state = true   ///< New state of the DTR signal.
     );
 
     /**Clear the Data Terminal Ready signal of the serial port. This is
-       equivalent to #SetDTR(FALSE)#.
+       equivalent to <code>SetDTR(false)</code>.
      */
     void ClearDTR();
 
     /**Set the Request To Send signal of the serial port. */
     void SetRTS(
-      BOOL state = TRUE   ///< New state of the RTS signal.
+      PBoolean state = true   ///< New state of the RTS signal.
     );
 
     /**Clear the Request To Send signal of the serial port. This is equivalent
-       to #SetRTS(FALSE)#.
+       to <code>SetRTS(false)</code>.
      */
     void ClearRTS();
 
     /** Set the break condition of the serial port. */
     void SetBreak(
-      BOOL state = TRUE   ///< New state of the serial port break condition.
+      PBoolean state = true   ///< New state of the serial port break condition.
     );
 
     /**Clear the break condition of the serial port. This is equivalent to
-       #SetBreak(FALSE)#.
+       <code>SetBreak(false)</code>.
      */
     void ClearBreak();
 
     /**Get the Clear To Send signal of the serial port.
     
        @return
-       TRUE if the CTS signal is asserted.
+       true if the CTS signal is asserted.
      */
-    BOOL GetCTS();
+    PBoolean GetCTS();
 
     /**Get the Data Set Ready signal of the serial port.
     
        @return
-       TRUE if the DSR signal is asserted.
+       true if the DSR signal is asserted.
      */
-    BOOL GetDSR();
+    PBoolean GetDSR();
 
     /**Get the Data Carrier Detect signal of the serial port.
     
        @return
-       TRUE if the DCD signal is asserted.
+       true if the DCD signal is asserted.
      */
-    BOOL GetDCD();
+    PBoolean GetDCD();
 
     /**Get the Ring Indicator signal of the serial port.
     
        @return
-       TRUE if the RI signal is asserted.
+       true if the RI signal is asserted.
      */
-    BOOL GetRing();
+    PBoolean GetRing();
   //@}
 
 
@@ -432,6 +383,8 @@ class PSerialChannel : public PChannel
 #endif
 };
 
-#endif
+
+#endif // PTLIB_SERIALCHANNEL_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

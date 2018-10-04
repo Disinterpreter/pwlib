@@ -26,17 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pvidfile.cxx,v $
- * Revision 1.3  2006/02/24 04:51:26  csoutheren
- * Fixed problem with using CIF from video files
- * Added support for video files in y4m format
- *
- * Revision 1.2  2006/02/20 06:49:45  csoutheren
- * Added video file and video file input device code
- *
- * Revision 1.1  2006/02/20 06:17:28  csoutheren
- * Added ability to read video from a file
- *
+ * $Revision: 26686 $
+ * $Author: rjongbloed $
+ * $Date: 2011-11-23 20:22:20 -0600 (Wed, 23 Nov 2011) $
  */
 
 #ifdef __GNUC__
@@ -45,170 +37,178 @@
 
 #include <ptlib.h>
 
+#if P_VIDEO
 #if P_VIDFILE
 
 #include <ptclib/pvidfile.h>
+#include <ptlib/videoio.h>
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
 PVideoFile::PVideoFile()
+  : m_fixedFrameSize(false)
+  , m_fixedFrameRate(false)
+  , m_frameBytes(CalculateFrameBytes())
+  , m_headerOffset(0)
 {
-  yuvSize = yuvWidth = yuvHeight = 0;
 }
 
-PVideoFile::PVideoFile(PINDEX width,
-                       PINDEX height,
-                     OpenMode mode,
-                          int opts)
-  : PFile(mode, opts), yuvWidth(width), yuvHeight(height)
+
+PBoolean PVideoFile::Open(const PFilePath & name, PFile::OpenMode mode, int opts)
 {
-  yuvSize = yuvWidth * yuvHeight * 3 / 2;
+  static PRegularExpression res("_(sqcif|qcif|cif|cif4|cif16|[0-9]+x[0-9]+)[^a-z0-9]", PRegularExpression::Extended|PRegularExpression::IgnoreCase);
+  static PRegularExpression fps("_[0-9]+fps[^a-z]",     PRegularExpression::Extended|PRegularExpression::IgnoreCase);
+
+  PINDEX pos, len;
+
+  if (name.FindRegEx(res, pos, len)) {
+    m_fixedFrameSize = Parse(name.Mid(pos+1, len-2));
+    if (m_fixedFrameSize)
+      m_frameBytes = CalculateFrameBytes();
+  }
+
+  if ((pos = name.FindRegEx(fps)) != P_MAX_INDEX)
+    m_fixedFrameRate = PVideoFrameInfo::SetFrameRate(name.Mid(pos+1).AsUnsigned());
+
+  return m_file.Open(name, mode, opts);
 }
 
-PVideoFile::PVideoFile(PINDEX width, 
-                       PINDEX height, 
-            const PFilePath & name,
-                     OpenMode mode,
-                          int opts)
-  : PFile(name, mode, opts), yuvWidth(width), yuvHeight(height)
+
+PBoolean PVideoFile::WriteFrame(const void * frame)
 {
-  yuvSize = yuvWidth * yuvHeight * 3 / 2;
+  return m_file.Write(frame, m_frameBytes);
 }
 
-void PVideoFile::SetWidth(PINDEX v)    
-{ 
-  yuvWidth = v; 
-  yuvSize = yuvWidth * yuvHeight * 3 / 2;
+
+PBoolean PVideoFile::ReadFrame(void * frame)
+{
+  if (m_file.Read(frame, m_frameBytes) && m_file.GetLastReadCount() == m_frameBytes)
+    return true;
+
+#if PTRACING
+  if (m_file.GetErrorCode(PFile::LastReadError) != PFile::NoError)
+    PTRACE(2, "VidFile\tError reading file \"" << m_file.GetFilePath()
+           << "\" - " << m_file.GetErrorText(PFile::LastReadError));
+  else
+    PTRACE(4, "VidFile\tEnd of file \"" << m_file.GetFilePath() << '"');
+#endif
+  return false;
 }
 
-void PVideoFile::SetHeight(PINDEX v)   
-{ 
-  yuvHeight = v; 
-  yuvSize = yuvWidth * yuvHeight * 3 / 2;
+
+off_t PVideoFile::GetLength() const
+{
+  off_t len = m_file.GetLength();
+  return len < m_headerOffset ? 0 : ((len - m_headerOffset)/m_frameBytes);
 }
+
+
+PBoolean PVideoFile::SetLength(off_t len)
+{
+  return m_file.SetLength(len*m_frameBytes + m_headerOffset);
+}
+
+
+off_t PVideoFile::GetPosition() const
+{
+  off_t pos = m_file.GetPosition();
+  return pos < m_headerOffset ? 0 : ((pos - m_headerOffset)/m_frameBytes);
+}
+
+
+PBoolean PVideoFile::SetPosition(off_t pos, PFile::FilePositionOrigin origin)
+{
+  pos *= m_frameBytes;
+  if (origin == PFile::Start)
+    pos += m_headerOffset;
+
+  return m_file.SetPosition(pos, origin);
+}
+
+
+PBoolean PVideoFile::SetFrameSize(unsigned width, unsigned height)
+{
+  if (frameWidth == width && frameHeight == height)
+    return true;
+
+  if (m_fixedFrameSize)
+    return false;
+
+  if (!PVideoFrameInfo::SetFrameSize(width, height))
+    return false;
+
+  m_frameBytes = CalculateFrameBytes();
+  return m_frameBytes > 0;
+}
+
+
+PBoolean PVideoFile::SetFrameRate(unsigned rate)
+{
+  if (frameRate == rate)
+    return true;
+
+  if (m_fixedFrameRate)
+    return false;
+  
+  return PVideoFrameInfo::SetFrameRate(rate);
+}
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 
+PFACTORY_CREATE(PFactory<PVideoFile>, PYUVFile, "yuv", false);
+static PFactory<PVideoFile>::Worker<PYUVFile> y4mFileFactory("y4m");
+
+
 PYUVFile::PYUVFile()
-  : PVideoFile()
+  : m_y4mMode(false)
 {
-  Construct();
-}
-
-PYUVFile::PYUVFile(PINDEX width,
-                   PINDEX height,
-                 OpenMode mode,
-                      int opts)
-  : PVideoFile(width, height, mode, opts)
-{
-  Construct();
-}
-
-PYUVFile::PYUVFile(PINDEX width, 
-                   PINDEX height, 
-        const PFilePath & name,
-                 OpenMode mode,
-                      int opts)
-  : PVideoFile(width, height, name, mode, opts)
-{
-  Construct();
-}
-
-void PYUVFile::Construct()
-{
-  offset = 0;
-  y4mMode = FALSE;
 }
 
 
-BOOL PYUVFile::Open(OpenMode mode, int opts)
+PBoolean PYUVFile::Open(const PFilePath & name, PFile::OpenMode mode, int opts)
 {
-  if (!(PFile::Open(mode, opts)))
-    return FALSE;
+  if (!PVideoFile::Open(name, mode, opts))
+    return false;
 
-  y4mMode = GetFilePath().GetType() *= ".y4m";
+  m_y4mMode = name.GetType() *= ".y4m";
 
-  if (offset != 0)
-    PFile::SetPosition(offset);
-
-  if (y4mMode) {
+  if (m_y4mMode) {
     int ch;
     do {
-      if ((ch = PFile::ReadChar()) < 0)
-        return FALSE;
+      if ((ch = m_file.ReadChar()) < 0)
+        return false;
     }
-    while (ch != 0x0a);
+    while (ch != '\n');
+    m_headerOffset = m_file.GetPosition();
   }
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PYUVFile::Open(const PFilePath & name, OpenMode mode, int opts)
+PBoolean PYUVFile::WriteFrame(const void * frame)
 {
-  if (IsOpen())
-    Close();
-  SetFilePath(name);
-  return Open(mode, opts);
+  if (m_y4mMode)
+    m_file.WriteChar('\n');
+
+  return m_file.Write(frame, m_frameBytes);
 }
 
-BOOL PYUVFile::WriteFrame(const void * frame)
-{
-  return PFile::Write(frame, yuvSize);
-}
 
-BOOL PYUVFile::ReadFrame(void * frame)
+PBoolean PYUVFile::ReadFrame(void * frame)
 {
-  if (y4mMode) {
-    int ch;
-    do {
-      if ((ch = PFile::ReadChar()) < 0)
-        return FALSE;
-    }
-    while (ch != 0x0a);
+  if (m_y4mMode) {
+    PString info;
+    info.ReadFrom(m_file);
+    PTRACE(4, "VidFile\ty4m \"" << info << '"');
   }
 
-  if (!PFile::Read(frame, yuvSize)) {
-    PTRACE(4, "YUVFILE\tError reading file " << GetErrorText(GetErrorCode(LastReadError)));
-    return FALSE;
-  }
-
-  if (GetLastReadCount() != yuvSize)
-    return FALSE;
-
-  return TRUE;
+  return PVideoFile::ReadFrame(frame);
 }
 
-off_t PYUVFile::GetLength() const
-{
-  return PFile::GetLength() - offset;
-}
-  
-BOOL PYUVFile::SetLength(off_t len)
-{
-  return PFile::SetLength(len + offset);
-}
-
-BOOL PYUVFile::SetPosition(off_t pos, FilePositionOrigin origin)
-{
-  switch (origin) {
-    case PFile::Start:
-      return PFile::SetPosition(pos + offset, origin);
-
-    case PFile::Current:
-      return PFile::SetPosition(pos, origin);
-
-    case PFile::End:
-      return PFile::SetPosition(offset, origin);
-  }
-
-  return FALSE;
-}
-
-off_t PYUVFile::GetPosition() const
-{
-  return PFile::GetPosition() - offset;
-}
 
 #endif  // P_VIDFILE
-
+#endif  // P_VIDEO

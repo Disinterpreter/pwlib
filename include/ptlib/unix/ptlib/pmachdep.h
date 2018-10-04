@@ -26,182 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pmachdep.h,v $
- * Revision 1.71  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.70  2005/11/25 00:06:12  csoutheren
- * Applied patch #1364593 from Hannes Friederich
- * Also changed so PTimesMutex is no longer descended from PSemaphore on
- * non-Windows platforms
- *
- * Revision 1.69  2005/08/04 20:10:24  csoutheren
- * Apply patch #1217596
- * Fixed problems with MacOSX Tiger
- * Thanks to Hannes Friederich
- *
- * Revision 1.68  2005/08/04 19:46:51  csoutheren
- * Applied patch #1240770
- * Fixed problem with compilation under Solaris 10
- * Thanks to Boris Pavacic
- *
- * Revision 1.67  2004/11/16 00:30:38  csoutheren
- * Added Cygwin support
- *
- * Revision 1.66  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.65  2004/06/17 23:37:04  csoutheren
- * Added definition of upad128_t for Solaris
- *
- * Revision 1.64  2004/05/14 05:23:39  ykiryanov
- * Added stl header
- *
- * Revision 1.63  2004/04/18 05:45:55  ykiryanov
- * Added TCP_NODELAY definition and removed BE_BONELESS. BeOS is boned now
- *
- * Revision 1.62  2004/04/02 03:32:11  ykiryanov
- * Added prototypes for missing dl*() functions
- *
- * Revision 1.61  2004/02/23 20:00:15  ykiryanov
- * Fixed a typo in declaration of setegid(0
- *
- * Revision 1.60  2004/02/22 04:33:19  ykiryanov
- * Added missing prototype for setegid for BeOS
- *
- * Revision 1.59  2004/02/22 03:27:30  ykiryanov
- * Added missing prototype for seteuid for BeOS
- *
- * Revision 1.58  2004/02/21 21:26:30  ykiryanov
- * Added P_THREADIDENTIFIER for BeOS threads
- *
- * Revision 1.57  2003/09/17 01:18:03  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.56  2003/05/06 06:59:12  robertj
- * Dynamic library support for MacOSX, thanks Hugo Santos
- *
- * Revision 1.55  2003/04/23 00:35:47  craigs
- * Fixed problem with pmachdep.h and MacOSX thanks to Hugo Santos
- *
- * Revision 1.54  2003/01/24 10:21:06  robertj
- * Fixed issues in RTEMS support, thanks Vladimir Nesic
- *
- * Revision 1.53  2002/12/02 03:57:18  robertj
- * More RTEMS support patches, thank you Vladimir Nesic.
- *
- * Revision 1.52  2002/11/22 10:14:07  robertj
- * QNX port, thanks Xiaodan Tang
- *
- * Revision 1.51  2002/10/17 13:44:27  robertj
- * Port to RTEMS, thanks Vladimir Nesic.
- *
- * Revision 1.50  2002/10/16 11:29:05  rogerh
- * remove redundant #include.
- *
- * Revision 1.49  2002/10/14 22:41:35  rogerh
- * Wrap _THREAD_SAFE to remove a warning if is already defined.
- *
- * Revision 1.48  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.47  2002/06/27 07:51:48  robertj
- * GNU 3.1 compatibility under Solaris
- *
- * Revision 1.46  2001/10/11 02:20:54  robertj
- * Added IRIX support (no audio/video), thanks Andre Schulze.
- *
- * Revision 1.45  2001/08/11 07:57:30  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.44  2001/06/30 06:59:06  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.43  2001/03/07 06:54:56  yurik
- * Changed email to current one
- *
- * Revision 1.42  2001/02/23 08:05:19  rogerh
- * Add tcp.h for MACOS_X (Darwin)
- *
- * Revision 1.41  2001/01/16 11:52:46  rogerh
- * Add patch from Jac Goudsmit <jac_goudsmit@yahoo.com> for BONE in BeOS 5
- *
- * Revision 1.40  2000/06/21 01:01:21  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.39  2000/05/12 01:37:38  rogerh
- * Add netinet/tcp.h to NetBSD and OpenBSD too.
- *
- * Revision 1.38  2000/05/05 07:08:01  robertj
- * Same again for FreeBSD and Solaris
- *
- * Revision 1.37  2000/05/05 05:06:38  robertj
- * Added tcp.h to get TCP_NODELAY for setsockopt call.
- *
- * Revision 1.36  2000/04/10 11:39:49  rogerh
- * Add NetBSD pthread support
- *
- * Revision 1.35  2000/04/09 18:29:02  rogerh
- * Add my NetBSD changes
- *
- * Revision 1.34  2000/04/07 05:45:49  rogerh
- * Add extra include to Mac OS X section
- *
- * Revision 1.33  2000/04/06 11:05:32  rogerh
- * Add MACOSX support from Kevin Packard
- *
- * Revision 1.32  2000/04/03 22:03:01  rogerh
- * Fix socklen_t usage for FreeBSD 3.x
- *
- * Revision 1.31  2000/03/08 12:17:09  rogerh
- * Add OpenBSD support
- *
- * Revision 1.30  2000/01/25 04:55:36  robertj
- * Added FreeBSD support for distinction between v3.x and later versions. Thanks Roger Hardiman.
- *
- * Revision 1.29  2000/01/20 08:20:57  robertj
- * FreeBSD v3 compatibility changes, thanks Roger Hardiman & Motonori Shindo
- *
- * Revision 1.28  1999/08/09 01:51:42  robertj
- * Added missing paths include (esp. for VARRUN in svcproc)
- *
- * Revision 1.27  1999/07/16 10:21:51  robertj
- * Added paths header file so _PATH_VARRUN is defined for svcprox.
- *
- * Revision 1.26  1999/03/02 05:41:58  robertj
- * More BeOS changes
- *
- * Revision 1.25  1999/02/26 04:10:39  robertj
- * More BeOS port changes
- *
- * Revision 1.24  1999/02/22 13:26:53  robertj
- * BeOS port changes.
- *
- * Revision 1.23  1999/02/06 05:49:44  robertj
- * BeOS port effort by Yuri Kiryanov <openh323@kiryanov.com>
- *
- * Revision 1.22  1999/01/08 01:28:16  robertj
- * Added pthreads support for FreeBSD
- *
- * Revision 1.21  1999/01/07 03:37:15  robertj
- * dded default for pthreads, shortens command line in compile.
- *
- * Revision 1.20  1998/12/21 06:47:20  robertj
- * Solaris 5.7 support.
- *
- * Revision 1.19  1998/12/04 12:38:07  robertj
- * Fixed signal include
- *
- * Revision 1.18  1998/11/24 09:38:19  robertj
- * FreeBSD port.
- *
- * Revision 1.17  1998/11/14 01:08:25  robertj
- * PPC linux GNU compatibility.
- *
- * Revision 1.16  1998/09/24 04:11:45  robertj
- * Added open software license.
- *
+ * $Revision: 28201 $
+ * $Author: rjongbloed $
+ * $Date: 2012-08-14 21:30:31 -0500 (Tue, 14 Aug 2012) $
  */
 
 #ifndef _PMACHDEP_H
@@ -223,7 +50,6 @@
 #include <dlfcn.h>
 
 #define HAS_IFREQ
-#define PSETPGRP()  setpgrp()
 
 #if __GNU_LIBRARY__ < 6
 #define P_LINUX_LIB_OLD
@@ -233,6 +59,23 @@ typedef int socklen_t;
 #ifdef PPC
 typedef size_t socklen_t;
 #endif
+
+///////////////////////////////////////////////////////////////////////////////
+#elif defined(P_GNU_HURD)
+
+#include <paths.h>
+#include <errno.h>
+#include <signal.h>
+#include <sys/ioctl.h>
+#include <sys/fcntl.h>
+#include <sys/termios.h>
+#include <unistd.h>
+#include <net/if.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+#include <dlfcn.h>
+
+#define HAS_IFREQ
 
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined(P_FREEBSD)
@@ -265,8 +108,6 @@ typedef int socklen_t;
 
 #define HAS_IFREQ
 
-#define PSETPGRP()  setpgrp(0, 0)
-
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined(P_OPENBSD)
 
@@ -291,8 +132,6 @@ typedef int socklen_t;
 #include <netinet/tcp.h>
 
 #define HAS_IFREQ
-
-#define PSETPGRP()  setpgrp(0, 0)
 
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined(P_NETBSD)
@@ -320,8 +159,6 @@ typedef int socklen_t;
 #include <netinet/tcp.h>
 
 #define HAS_IFREQ
-
-#define PSETPGRP()  setpgrp(0, 0)
 
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined(P_SOLARIS)
@@ -354,8 +191,6 @@ typedef union {
 } upad128_t;
 #endif
 
-#define PSETPGRP()  setpgrp()
-
 #define INADDR_NONE     -1
 #if P_SOLARIS < 7
 typedef int socklen_t;
@@ -385,7 +220,6 @@ int gethostname(char *, int);
 #include <sys/sockio.h>
 
 #define HAS_IFREQ
-#define PSETPGRP()  setpgrp(0, 0)
 #define raise(s)    kill(getpid(),s)
 
 extern "C" {
@@ -463,7 +297,6 @@ typedef int socklen_t;
 #include <bone/arpa/inet.h>
 
 #define wait3(s, o, r) waitpid(-1, s, o)
-#define PSETPGRP()  setpgid(0,0)
 int seteuid(uid_t euid);
 int setegid(gid_t gid);
 
@@ -478,9 +311,11 @@ void *dlsym(void *handle, const char *symbol);
 #elif defined (P_MACOSX) || defined(P_MACOS)
  
 #if defined(P_PTHREADS)
-#   define _THREAD_SAFE
-#   define P_THREAD_SAFE_CLIB
-#   include <pthread.h>
+  #ifndef _THREAD_SAFE
+    #define _THREAD_SAFE
+  #endif
+  #define P_THREAD_SAFE_CLIB
+  #include <pthread.h>
 #endif
 #if defined(P_MAC_MPTHREADS)
 #include <CoreServices/CoreServices.h>
@@ -515,8 +350,7 @@ typedef int socklen_t;
 #endif
  
 #define HAS_IFREQ
- 
-#define PSETPGRP()  setpgrp(0, 0)
+#define _POSIX_MONOTONIC_CLOCK
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -544,8 +378,6 @@ typedef int socklen_t;
 
 #define HAS_IFREQ
 
-#define PSETPGRP()  setpgrp()
-
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined (P_IRIX)
 
@@ -571,8 +403,6 @@ typedef int socklen_t;
 #include <sys/sockio.h>
 
 typedef int socklen_t;
-
-#define PSETPGRP()  setpgrp()
 
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined (P_VXWORKS)
@@ -619,7 +449,8 @@ struct hostent * Vx_gethostbyaddr(char *name, struct hostent *hp);
 #define P_HAS_SEMAPHORES
 #define _THREAD_SAFE
 #define P_THREAD_SAFE_CLIB
-#define P_THREADIDENTIFIER long
+typedef long PThreadIdentifier;
+typedef long PProcessIdentifier;
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -674,7 +505,6 @@ extern "C" {
 #include <netinet/tcp.h>
 
 #define HAS_IFREQ
-#define PSETPGRP()  setpgrp()
 
 ///////////////////////////////////////////////////////////////////////////////
 #elif defined(P_CYGWIN)
@@ -710,11 +540,20 @@ extern "C" {
 #endif
 
 typedef int SOCKET;
+typedef pid_t PProcessIdentifier;
+
+#ifndef PSETPGRP
+#if P_SETPGRP_NOPARM
+#define PSETPGRP()  setpgrp()
+#else
+#define PSETPGRP()  setpgrp(0, 0)
+#endif
+#endif
 
 #ifdef P_PTHREADS
 
 #include <pthread.h>
-#define P_THREADIDENTIFIER pthread_t
+typedef pthread_t PThreadIdentifier;
 
 #if defined(P_HAS_SEMAPHORES) || defined(P_HAS_NAMED_SEMAPHORES)
 #include <semaphore.h>
@@ -723,7 +562,7 @@ typedef int SOCKET;
 #endif  // P_PTHREADS
 
 #ifdef BE_THREADS
-#define P_THREADIDENTIFIER thread_id
+typedef thread_id PThreadIdentifier;
 #endif // BE_THREADS
 
 #endif // _PMACHDEP_H

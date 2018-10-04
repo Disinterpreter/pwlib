@@ -3,7 +3,7 @@
  *
  * Abstract synchronisation semaphore class.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  * Copyright (c) 2005 Post Increment
@@ -27,64 +27,49 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psync.h,v $
- * Revision 1.4  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.3  2005/11/14 22:29:13  csoutheren
- * Reverted Wait and Signal to non-const - there is no way we can guarantee that all
- * descendant classes everywhere will be changed over, so we have to keep the
- * original  API
- *
- * Revision 1.2  2005/11/04 06:56:10  csoutheren
- * Added new class PSync as abstract base class for all mutex/sempahore classes
- * Changed PCriticalSection to use Wait/Signal rather than Enter/Leave
- * Changed Wait/Signal to be const member functions
- * Renamed PMutex to PTimedMutex and made PMutex synonym for PCriticalSection.
- * This allows use of very efficient mutex primitives in 99% of cases where timed waits
- * are not needed
- *
- * Revision 1.1  2005/11/04 06:34:20  csoutheren
- * Added new class PSync as abstract base class for all mutex/sempahore classes
- * Changed PCriticalSection to use Wait/Signal rather than Enter/Leave
- * Changed Wait/Signal to be const member functions
- * Renamed PMutex to PTimedMutex and made PMutex synonym for PCriticalSection.
- * This allows use of very efficient mutex primitives in 99% of cases where timed waits
- * are not needed
- *
+ * $Revision: 27923 $
+ * $Author: rjongbloed $
+ * $Date: 2012-06-27 22:28:36 -0500 (Wed, 27 Jun 2012) $
  */
 
-#ifndef _PSYNC
-#define _PSYNC
+#ifndef PTLIB_SYNC_H
+#define PTLIB_SYNC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <ptlib/contain.h>
+#include <ptlib/object.h>
 
 class PSync : public PObject
 {
   public:
   /**@name Operations */
   //@{
-    /**Block until the synchronisation object is available
+    /**Block until the synchronisation object is available.
      */
     virtual void Wait() = 0;
 
-    /**Signal that the synchronisation object is available
+    /**Signal that the synchronisation object is available.
      */
     virtual void Signal() = 0;
   //@}
- 
+};
+
+class PSyncNULL : public PSync
+{
+  public:
+    virtual void Wait() { }
+    virtual void Signal() { }
 };
 
 /**This class waits for the semaphore on construction and automatically
    signals the semaphore on destruction. Any descendent of PSemaphore
    may be used.
 
-  This is very usefull for constructs such as:
-\begin{verbatim}
+  This is very useful for constructs such as:
+<pre><code>
     void func()
     {
       PWaitAndSignal mutexWait(myMutex);
@@ -95,18 +80,18 @@ class PSync : public PObject
         return;
       do_something_else();
     }
-\end{verbatim}
+</code></pre>
  */
 
 class PWaitAndSignal {
   public:
     /**Create the semaphore wait instance.
-       This will wait on the specified semaphore using the #Wait()# function
+       This will wait on the specified semaphore using the Wait() function
        before returning.
       */
     inline PWaitAndSignal(
       const PSync & sem,   ///< Semaphore descendent to wait/signal.
-      BOOL wait = TRUE    ///< Wait for semaphore before returning.
+      PBoolean wait = true    ///< Wait for semaphore before returning.
     ) : sync((PSync &)sem)
     { if (wait) sync.Wait(); }
 
@@ -121,5 +106,8 @@ class PWaitAndSignal {
     PSync & sync;
 };
 
-#endif // PSYNC
 
+#endif // PTLIB_SYNC_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

@@ -23,37 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ftpsrvr.cxx,v $
- * Revision 1.10  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.9  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.8  2000/06/21 01:10:18  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.7  2000/06/21 01:01:22  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.6  1999/02/16 06:04:41  robertj
- * Fixed bug in FTP server for PASV mode, may return incorrect IP address.
- *
- * Revision 1.5  1998/11/30 04:50:48  robertj
- * New directory structure
- *
- * Revision 1.4  1998/10/13 14:06:21  robertj
- * Complete rewrite of memory leak detection code.
- *
- * Revision 1.3  1998/09/23 06:22:02  robertj
- * Added open source copyright license.
- *
- * Revision 1.2  1996/10/26 01:39:49  robertj
- * Added check for security breach using 3 way FTP transfer or use of privileged PORT.
- *
- * Revision 1.1  1996/09/14 13:02:35  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -86,7 +58,7 @@ PFTPServer::PFTPServer(const PString & readyStr)
 
 void PFTPServer::Construct()
 {
-  thirdPartyPort = FALSE;
+  thirdPartyPort = PFalse;
   illegalPasswordCount = 0;
   state     = NotConnected;
   type      = 'A';
@@ -102,19 +74,19 @@ PFTPServer::~PFTPServer()
 }
 
 
-BOOL PFTPServer::OnOpen()
+PBoolean PFTPServer::OnOpen()
 {
   // the default data port for a client is the same port
   PIPSocket * socket = GetSocket();
   if (socket == NULL)
-    return FALSE;
+    return PFalse;
 
   state = NeedUser;
   if (!WriteResponse(220, readyString))
-    return FALSE;
+    return PFalse;
 
   socket->GetPeerAddress(remoteHost, remotePort);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -136,18 +108,18 @@ PString PFTPServer::GetSystemTypeString() const
 }
 
 
-BOOL PFTPServer::AuthoriseUser(const PString &, const PString &, BOOL &)
+PBoolean PFTPServer::AuthoriseUser(const PString &, const PString &, PBoolean &)
 {
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::ProcessCommand()
+PBoolean PFTPServer::ProcessCommand()
 {
   PString args;
   PINDEX code;
   if (!ReadCommand(code, args))
-    return FALSE;
+    return PFalse;
 
   if (code == P_MAX_INDEX)
     return OnUnknown(args);
@@ -158,11 +130,11 @@ BOOL PFTPServer::ProcessCommand()
   
   // otherwise enforce login
   WriteResponse(530, "Please login with USER and PASS.");
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::DispatchCommand(PINDEX code, const PString & args)
+PBoolean PFTPServer::DispatchCommand(PINDEX code, const PString & args)
 {
   switch (code) {
 
@@ -237,13 +209,13 @@ BOOL PFTPServer::DispatchCommand(PINDEX code, const PString & args)
       return OnREST(args);
     default:
       PAssertAlways("Registered FTP command not handled");
-      return FALSE;
+      return PFalse;
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::CheckLoginRequired(PINDEX cmd)
+PBoolean PFTPServer::CheckLoginRequired(PINDEX cmd)
 {
   static const BYTE RequiresLogin[NumCommands] = {
     1, // USER
@@ -283,14 +255,14 @@ BOOL PFTPServer::CheckLoginRequired(PINDEX cmd)
   if (cmd < NumCommands)
     return RequiresLogin[cmd] == 0;
   else
-    return TRUE;
+    return PTrue;
 }
 
 
-BOOL PFTPServer::OnUnknown(const PCaselessString & command)
+PBoolean PFTPServer::OnUnknown(const PCaselessString & command)
 {
   WriteResponse(500, "\"" + command + "\" command unrecognised.");
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -324,43 +296,43 @@ void PFTPServer::OnCommandSuccessful(PINDEX cmdNum)
 
 // mandatory commands that can be performed without loggin in
 
-BOOL PFTPServer::OnUSER(const PCaselessString & args)
+PBoolean PFTPServer::OnUSER(const PCaselessString & args)
 {
   userName = args;
   state    = NeedPassword;
   WriteResponse(331, "Password required for " + args + ".");
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnPASS(const PCaselessString & args)
+PBoolean PFTPServer::OnPASS(const PCaselessString & args)
 {
-  BOOL replied = FALSE;
+  PBoolean replied = PFalse;
   if (state != NeedPassword) 
     WriteResponse(503, "Login with USER first.");
   else if (!AuthoriseUser(userName, args, replied)) {
     if (!replied)
       WriteResponse(530, "Login incorrect.");
     if (illegalPasswordCount++ == MaxIllegalPasswords)
-      return FALSE;
+      return PFalse;
   } else {
     if (!replied)
       WriteResponse(230, GetHelloString(userName));
     illegalPasswordCount = 0;
     state = Connected;
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnQUIT(const PCaselessString & userName)
+PBoolean PFTPServer::OnQUIT(const PCaselessString & userName)
 {
   WriteResponse(221, GetGoodbyeString(userName));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PFTPServer::OnPORT(const PCaselessString & args)
+PBoolean PFTPServer::OnPORT(const PCaselessString & args)
 {
   PStringArray tokens = args.Tokenise(",");
 
@@ -395,11 +367,11 @@ BOOL PFTPServer::OnPORT(const PCaselessString & args)
       }
     }
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnPASV(const PCaselessString &)
+PBoolean PFTPServer::OnPASV(const PCaselessString &)
 {
   if (passiveSocket != NULL)
     delete passiveSocket;
@@ -424,7 +396,7 @@ BOOL PFTPServer::OnPASV(const PCaselessString &)
 }
 
 
-BOOL PFTPServer::OnTYPE(const PCaselessString & args)
+PBoolean PFTPServer::OnTYPE(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(TYPE);
@@ -439,19 +411,19 @@ BOOL PFTPServer::OnTYPE(const PCaselessString & args)
       case 'E':
       case 'L':
         WriteResponse(504, PString("TYPE not implemented for parameter ") + args);
-        return TRUE;
+        return PTrue;
 
       default:
         OnSyntaxError(TYPE);
-        return TRUE;
+        return PTrue;
     }
   }
   OnCommandSuccessful(TYPE);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnMODE(const PCaselessString & args)
+PBoolean PFTPServer::OnMODE(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(MODE);
@@ -463,18 +435,18 @@ BOOL PFTPServer::OnMODE(const PCaselessString & args)
       case 'B':
       case 'C':
         WriteResponse(504, PString("MODE not implemented for parameter ") + args);
-        return TRUE;
+        return PTrue;
       default:
         OnSyntaxError(MODE);
-        return TRUE;
+        return PTrue;
     }
   }
   OnCommandSuccessful(MODE);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSTRU(const PCaselessString & args)
+PBoolean PFTPServer::OnSTRU(const PCaselessString & args)
 {
   if (args.IsEmpty())
     OnSyntaxError(STRU);
@@ -486,191 +458,191 @@ BOOL PFTPServer::OnSTRU(const PCaselessString & args)
       case 'R':
       case 'P':
         WriteResponse(504, PString("STRU not implemented for parameter ") + args);
-        return TRUE;
+        return PTrue;
       default:
         OnSyntaxError(STRU);
-        return TRUE;
+        return PTrue;
     }
   }
   OnCommandSuccessful(STRU);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnNOOP(const PCaselessString &)
+PBoolean PFTPServer::OnNOOP(const PCaselessString &)
 {
   OnCommandSuccessful(NOOP);
-  return TRUE;
+  return PTrue;
 }
 
 
 // mandatory commands that cannot be performed without logging in
 
-BOOL PFTPServer::OnRETR(const PCaselessString &)
+PBoolean PFTPServer::OnRETR(const PCaselessString &)
 {
   OnNotImplemented(RETR);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSTOR(const PCaselessString &)
+PBoolean PFTPServer::OnSTOR(const PCaselessString &)
 {
   OnNotImplemented(STOR);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnACCT(const PCaselessString &)
+PBoolean PFTPServer::OnACCT(const PCaselessString &)
 {
   WriteResponse(532, "Need account for storing files");
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnCWD(const PCaselessString &)
+PBoolean PFTPServer::OnCWD(const PCaselessString &)
 {
   OnNotImplemented(CWD);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnCDUP(const PCaselessString &)
+PBoolean PFTPServer::OnCDUP(const PCaselessString &)
 {
   OnNotImplemented(CDUP);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSMNT(const PCaselessString &)
+PBoolean PFTPServer::OnSMNT(const PCaselessString &)
 {
   OnNotImplemented(SMNT);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnREIN(const PCaselessString &)
+PBoolean PFTPServer::OnREIN(const PCaselessString &)
 {
   OnNotImplemented(REIN);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSTOU(const PCaselessString &)
+PBoolean PFTPServer::OnSTOU(const PCaselessString &)
 {
   OnNotImplemented(STOU);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnAPPE(const PCaselessString &)
+PBoolean PFTPServer::OnAPPE(const PCaselessString &)
 {
   OnNotImplemented(APPE);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnALLO(const PCaselessString &)
+PBoolean PFTPServer::OnALLO(const PCaselessString &)
 {
   OnNotImplemented(ALLO);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnREST(const PCaselessString &)
+PBoolean PFTPServer::OnREST(const PCaselessString &)
 {
   OnNotImplemented(REST);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnRNFR(const PCaselessString &)
+PBoolean PFTPServer::OnRNFR(const PCaselessString &)
 {
   OnNotImplemented(RNFR);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnRNTO(const PCaselessString &)
+PBoolean PFTPServer::OnRNTO(const PCaselessString &)
 {
   OnNotImplemented(RNTO);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnABOR(const PCaselessString &)
+PBoolean PFTPServer::OnABOR(const PCaselessString &)
 {
   OnNotImplemented(ABOR);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnDELE(const PCaselessString &)
+PBoolean PFTPServer::OnDELE(const PCaselessString &)
 {
   OnNotImplemented(DELE);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnRMD(const PCaselessString &)
+PBoolean PFTPServer::OnRMD(const PCaselessString &)
 {
   OnNotImplemented(RMD);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnMKD(const PCaselessString &)
+PBoolean PFTPServer::OnMKD(const PCaselessString &)
 {
   OnNotImplemented(MKD);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnPWD(const PCaselessString &)
+PBoolean PFTPServer::OnPWD(const PCaselessString &)
 {
   OnNotImplemented(PWD);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnLIST(const PCaselessString &)
+PBoolean PFTPServer::OnLIST(const PCaselessString &)
 {
   OnNotImplemented(LIST);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnNLST(const PCaselessString &)
+PBoolean PFTPServer::OnNLST(const PCaselessString &)
 {
   OnNotImplemented(NLST);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSITE(const PCaselessString &)
+PBoolean PFTPServer::OnSITE(const PCaselessString &)
 {
   OnNotImplemented(SITE);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSYST(const PCaselessString &)
+PBoolean PFTPServer::OnSYST(const PCaselessString &)
 {
   WriteResponse(215, GetSystemTypeString());
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnSTAT(const PCaselessString &)
+PBoolean PFTPServer::OnSTAT(const PCaselessString &)
 {
   OnNotImplemented(STATcmd);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPServer::OnHELP(const PCaselessString &)
+PBoolean PFTPServer::OnHELP(const PCaselessString &)
 {
   OnNotImplemented(HELP);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -697,11 +669,11 @@ void PFTPServer::SendToClient(const PFilePath & filename)
           PString fileSize(PString::Unsigned, file.GetLength());
           WriteResponse(150, PString("Opening ASCII data connection for " + filename.GetFileName() + "(" + fileSize + " bytes)"));
           PString line;
-          BOOL ok = TRUE;
+          PBoolean ok = PTrue;
           while (ok && file.ReadLine(line)) {
             if (!dataSocket->Write((const char *)line, line.GetLength())) {
               WriteResponse(426, "Connection closed - transfer aborted");
-              ok = FALSE;
+              ok = PFalse;
             }
           }
           file.Close();
@@ -714,11 +686,11 @@ void PFTPServer::SendToClient(const PFilePath & filename)
           PString fileSize(PString::Unsigned, file.GetLength());
           WriteResponse(150, PString("Opening BINARY data connection for " + filename.GetFileName() + "(" + fileSize + " bytes)"));
           BYTE buffer[2048];
-          BOOL ok = TRUE;
+          PBoolean ok = PTrue;
           while (ok && file.Read(buffer, 2048)) {
             if (!dataSocket->Write(buffer, file.GetLastReadCount())) {
               WriteResponse(426, "Connection closed - transfer aborted");
-              ok = FALSE;
+              ok = PFalse;
             }
           }
           file.Close();

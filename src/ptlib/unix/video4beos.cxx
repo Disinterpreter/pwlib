@@ -24,35 +24,9 @@
  * Contributor(s): Yuri Kiryanov, ykiryanov at users.sourceforge.net
  * Jac Goudsmit <jac@be.com>.
  *
- * $Log: video4beos.cxx,v $
- * Revision 1.6  2005/08/09 09:08:13  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.5.6.1  2005/07/17 09:27:08  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.5  2004/06/16 01:55:47  ykiryanov
- * Made video capture working
- *
- * Revision 1.4  2004/01/02 23:30:18  rjongbloed
- * Removed extraneous static function for getting input device names that has been deprecated during the plug ins addition.
- *
- * Revision 1.3  2002/04/10 08:40:36  rogerh
- * Simplify the SetVideoChannelFormat() code. Use the implementation in the
- * ancestor class.
- *
- * Revision 1.2  2002/04/05 21:54:58  rogerh
- * Add SetVideoChannelFormat - Reminded by Yuri
- *
- * Revision 1.1  2001/07/09 06:16:15  yurik
- * Jac Goudsmit's BeOS changes of July,6th. Cleaning up media subsystem etc.
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -703,10 +677,10 @@ PVideoInputDevice_BeOSVideo::PVideoInputDevice_BeOSVideo()
   PTRACE(TL, "PVideoInputDevice_BeOSVideo");
   
   captureThread = NULL;
-  isCapturingNow = FALSE;
+  isCapturingNow = PFalse;
 }
 
-BOOL PVideoInputDevice_BeOSVideo::Open(const PString & devName, BOOL startImmediate)
+PBoolean PVideoInputDevice_BeOSVideo::Open(const PString & devName, PBoolean startImmediate)
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::Open");
 
@@ -721,146 +695,146 @@ BOOL PVideoInputDevice_BeOSVideo::Open(const PString & devName, BOOL startImmedi
   if (startImmediate)
     return Start();
     
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::IsOpen() 
+PBoolean PVideoInputDevice_BeOSVideo::IsOpen() 
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::IsOpen");
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::Close()
+PBoolean PVideoInputDevice_BeOSVideo::Close()
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::Close");
 
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
  
   Stop();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::Start()
+PBoolean PVideoInputDevice_BeOSVideo::Start()
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::Start");
 
   if (IsCapturing())
-    return TRUE;
+    return PTrue;
    
   StartNodes();    
 
-  isCapturingNow = TRUE;
+  isCapturingNow = PTrue;
 
   return isCapturingNow;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::Stop()
+PBoolean PVideoInputDevice_BeOSVideo::Stop()
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::Stop");
 
   if (!IsCapturing())
-    return FALSE;
+    return PFalse;
 
   StopNodes();
   ::snooze(100000);
 
-  isCapturingNow = FALSE;
+  isCapturingNow = PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::IsCapturing()
+PBoolean PVideoInputDevice_BeOSVideo::IsCapturing()
 {
   return isCapturingNow;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::TestAllFormats() 
+PBoolean PVideoInputDevice_BeOSVideo::TestAllFormats() 
 {
-  BOOL running = IsCapturing();
+  PBoolean running = IsCapturing();
   if (running)
     Stop();
 
   if (running)
     return Start();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::SetFrameRate(unsigned rate)
+PBoolean PVideoInputDevice_BeOSVideo::SetFrameRate(unsigned rate)
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::SetFrameRate");
 
   if (!PVideoDevice::SetFrameRate(rate))
-    return FALSE;
+    return PFalse;
 
-  BOOL running = IsCapturing();
+  PBoolean running = IsCapturing();
   if (running)
     Stop();
   
   if (running)
     return Start();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::SetFrameSize(unsigned width, unsigned height)
+PBoolean PVideoInputDevice_BeOSVideo::SetFrameSize(unsigned width, unsigned height)
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::SetFrameSize, width " << width << " height " << height);
 
-  BOOL running = IsCapturing();
+  PBoolean running = IsCapturing();
   if (running)
     Stop();
 
   if (!PVideoDevice::SetFrameSize(width, height))
-    return FALSE;
+    return PFalse;
 
   if (running)
     return Start();
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_BeOSVideo::SetColourFormat(const PString & colourFmt)
+PBoolean PVideoInputDevice_BeOSVideo::SetColourFormat(const PString & colourFmt)
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::SetColourFormat, format" << colourFmt);
  
-  BOOL running = IsCapturing();
+  PBoolean running = IsCapturing();
   if (running)
     Stop();
 
   if (!PVideoDevice::SetColourFormat(colourFmt)) {
-    return FALSE;
+    return PFalse;
   }
 
   converter = PColourConverter::Create("RGB32", colourFormat, frameWidth, frameHeight);
   if (converter == NULL) {
     PTRACE(1, "Failed to make a converter.");
-    return FALSE;
+    return PFalse;
   }
 
-//  if (converter->SetSrcFrameSize(width,height) == FALSE) {
+//  if (converter->SetSrcFrameSize(width,height) == PFalse) {
 //    PTRACE(1, "Failed to set source frame size of a converter.");
-//    return FALSE;
+//    return PFalse;
 //  }
-//  if (converter->SetDstFrameSize(desiredFrameWidth, desiredFrameHeight, FALSE) == FALSE) {
+//  if (converter->SetDstFrameSize(desiredFrameWidth, desiredFrameHeight, PFalse) == PFalse) {
 //    PTRACE(1, "Failed to set destination frame size (+scaling) of a converter.");
-//    return FALSE;
+//    return PFalse;
 //  }
     
   if (running)
     return Start();
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -882,21 +856,21 @@ PINDEX PVideoInputDevice_BeOSVideo::GetMaxFrameBytes()
 }
 
 
-BOOL PVideoInputDevice_BeOSVideo::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_BeOSVideo::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 {
   return GetFrameDataNoDelay(buffer, bytesReturned);
 }
 
-BOOL PVideoInputDevice_BeOSVideo::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_BeOSVideo::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
 {
   PTRACE(TL, "PVideoInputDevice_BeOSVideo::GetFrameDataNoDelay");
   if (!IsCapturing()) 
-    return FALSE;
+    return PFalse;
   
   *bytesReturned = GetMaxFrameBytes();
   fVideoConsumer->GetFrame(buffer, bytesReturned, converter);
    
-  return TRUE;
+  return PTrue;
 }
 
 status_t PVideoInputDevice_BeOSVideo::StartNodes()

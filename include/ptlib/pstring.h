@@ -26,310 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pstring.h,v $
- * Revision 1.86  2006/04/09 07:05:40  rjongbloed
- * Moved output stream operator for PString from sockets code to string code and fixed
- *   its implemetation to continue to use PrintOn. Why it was added is unknown, probably
- *   a compiler issue, but it should not be in a random source file!
- *
- * Revision 1.85  2005/12/15 21:14:34  dsandras
- * Fixed from Alexander Larsson <alexl _AT__ redhat.com> for gcc 4.1 compilation. Thanks!
- *
- * Revision 1.84  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.83  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.82  2005/09/18 11:05:36  dominance
- * include/ptlib/channel.h, include/ptlib/pstring.h, src/ptlib/common/contain.cxx,
- * src/ptlib/common/pchannel.cxx:
- *   correct the STL defined checking to use proper syntax.
- *
- * include/ptlib/object.h:
- *   re-add typedef to compile on mingw
- *
- * make/ptlib-config.in:
- *   import a long-standing fix from the Debian packs which allows usage of
- *   ptlib-config without manually adding -lpt for each of the subsequent
- *   projects
- *
- * Revision 1.81  2004/12/22 04:04:36  dereksmithies
- * Modify description of parameters for PString::Replace()
- *
- * Revision 1.80  2004/11/23 11:33:08  csoutheren
- * Fixed problem with RemoveAt returning invalid pointer in some cases,
- * and added extra documentation on this case.
- * Thanks to Diego Tartara for pointing out this potential problem
- *
- * Revision 1.79  2004/10/21 13:04:20  rjongbloed
- * Fixed possibility of const operator[] on PStringArray returning a NULL reference. This
- *   function should return a non-lvalue PString anyway as it is const!
- *
- * Revision 1.78  2004/08/16 08:49:59  csoutheren
- * Removed error when compiling with gcc
- *
- * Revision 1.77  2004/08/16 06:40:59  csoutheren
- * Added adapters template to make device plugins available via the abstract factory interface
- *
- * Revision 1.76  2004/06/01 05:54:18  csoutheren
- * Added <vector> and <string>
- *
- * Revision 1.75  2004/06/01 05:21:38  csoutheren
- * Added conversions between std::string and PString, and vector<PString> and PStringArray
- *
- * Revision 1.74  2004/05/04 11:10:36  rjongbloed
- * Fixed usage of MakeEmpty() with PStringStream.
- *
- * Revision 1.73  2004/04/18 04:33:36  rjongbloed
- * Changed all operators that return BOOL to return standard type bool. This is primarily
- *   for improved compatibility with std STL usage removing many warnings.
- *
- * Revision 1.72  2004/04/11 13:26:25  csoutheren
- * Removed namespace problems and removed warnings for Windows <string>
- *
- * Revision 1.71  2004/04/09 06:38:10  rjongbloed
- * Fixed compatibility with STL based streams, eg as used by VC++2003
- *
- * Revision 1.70  2004/04/09 03:42:34  csoutheren
- * Removed all usages of "virtual inline" and "inline virtual"
- *
- * Revision 1.69  2004/04/03 06:54:22  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.68  2004/02/23 00:44:38  csoutheren
- * A completely different, other regex include hack to avoid requiring
- * the sources when using a header-file only environment
- *
- * Revision 1.67  2004/02/23 00:26:05  csoutheren
- * Finally, a generic and elegant fix for the regex include hacks.  Thanks to Roger Hardiman
- *
- * Revision 1.66  2004/02/11 05:09:14  csoutheren
- * Fixed problems with regex libraries on Solaris, and with host OS numbering
- * being a quoted string rather than a number. Thanks to Chad Attermann
- * Fixed problems SSL detection problems thanks to Michal Zygmuntowicz
- *
- * Revision 1.65  2004/02/08 11:13:11  rjongbloed
- * Fixed crash in heavily loaded multi-threaded systems using simultaneous sorted
- *   lists, Thanks Federico Pinna, Fabrizio Ammollo and the gang at Reitek S.p.A.
- *
- * Revision 1.64  2004/01/18 13:43:48  rjongbloed
- * Fixed broken PString::MakeEmpty() function and moved implementations to .inl file.
- *
- * Revision 1.63  2004/01/17 18:15:24  csoutheren
- * Fixed multi-threading problem with PString::Empty
- * Created PString::MakeEmpty for efficient emptying of existing strings
- *
- * Revision 1.62  2004/01/16 13:24:37  csoutheren
- * Changed PString::Empty to be thread-safe
- * Fixed PContainer::SetMinSize and PAbstractArray::SetSize, thanks to 123@call2ua.com
- * Fixed PString::FindLast, thanks to Andreas Sikkema
- *
- * Revision 1.61  2003/12/13 23:08:46  csoutheren
- * Changed PRegularExpression to allow a copy constructor and operator =
- *
- * Revision 1.60  2003/12/10 03:28:50  csoutheren
- * Removed compile time warning under Linux
- *
- * Revision 1.59  2003/12/07 05:50:49  csoutheren
- * Blocked operator = for PRegularExpression
- *
- * Revision 1.58  2003/12/04 13:10:38  csoutheren
- * Made PRegularExpression copy constructor private to avoid accidental usage (and subsequent crash)
- *
- * Revision 1.57  2003/05/14 00:46:47  rjongbloed
- * Added constructor to string lists/arrays etc that takes a single PString.
- *
- * Revision 1.56  2003/03/31 01:23:56  robertj
- * Added ReadFrom functions for standard container classes such as
- *   PIntArray and PStringList etc
- *
- * Revision 1.55  2003/03/05 08:48:32  robertj
- * Added PStringArray::ToCharAray() function at suggestion of Ravelli Rossano
- *
- * Revision 1.54  2002/11/12 09:17:44  robertj
- * Added PString::NumCompare() as functional equivalent of strncmp().
- * Added PSortedStringList::GetNextStringsIndex() to do searches of binary
- *   tree on partal strings.
- *
- * Revision 1.53  2002/10/31 05:53:44  robertj
- * Now comprehensively stated that a PString is ALWAYS an 8 bit string as
- *   there are far too many inheerent assumptions every to make it 16 bit.
- * Added UTF-8/UCS-2 conversion functions to PString.
- *
- * Revision 1.52  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.51  2002/08/14 00:43:39  robertj
- * Added ability to have fixed maximum length PStringStream's so does not do
- *   unwanted malloc()'s while outputing data.
- *
- * Revision 1.50  2002/04/09 02:30:18  robertj
- * Removed GCC3 variable as __GNUC__ can be used instead, thanks jason Spence
- *
- * Revision 1.49  2002/02/15 04:29:31  robertj
- * Added PString::Empty() to return the primordial empty string. Saves on a
- *   couple of memory allocations for every empty string ever used.
- *
- * Revision 1.48  2002/01/26 23:55:55  craigs
- * Changed for GCC 3.0 compatibility, thanks to manty@manty.net
- *
- * Revision 1.47  2002/01/22 01:03:57  craigs
- * Added operator += and operator + functions to PStringArray and PStringList
- * Added AppendString operator to PStringArray
- *
- * Revision 1.46  2001/10/17 05:09:22  robertj
- * Added contructors and assigmnent operators so integer types can be
- *   automatically converted to strings.
- *
- * Revision 1.45  2001/08/11 07:57:30  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.44  2001/04/18 04:10:15  robertj
- * Removed hash function for caseless strings as confuses mixed dictionaries.
- *
- * Revision 1.43  2001/04/18 01:20:58  robertj
- * Fixed problem with hash function for short strings, thanks Patrick Koorevaar.
- * Also fixed hash function for caseless strings.
- *
- * Revision 1.42  2001/02/21 03:38:37  robertj
- * Added ability to copy between various string lists/arrays etc during construction.
- *
- * Revision 1.41  2001/02/13 04:39:08  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.40  1999/08/22 12:13:43  robertj
- * Fixed warning when using inlines on older GNU compiler
- *
- * Revision 1.39  1999/05/28 14:01:22  robertj
- * Added initialisers to string containers (list, sorted list and set).
- *
- * Revision 1.38  1999/03/09 09:34:05  robertj
- * Fixed typo's.
- *
- * Revision 1.37  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.36  1999/02/16 08:11:09  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.35  1998/09/23 06:21:12  robertj
- * Added open source copyright license.
- *
- * Revision 1.34  1998/01/26 00:33:46  robertj
- * Added FindRegEx function to PString that returns position and length.
- * Added Execute() functions to PRegularExpression that take PINDEX references instead of PIntArrays.
- * Added static function to PRegularExpression to escape all special operator characters in a string.
- *
- * Revision 1.33  1998/01/05 10:39:35  robertj
- * Fixed "typesafe" templates/macros for dictionaries, especially on GNU.
- *
- * Revision 1.32  1997/12/11 13:32:47  robertj
- * Added AsUnsigned() function to convert string to DWORD.
- *
- * Revision 1.31  1997/12/11 10:29:49  robertj
- * Added type correct Contains() function to dictionaries.
- *
- * Revision 1.30  1997/07/08 13:13:47  robertj
- * DLL support.
- *
- * Revision 1.29  1997/06/10 11:36:32  craigs
- * Added inline statements to allow compilation uder Unix
- *
- * Revision 1.28  1997/06/08 04:48:58  robertj
- * Added regular expressions.
- * Fixed non-template class descendent order.
- *
- * Revision 1.27  1997/05/16 12:10:12  robertj
- * Fixed G++ compatibility bug.
- *
- * Revision 1.26  1996/10/08 13:13:38  robertj
- * Added operator += and &= for char so no implicit PString construction.
- *
- * Revision 1.25  1996/09/14 12:52:39  robertj
- * Added operator! for !IsEmpty().
- *
- * Revision 1.24  1996/08/17 10:00:25  robertj
- * Changes for Windows DLL support.
- *
- * Revision 1.23  1996/05/26 03:27:02  robertj
- * Compatibility to GNU 2.7.x
- *
- * Revision 1.22  1996/03/31 08:51:22  robertj
- * Added RemoveAt() function to remove entries from dictionaries.
- *
- * Revision 1.21  1996/03/10 13:15:50  robertj
- * Added operator() to template version.
- *
- * Revision 1.20  1996/02/19 13:17:33  robertj
- * Removed PCaselessString hash function to fix dictionary match failure.
- * Added operator() to do string dictionary lookup with default value.
- *
- * Revision 1.19  1996/02/08 12:19:16  robertj
- * Added new operators to PString for case insensitive compare and spaced concatenate.
- *
- * Revision 1.18  1996/01/24 14:43:15  robertj
- * Added initialisers to string dictionaries.
- *
- * Revision 1.17  1996/01/23 13:15:17  robertj
- * Added Replace() function to strings.
- * Mac Metrowerks compiler support.
- * String searching algorithm rewrite.
- *
- * Revision 1.16  1996/01/02 12:04:31  robertj
- * Mac OS compatibility changes.
- * Removed requirement that PArray elements have parameterless constructor..
- *
- * Revision 1.15  1995/12/23 03:46:23  robertj
- * Added operators for include and exclude from string set.
- *
- * Revision 1.14  1995/10/14 15:02:56  robertj
- * Changed arrays to not break references, but strings still need to.
- *
- * Revision 1.13  1995/06/17 11:13:08  robertj
- * Documentation update.
- *
- * Revision 1.12  1995/06/17 00:43:40  robertj
- * Added flag for PStringArray constructor to create caseless strings.
- *
- * Revision 1.11  1995/06/04 12:34:57  robertj
- * Better C++ compatibility (with BC++)
- *
- * Revision 1.10  1995/04/02 09:27:23  robertj
- * Added "balloon" help.
- *
- * Revision 1.9  1995/03/14 12:42:16  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.8  1995/03/12  04:44:39  robertj
- * Fixed use of PCaselessString as dictionary key.
- *
- * Revision 1.7  1995/02/05  00:48:09  robertj
- * Fixed template version.
- *
- * Revision 1.6  1995/01/15  04:50:20  robertj
- * Added inlines on friend functions, required by GNU compiler.
- *
- * Revision 1.5  1995/01/10  11:43:41  robertj
- * Removed PString parameter in stdarg function for GNU C++ compatibility.
- *
- * Revision 1.4  1995/01/09  12:33:44  robertj
- * Removed unnecesary return value from I/O functions.
- * Changed function names due to Mac port.
- *
- * Revision 1.3  1994/12/21  11:53:21  robertj
- * Documentation and variable normalisation.
- *
- * Revision 1.2  1994/12/12  13:13:13  robertj
- * Fixed bugs in PString mods just made.
- *
- * Revision 1.1  1994/12/12  09:59:37  robertj
- * Initial revision
- *
+ * $Revision: 27359 $
+ * $Author: rjongbloed $
+ * $Date: 2012-03-28 21:17:54 -0500 (Wed, 28 Mar 2012) $
  */
+
+#ifndef PTLIB_STRING_H
+#define PTLIB_STRING_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -337,12 +40,36 @@
 
 #include <string>
 #include <vector>
+#include <ptlib/array.h>
 
 ///////////////////////////////////////////////////////////////////////////////
 // PString class
 
 class PStringArray;
 class PRegularExpression;
+class PString;
+
+/**The same as the standard C snprintf(fmt, 1000, ...), but returns a
+   PString instead of a const char *.
+ */
+PString psprintf(
+  const char * fmt, ///< printf style format string
+  ...
+);
+
+/**The same as the standard C vsnprintf(fmt, 1000, va_list arg), but
+   returns a PString instead of a const char *.
+ */
+PString pvsprintf(
+  const char * fmt, ///< printf style format string
+  va_list arg       ///< Arguments for formatting
+);
+
+#if (defined(_WIN32) || defined(_WIN32_WCE)) && (!defined(_NATIVE_WCHAR_T_DEFINED)) && (!defined(__MINGW32__))
+PBASEARRAY(PWCharArray, unsigned short);
+#else
+PBASEARRAY(PWCharArray, wchar_t);
+#endif
 
 /**The character string class. It supports a wealth of additional functions
    for string processing and conversion. Operators are provided so that
@@ -354,19 +81,19 @@ class PRegularExpression;
    made of its contents. That is this instance of the array is disconnected
    from all other references to the string data, if any, and a new string array
    contents created. For example consider the following:
-\begin{verbatim}
+<pre><code>
           PString s1 = "String"; // New array allocated and set to "String"
           PString s2 = s1;       // s2 has pointer to same array as s1
                                  // and reference count is 2 for both
           s1[0] = 's';           // Breaks references into different strings
-\end{verbatim}
+</code></pre>
    at the end s1 is "string" and s2 is "String" both with reference count of 1.
 
-   The functions that will "break" a reference are #SetSize()#,
-   #SetMinSize()#, #GetPointer()#, #SetAt()# and
-   #operator[]#.
+   The functions that will "break" a reference are <code>SetSize()</code>,
+   <code>SetMinSize()</code>, <code>GetPointer()</code>, <code>SetAt()</code> and
+   <code>operator[]</code>.
 
-   Note that the array is a '\0' terminated string as in C strings. Thus the
+   Note that the array is a '\\0' terminated string as in C strings. Thus the
    memory allocated, and the length of the string may be different values.
 
    Also note that the PString is inherently an 8 bit string. The character set
@@ -378,16 +105,19 @@ class PRegularExpression;
    world usage.
  */
 
-class PString : public PCharArray {
+class PString : public PCharArray
+{
   PCLASSINFO(PString, PCharArray);
 
 //  using namespace std;
 
   public:
+    typedef const char * Initialiser;
+
   /**@name Construction */
   //@{
     /**Construct an empty string. This will have one character in it which is
-       the '\0' character.
+       the '\\0' character.
      */
     PINLINE PString();
 
@@ -407,35 +137,35 @@ class PString : public PCharArray {
     /**Create a string from the C string array. This is most commonly used with
        a literal string, eg "hello". A new memory block is allocated of a size
        sufficient to take the length of the string and its terminating
-       '\0' character.
+       '\\0' character.
 
        If UCS-2 is used then each char from the char pointer is mapped to a
        single UCS-2 character.
      */
     PString(
-      const char * cstr ///< Standard '\0' terminated C string.
+      const char * cstr ///< Standard '\\0' terminated C string.
     );
 
     /**Create a string from the UCS-2 string array.
        A new memory block is allocated of a size sufficient to take the length
-       of the string and its terminating '\0' character.
+       of the string and its terminating '\\0' character.
      */
     PString(
-      const WORD * ustr ///< UCS-2 null terminated string.
+      const wchar_t * ustr ///< UCS-2 null terminated string.
     );
 
     /**Create a string from the array. A new memory block is allocated of
-       a size equal to #len# plus one which is sufficient to take
-       the string and a terminating '\0' character.
+       a size equal to <code>len</code> plus one which is sufficient to take
+       the string and a terminating '\\0' character.
 
        If UCS-2 is used then each char from the char pointer is mapped to a
        single UCS-2 character.
 
-       Note that this function will allow a string with embedded '\0'
+       Note that this function will allow a string with embedded '\\0'
        characters to be created, but most of the functions here will be unable
-       to access characters beyond the first '\0'. Furthermore, if the
-       #MakeMinimumSize()# function is called, all data beyond that first
-       #'\0'# character will be lost.
+       to access characters beyond the first '\\0'. Furthermore, if the
+       <code>MakeMinimumSize()</code> function is called, all data beyond that first
+       '\\0' character will be lost.
      */
     PString(
       const char * cstr,  ///< Pointer to a string of characters.
@@ -443,38 +173,38 @@ class PString : public PCharArray {
     );
 
     /**Create a string from the UCS-2 array. A new memory block is allocated
-       of a size equal to #len# plus one which is sufficient to take
-       the string and a terminating '\0' character.
+       of a size equal to <code>len</code> plus one which is sufficient to take
+       the string and a terminating '\\0' character.
 
-       Note that this function will allow a string with embedded '\0'
+       Note that this function will allow a string with embedded '\\0'
        characters to be created, but most of the functions here will be unable
-       to access characters beyond the first '\0'. Furthermore, if the
-       #MakeMinimumSize()# function is called, all data beyond that first
-       #'\0'# character will be lost.
+       to access characters beyond the first '\\0'. Furthermore, if the
+       <code>MakeMinimumSize()</code> function is called, all data beyond that first
+       '\\0' character will be lost.
      */
     PString(
-      const WORD * ustr,  ///< Pointer to a string of UCS-2 characters.
+      const wchar_t * ustr,  ///< Pointer to a string of UCS-2 characters.
       PINDEX len          ///< Length of the string in bytes.
     );
 
     /**Create a string from the UCS-2 array. A new memory block is allocated
-       of a size equal to #len# plus one which is sufficient to take
-       the string and a terminating '\0' character.
+       of a size equal to <code>len</code> plus one which is sufficient to take
+       the string and a terminating '\\0' character.
 
-       Note that this function will allow a string with embedded '\0'
+       Note that this function will allow a string with embedded '\\0'
        characters to be created, but most of the functions here will be unable
-       to access characters beyond the first '\0'. Furthermore, if the
-       #MakeMinimumSize()# function is called, all data beyond that first
-       #'\0'# character will be lost.
+       to access characters beyond the first '\\0'. Furthermore, if the
+       <code>MakeMinimumSize()</code> function is called, all data beyond that first
+       '\\0' character will be lost.
      */
     PString(
-      const PWORDArray & ustr ///< UCS-2 null terminated string.
+      const PWCharArray & ustr ///< UCS-2 null terminated string.
     );
 
     /**Create a string from the single character. This is most commonly used
        as a type conversion constructor when a literal character, eg 'A' is
        used in a string expression. A new memory block is allocated of two
-       characters to take the char and its terminating '\0' character.
+       characters to take the char and its terminating '\\0' character.
 
        If UCS-2 is used then the char is mapped to a single UCS-2
        character.
@@ -551,7 +281,7 @@ class PString : public PCharArray {
     enum ConversionType {
       Pascal,   // Data is a length byte followed by characters.
       Basic,    // Data is two length bytes followed by characters.
-      Literal,  // Data is C language style string with \ escape codes.
+      Literal,  // Data is C language style string with \\ escape codes.
       Signed,   // Convert a signed integer to a string.
       Unsigned, // Convert an unsigned integer to a string.
       Decimal,  // Convert a real number to a string in decimal format.
@@ -568,7 +298,7 @@ class PString : public PCharArray {
     PString(
       ConversionType type,  ///< Type of data source for conversion.
       const char * str,    ///< String to convert.
-      ...                 ///< Extra parameters for #sprintf()# call.
+      ...                 ///< Extra parameters for <code>sprintf()</code> call.
     );
     PString(
       ConversionType type,  ///< Type of data source for conversion.
@@ -582,7 +312,7 @@ class PString : public PCharArray {
     );
 
     /**Assign the string to the current object. The current instance then
-       becomes another reference to the same string in the #str#
+       becomes another reference to the same string in the <code>str</code>
        parameter.
        
        @return
@@ -592,12 +322,23 @@ class PString : public PCharArray {
       const PString & str  ///< New string to assign.
     );
 
+    /**Assign the string to the current object. The current instance then
+       becomes another reference to the same string in the <code>str</code>
+       parameter.
+       
+       @return
+       reference to the current PString object.
+     */
+    PString & operator=(
+      const std::string & str  ///< New string to assign.
+    ) { return operator=(str.c_str()); }
+
     /**Assign the C string to the current object. The current instance then
-       becomes a unique reference to a copy of the #cstr# parameter.
-       The #cstr# parameter is typically a literal string, eg:
-\begin{verbatim}
+       becomes a unique reference to a copy of the <code>cstr</code> parameter.
+       The <code>cstr</code> parameter is typically a literal string, eg:
+<pre><code>
           myStr = "fred";
-\end{verbatim}
+</code></pre>
        @return
        reference to the current PString object.
      */
@@ -607,9 +348,9 @@ class PString : public PCharArray {
 
     /**Assign the character to the current object. The current instance then
        becomes a unique reference to a copy of the character parameter. eg:
-\begin{verbatim}
+<pre><code>
           myStr = 'A';
-\end{verbatim}
+</code></pre>
        @return
        reference to the current PString object.
      */
@@ -702,9 +443,9 @@ class PString : public PCharArray {
        eg strcmp(), is used.
 
        @return
-       comparison of the two objects, #EqualTo# for same,
-       #LessThan# for #obj# logically less than the
-       object and #GreaterThan# for #obj# logically
+       comparison of the two objects, <code>EqualTo</code> for same,
+       <code>LessThan</code> for <code>obj</code> logically less than the
+       object and <code>GreaterThan</code> for <code>obj</code> logically
        greater than the object.
      */
     virtual Comparison Compare(
@@ -719,7 +460,7 @@ class PString : public PCharArray {
 
     /**Input the string from the specified stream. This will read all
        characters until a end of line is reached. The end of line itself is
-       {\bf not} placed in the string, however it {\bf is} removed from
+       <b>not</b> placed in the string, however it <b>is</b> removed from
        the stream.
      */
     virtual void ReadFrom(
@@ -754,21 +495,21 @@ class PString : public PCharArray {
        old array copied to it.
 
        @return
-       TRUE if the memory for the array was allocated successfully.
+       true if the memory for the array was allocated successfully.
      */
-    virtual BOOL SetSize(
+    virtual PBoolean SetSize(
       PINDEX newSize  ///< New size of the array in elements.
     );
 
     /**Determine if the string is empty. This is semantically slightly
-       different from the usual #PContainer::IsEmpty()# function. It does
-       not test for #PContainer::GetSize()# equal to zero, it tests for
-       #GetLength()# equal to zero.
+       different from the usual <code>PContainer::IsEmpty()</code> function. It does
+       not test for <code>PContainer::GetSize()</code> equal to zero, it tests for
+       <code>GetLength()</code> equal to zero.
 
        @return
-       TRUE if no non-null characters in string.
+       true if no non-null characters in string.
      */
-    virtual BOOL IsEmpty() const;
+    virtual PBoolean IsEmpty() const;
 
     /**Make this instance to be the one and only reference to the container
        contents. This implicitly does a clone of the contents of the container
@@ -776,9 +517,9 @@ class PString : public PCharArray {
        the function does nothing.
 
        @return
-       TRUE if the instance was already unique.
+       true if the instance was already unique.
      */
-    virtual BOOL MakeUnique();
+    virtual PBoolean MakeUnique();
   //@}
 
 
@@ -792,12 +533,12 @@ class PString : public PCharArray {
        from the old string buffer copied to it.
 
        @return
-       TRUE if new memory block successfully allocated.
+       true if new memory block successfully allocated.
      */
-    BOOL MakeMinimumSize();
+    PBoolean MakeMinimumSize();
 
     /**Determine the length of the null terminated string. This is different
-       from #PContainer::GetSize()# which returns the amount of memory
+       from <code>PContainer::GetSize()</code> which returns the amount of memory
        allocated to the string. This is often, though no necessarily, one
        larger than the length of the string.
        
@@ -810,7 +551,7 @@ class PString : public PCharArray {
        to executing !IsEmpty() on the string.
 
        @return
-       TRUE if non-null characters in string.
+       true if non-null characters in string.
      */
     bool operator!() const;
   //@}
@@ -829,11 +570,11 @@ class PString : public PCharArray {
 
     /**Concatenate a C string to a PString to produce a third. The original
        string is not modified, an entirely new unique reference to a string
-       is created. The #cstr# parameter is typically a literal
+       is created. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           myStr = aStr + "fred";
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
@@ -844,11 +585,11 @@ class PString : public PCharArray {
 
     /**Concatenate a single character to a PString to produce a third. The
        original string is not modified, an entirely new unique reference to a
-       string is created. The #ch# parameter is typically a
+       string is created. The <code>ch</code> parameter is typically a
        literal, eg:
-\begin{verbatim}
+<pre><code>
           myStr = aStr + '!';
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
@@ -859,11 +600,11 @@ class PString : public PCharArray {
 
     /**Concatenate a PString to a C string to produce a third. The original
        string is not modified, an entirely new unique reference to a string
-       is created. The #cstr# parameter is typically a literal
+       is created. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           myStr = "fred" + aStr;
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
@@ -875,17 +616,17 @@ class PString : public PCharArray {
 
     /**Concatenate a PString to a single character to produce a third. The
        original string is not modified, an entirely new unique reference to a
-       string is created. The #c# parameter is typically a literal,
+       string is created. The <code>ch</code> parameter is typically a literal,
        eg:
-\begin{verbatim}
+<pre><code>
           myStr = '!' + aStr;
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
      */
     friend PString operator+(
-      char  c,              ///< Character to be concatenated to.
+      char  ch,             ///< Character to be concatenated to.
       const PString & str   ///< String to concatenate.
     );
 
@@ -899,10 +640,10 @@ class PString : public PCharArray {
     );
 
     /**Concatenate a C string to a PString, modifiying that string. The
-       #cstr# parameter is typically a literal string, eg:
-\begin{verbatim}
+       <code>cstr</code> parameter is typically a literal string, eg:
+<pre><code>
           myStr += "fred";
-\end{verbatim}
+</code></pre>
 
        @return
        reference to string that was concatenated to.
@@ -911,11 +652,11 @@ class PString : public PCharArray {
       const char * cstr  ///< C string to concatenate.
     );
 
-    /**Concatenate a single character to a PString. The #ch#
+    /**Concatenate a single character to a PString. The <code>ch</code>
        parameter is typically a literal, eg:
-\begin{verbatim}
+<pre><code>
           myStr += '!';
-\end{verbatim}
+</code></pre>
 
        @return
        new string with concatenation of the object and parameter.
@@ -937,11 +678,11 @@ class PString : public PCharArray {
 
     /**Concatenate a C string to a PString to produce a third. The original
        string is not modified, an entirely new unique reference to a string
-       is created. The #cstr# parameter is typically a literal
+       is created. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           myStr = aStr & "fred";
-\end{verbatim}
+</code></pre>
 
        This function differes from operator+ in that it assures there is at
        least one space between the strings. Exactly one space is added if
@@ -957,11 +698,11 @@ class PString : public PCharArray {
 
     /**Concatenate a single character to a PString to produce a third. The
        original string is not modified, an entirely new unique reference to a
-       string is created. The #ch# parameter is typically a
+       string is created. The <code>ch</code> parameter is typically a
        literal, eg:
-\begin{verbatim}
+<pre><code>
           myStr = aStr & '!';
-\end{verbatim}
+</code></pre>
 
        This function differes from operator+ in that it assures there is at
        least one space between the strings. Exactly one space is added if
@@ -977,11 +718,11 @@ class PString : public PCharArray {
 
     /**Concatenate a PString to a C string to produce a third. The original
        string is not modified, an entirely new unique reference to a string
-       is created. The #cstr# parameter is typically a literal
+       is created. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           myStr = "fred" & aStr;
-\end{verbatim}
+</code></pre>
 
        This function differes from operator+ in that it assures there is at
        least one space between the strings. Exactly one space is added if
@@ -998,13 +739,13 @@ class PString : public PCharArray {
 
     /**Concatenate a PString to a single character to produce a third. The
        original string is not modified, an entirely new unique reference to a
-       string is created. The #c# parameter is typically a literal,
+       string is created. The <code>c</code> parameter is typically a literal,
        eg:
-\begin{verbatim}
+<pre><code>
           myStr = '!' & aStr;
-\end{verbatim}
+</code></pre>
 
-       This function differes from #operator+# in that it assures there is at
+       This function differs from <code>operator+</code> in that it assures there is at
        least one space between the strings. Exactly one space is added if
        there is not a space at the end of the first or beggining of the last
        string.
@@ -1027,10 +768,10 @@ class PString : public PCharArray {
     );
 
     /**Concatenate a C string to a PString, modifiying that string. The
-       #cstr# parameter is typically a literal string, eg:
-\begin{verbatim}
+       <code>cstr</code> parameter is typically a literal string, eg:
+<pre><code>
           myStr &= "fred";
-\end{verbatim}
+</code></pre>
 
        This function differes from operator+ in that it assures there is at
        least one space between the strings. Exactly one space is added if
@@ -1046,10 +787,10 @@ class PString : public PCharArray {
 
 
     /**Concatenate a character to a PString, modifiying that string. The
-       #ch# parameter is typically a literal string, eg:
-\begin{verbatim}
+       <code>ch</code> parameter is typically a literal string, eg:
+<pre><code>
           myStr &= '!';
-\end{verbatim}
+</code></pre>
 
        This function differes from operator+ in that it assures there is at
        least one space between the strings. Exactly one space is added if
@@ -1070,73 +811,73 @@ class PString : public PCharArray {
     /**Compare two strings using case insensitive comparison.
 
        @return
-       TRUE if equal.
+       true if equal.
      */
     bool operator*=(
       const PString & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if equal.
+       true if equal.
      */
     bool operator==(
       const PObject & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if not equal.
+       true if not equal.
      */
     bool operator!=(
       const PObject & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if less than.
+       true if less than.
      */
     bool operator<(
       const PObject & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if greater than.
+       true if greater than.
      */
     bool operator>(
       const PObject & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if less than or equal.
+       true if less than or equal.
      */
     bool operator<=(
       const PObject & str  ///< PString object to compare against.
     ) const;
 
-    /**Compare two strings using the #PObject::Compare()# function. This
-       is identical to the #PObject# class function but is necessary due
+    /**Compare two strings using the <code>PObject::Compare()</code> function. This
+       is identical to the <code>PObject</code> class function but is necessary due
        to other overloaded versions.
 
        @return
-       TRUE if greater than or equal.
+       true if greater than or equal.
      */
     bool operator>=(
       const PObject & str  ///< PString object to compare against.
@@ -1144,113 +885,113 @@ class PString : public PCharArray {
 
 
     /**Compare a PString to a C string using a case insensitive compare
-       function. The #cstr# parameter is typically a literal string,
+       function. The <code>cstr</code> parameter is typically a literal string,
        eg:
-\begin{verbatim}
+<pre><code>
           if (myStr == "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if equal.
+       true if equal.
      */
     bool operator*=(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the ##Compare()##
-       function. The #cstr# parameter is typically a literal string,
+    /**Compare a PString to a C string using the <code>Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal string,
        eg:
-\begin{verbatim}
+<pre><code>
           if (myStr == "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if equal.
+       true if equal.
      */
     bool operator==(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the #PObject::Compare()#
-       function. The #cstr# parameter is typically a literal
+    /**Compare a PString to a C string using the <code>PObject::Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           if (myStr != "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if not equal.
+       true if not equal.
      */
     bool operator!=(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the #PObject::Compare()#
-       function. The #cstr# parameter is typically a literal
+    /**Compare a PString to a C string using the <code>PObject::Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           if (myStr < "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if less than.
+       true if less than.
      */
     bool operator<(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the #PObject::Compare()#
-       function. The #cstr# parameter is typically a literal
+    /**Compare a PString to a C string using the <code>PObject::Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           if (myStr > "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if greater than.
+       true if greater than.
      */
     bool operator>(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the #PObject::Compare()#
-       function. The #cstr# parameter is typically a literal
+    /**Compare a PString to a C string using the <code>PObject::Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           if (myStr <= "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if less than or equal.
+       true if less than or equal.
      */
     bool operator<=(
       const char * cstr  ///< C string to compare against.
     ) const;
 
-    /**Compare a PString to a C string using the #PObject::Compare()#
-       function. The #cstr# parameter is typically a literal
+    /**Compare a PString to a C string using the <code>PObject::Compare()</code>
+       function. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           if (myStr >= "fred")
-\end{verbatim}
+</code></pre>
 
        @return
-       TRUE if greater than or equal.
+       true if greater than or equal.
      */
     bool operator>=(
       const char * cstr  ///< C string to compare against.
     ) const;
 
     /**Compare a string against a substring of the object.
-       This will compare at most #count# characters of the string, starting at
-       the specified #offset#, against that many characters of the #str#
-       parameter. If #count# greater than the length of the #str# parameter
-       then the actual length of #str# is used. If #count# and the length of
-       #str# are greater than the length of the string remaining from the
-       #offset# then FALSE is returned.
+       This will compare at most <code>count</code> characters of the string, starting at
+       the specified <code>offset</code>, against that many characters of the <code>str</code>
+       parameter. If <code>count</code> greater than the length of the <code>str</code> parameter
+       then the actual length of <code>str</code> is used. If <code>count</code> and the length of
+       <code>str</code> are greater than the length of the string remaining from the
+       <code>offset</code> then false is returned.
 
        @return
-       TRUE if str is a substring of .
+       true if str is a substring of .
      */
     Comparison NumCompare(
       const PString & str,        ///< PString object to compare against.
@@ -1259,15 +1000,15 @@ class PString : public PCharArray {
     ) const;
 
     /**Compare a string against a substring of the object.
-       This will compare at most #count# characters of the string, starting at
-       the specified #offset#, against that many characters of the #str#
-       parameter. If #count# greater than the length of the #str# parameter
-       then the actual length of #str# is used. If #count# and the length of
-       #str# are greater than the length of the string remaining from the
-       #offset# then FALSE is returned.
+       This will compare at most <code>count</code> characters of the string, starting at
+       the specified <code>offset</code>, against that many characters of the <code>str</code>
+       parameter. If <code>count</code> greater than the length of the <code>str</code> parameter
+       then the actual length of <code>str</code> is used. If <code>count</code> and the length of
+       <code>str</code> are greater than the length of the string remaining from the
+       <code>offset</code> then false is returned.
 
        @return
-       TRUE if str is a substring of .
+       true if str is a substring of .
      */
     Comparison NumCompare(
       const char * cstr,          ///< C string object to compare against.
@@ -1294,12 +1035,12 @@ class PString : public PCharArray {
     /* Locate the position within the string of the character or substring. The
        search will begin at the character offset provided.
        
-       If #offset# is beyond the length of the string, then the
-       function will always return #P_MAX_INDEX#.
+       If <code>offset</code> is beyond the length of the string, then the
+       function will always return P_MAX_INDEX.
        
        The matching will be for identical character or string. If a search
        ignoring case is required then the string should be converted to a
-       #PCaselessString# before the search is made.
+       PCaselessString before the search is made.
 
        @return
        position of character or substring in the string, or P_MAX_INDEX if the
@@ -1327,13 +1068,13 @@ class PString : public PCharArray {
        substring. The search will begin at the character offset provided,
        moving backward through the string.
 
-       If #offset# is beyond the length of the string, then the
-       search begins at the end of the string. If #offset# is zero
-       then the function always returns #P_MAX_INDEX#.
+       If <code>offset</code> is beyond the length of the string, then the
+       search begins at the end of the string. If <code>offset</code> is zero
+       then the function always returns P_MAX_INDEX.
 
        The matching will be for identical character or string. If a search
        ignoring case is required then the string should be converted to a
-       #PCaselessString# before the search is made.
+       PCaselessString before the search is made.
 
        @return
        position of character or substring in the string, or P_MAX_INDEX if the
@@ -1353,12 +1094,12 @@ class PString : public PCharArray {
     /**Locate the position of one of the characters in the set.
        The search will begin at the character offset provided.
 
-       If #offset# is beyond the length of the string, then the
-       function will always return #P_MAX_INDEX#.
+       If <code>offset</code> is beyond the length of the string, then the
+       function will always return P_MAX_INDEX.
        
        The matching will be for identical character or string. If a search
        ignoring case is required then the string should be converted to a
-       #PCaselessString# before the search is made.
+       PCaselessString before the search is made.
 
        @return
        position of character in the string, or P_MAX_INDEX if no characters
@@ -1369,11 +1110,37 @@ class PString : public PCharArray {
       PINDEX offset = 0     ///< Offset into string to begin search.
     ) const;
 
+    /** Locate the position of character not in the set. */
+    PINDEX FindSpan(
+      const PString & set,  ///< String of characters to search for in string.
+      PINDEX offset = 0     ///< Offset into string to begin search.
+    ) const;
+
+    /**Locate the position of character not in the set.
+       The search will begin at the character offset provided.
+
+       If <code>offset</code> is beyond the length of the string, or every character
+       in the string is a member of the set, then the function will always
+       return P_MAX_INDEX.
+       
+       The matching will be for identical character or string. If a search
+       ignoring case is required then the string should be converted to a
+       PCaselessString before the search is made.
+
+       @return
+       position of character not in the set, or P_MAX_INDEX if all characters
+       from the string are in the set.
+     */
+    PINDEX FindSpan(
+      const char * cset,    ///< C string of characters to search for in string.
+      PINDEX offset = 0     ///< Offset into string to begin search.
+    ) const;
+
     /**Locate the position within the string of one of the regular expression.
        The search will begin at the character offset provided.
 
-       If #offset# is beyond the length of the string, then the
-       function will always return #P_MAX_INDEX#.
+       If <code>offset</code> is beyond the length of the string, then the
+       function will always return P_MAX_INDEX.
        
        @return
        position of regular expression in the string, or P_MAX_INDEX if no
@@ -1387,14 +1154,14 @@ class PString : public PCharArray {
     /**Locate the position within the string of one of the regular expression.
        The search will begin at the character offset provided.
 
-       If #offset# is beyond the length of the string, then the
-       function will always return #P_MAX_INDEX#.
+       If <code>offset</code> is beyond the length of the string, then the
+       function will always return P_MAX_INDEX.
        
        @return
        position of regular expression in the string, or P_MAX_INDEX if no
        characters from the set are in the string.
      */
-    BOOL FindRegEx(
+    PBoolean FindRegEx(
       const PRegularExpression & regex, ///< regular expression to find
       PINDEX & pos,                     ///< Position of matched expression
       PINDEX & len,                     ///< Length of matched expression
@@ -1403,20 +1170,26 @@ class PString : public PCharArray {
     ) const;
 
 
+    /**Return true if the entire string matches the regular expression
+     */
+    PBoolean MatchesRegEx(
+      const PRegularExpression & regex ///< regular expression to match
+    ) const;
+
     /**Locate the substring within the string and replace it with the specifed
        substring. The search will begin at the character offset provided.
 
-       If #offset# is beyond the length of the string, then the
+       If <code>offset</code> is beyond the length of the string, then the
        function will do nothing.
 
        The matching will be for identical character or string. If a search
        ignoring case is required then the string should be converted to a
-       #PCaselessString# before the search is made.
+       PCaselessString before the search is made.
      */
     void Replace(
       const PString & target,   ///< Text to be removed.
       const PString & subs,     ///< String to be inserted into the gaps created
-      BOOL all = FALSE,         ///< Replace all occurrences of target text.
+      PBoolean all = false,         ///< Replace all occurrences of target text.
       PINDEX offset = 0         ///< Offset into string to begin search.
     );
 
@@ -1465,14 +1238,14 @@ class PString : public PCharArray {
        is not changed and a new unique reference to a string is returned.
        
        The substring is returned inclusive of the characters at the
-       #start# and #end# positions.
+       <code>start</code> and <code>end</code> positions.
        
-       If the #end# position is greater than the length of the
-       string then all characters from the #start# up to the end of
+       If the <code>end</code> position is greater than the length of the
+       string then all characters from the <code>start</code> up to the end of
        the string are returned.
 
-       If #start# is greater than the length of the string or
-       #end# is before #start# then an empty string is
+       If <code>start</code> is greater than the length of the string or
+       <code>end</code> is before <code>start</code> then an empty string is
        returned.
 
        @return
@@ -1489,10 +1262,10 @@ class PString : public PCharArray {
        A substring from the beginning of the string for the number of
        characters specified is extracted.
        
-       If #len# is greater than the length of the string then all
+       If <code>len</code> is greater than the length of the string then all
        characters to the end of the string are returned.
 
-       If #len# is zero then an empty string is returned.
+       If <code>len</code> is zero then an empty string is returned.
 
        @return
        substring of the source string.
@@ -1507,10 +1280,10 @@ class PString : public PCharArray {
        A substring from the end of the string for the number of characters
        specified is extracted.
        
-       If #len# is greater than the length of the string then all
+       If <code>len</code> is greater than the length of the string then all
        characters to the beginning of the string are returned.
 
-       If #len# is zero then an empty string is returned.
+       If <code>len</code> is zero then an empty string is returned.
 
        @return
        substring of the source string.
@@ -1522,15 +1295,15 @@ class PString : public PCharArray {
     /**Extract a portion of the string into a new string. The original string
        is not changed and a new unique reference to a string is returned.
        
-       A substring from the #start# position for the number of
+       A substring from the <code>start</code> position for the number of
        characters specified is extracted.
        
-       If #len# is greater than the length of the string from the
-       #start# position then all characters to the end of the
+       If <code>len</code> is greater than the length of the string from the
+       <code>start</code> position then all characters to the end of the
        string are returned.
 
-       If #start# is greater than the length of the string or
-       #len# is zero then an empty string is returned.
+       If <code>start</code> is greater than the length of the string or
+       <code>len</code> is zero then an empty string is returned.
 
        @return
        substring of the source string.
@@ -1595,7 +1368,7 @@ class PString : public PCharArray {
     PStringArray Tokenise(
       const PString & separators,
         ///< A string for the set of separator characters that delimit tokens.
-      BOOL onePerSeparator = TRUE
+      PBoolean onePerSeparator = true
         ///< Flag for if there are empty tokens between consecutive separators.
     ) const;
     /**Split the string into an array of substrings.
@@ -1603,19 +1376,21 @@ class PString : public PCharArray {
        from the specified set.
        
        There are two options for the tokenisation, the first is where the
-       #onePerSeparator# is TRUE. This form will produce a token
+       <code>onePerSeparator</code> is true. This form will produce a token
        for each delimiter found in the set. Thus the string ",two,three,,five"
        would be split into 5 substrings; "", "two", "three", "" and "five".
        
-       The second form where #onePerSeparator# is FALSE is used
+       The second form where <code>onePerSeparator</code> is false is used
        where consecutive delimiters do not constitute a empty token. In this
-       case the string "  a list  of words  " would be split into 4 substrings;
-       "a", "list", "of" and "words".
+       case the string "  a list  of words  " would be split into 5 substrings;
+       "a", "list", "of", "words" and "".
 
        There is an important distinction when there are delimiters at the
        beginning or end of the source string. In the first case there will be
-       empty strings at the end of the array and in the second the delimiters
-       are ignored.
+       empty strings at the end of the array. In the second case delimeters
+       at the beginning of the source string are ignored and if there are one
+       or more trailing delimeters, they will yeild a single empty string at
+       the end of the array.
 
        @return
        an array of substring for each token in the string.
@@ -1623,18 +1398,18 @@ class PString : public PCharArray {
     PStringArray Tokenise(
       const char * cseparators,
         ///< A C string for the set of separator characters that delimit tokens.
-      BOOL onePerSeparator = TRUE
+      PBoolean onePerSeparator = true
         ///< Flag for if there are empty tokens between consecutive separators.
     ) const;
 
     /**Split the string into individual lines. The line delimiters may be a
-       carriage return ('\r'), a line feed ('\n') or a carriage return and
-       line feed pair ("\r\n"). A line feed and carriage return pair ("\n\r")
+       carriage return ('\\r'), a line feed ('\\n') or a carriage return and
+       line feed pair ("\\r\\n"). A line feed and carriage return pair ("\\n\\r")
        would yield a blank line. between the characters.
 
-       The #Tokenise()# function should not be used to split a string
-       into lines as a #"\r\n"# pair consitutes a single line
-       ending. The #Tokenise()# function would produce a blank line in
+       The <code>Tokenise()</code> function should not be used to split a string
+       into lines as a #"\\r\\n"# pair consitutes a single line
+       ending. The <code>Tokenise()</code> function would produce a blank line in
        between them.
 
        @return
@@ -1646,7 +1421,7 @@ class PString : public PCharArray {
   /**@name Conversion functions */
   //@{
     /**Concatenate a formatted output to the string. This is identical to the
-       standard C library #sprintf()# function, but appends its
+       standard C library <code>sprintf()</code> function, but appends its
        output to the string.
        
        This function makes the assumption that there is less the 1000
@@ -1661,12 +1436,12 @@ class PString : public PCharArray {
      */
     PString & sprintf(
       const char * cfmt,   ///< C string for output format.
-      ...                  ///< Extra parameters for #sprintf()# call.
+      ...                  ///< Extra parameters for <code>sprintf()</code> call.
     );
 
     /**Produce formatted output as a string. This is identical to the standard
-       C library #sprintf()# function, but sends its output to a
-       #PString#.
+       C library <code>sprintf()</code> function, but sends its output to a
+       <code>PString</code>.
 
        This function makes the assumption that there is less the 1000
        characters of formatted output. The function will assert if this occurs.
@@ -1680,16 +1455,16 @@ class PString : public PCharArray {
      */
     friend PString psprintf(
       const char * cfmt,   ///< C string for output format.
-      ...                  ///< Extra parameters for #sprintf()# call.
+      ...                  ///< Extra parameters for <code>sprintf()</code> call.
     );
 
     /** Concatenate a formatted output to the string. */
     PString & vsprintf(
       const PString & fmt, ///< String for output format.
-      va_list args         ///< Extra parameters for #sprintf()# call.
+      va_list args         ///< Extra parameters for <code>sprintf()</code> call.
     );
     /**Concatenate a formatted output to the string. This is identical to the
-       standard C library #vsprintf()# function, but appends its
+       standard C library <code>vsprintf()</code> function, but appends its
        output to the string.
 
        This function makes the assumption that there is less the 1000
@@ -1704,17 +1479,17 @@ class PString : public PCharArray {
      */
     PString & vsprintf(
       const char * cfmt,   ///< C string for output format.
-      va_list args         ///< Extra parameters for #sprintf()# call.
+      va_list args         ///< Extra parameters for <code>sprintf()</code> call.
     );
 
     /** Produce formatted output as a string. */
     friend PString pvsprintf(
       const char * cfmt,   ///< C string for output format.
-      va_list args         ///< Extra parameters for #sprintf()# call.
+      va_list args         ///< Extra parameters for <code>sprintf()</code> call.
     );
     /**Produce formatted output as a string. This is identical to the standard
-       C library #vsprintf()# function, but sends its output to a
-       #PString#.
+       C library <code>vsprintf()</code> function, but sends its output to a
+       <code>PString</code>.
 
        This function makes the assumption that there is less the 1000
        characters of formatted output. The function will assert if this occurs.
@@ -1728,7 +1503,7 @@ class PString : public PCharArray {
      */
     friend PString pvsprintf(
       const PString & fmt, ///< String for output format.
-      va_list args         ///< Extra parameters for #sprintf()# call.
+      va_list args         ///< Extra parameters for <code>sprintf()</code> call.
     );
 
 
@@ -1739,7 +1514,7 @@ class PString : public PCharArray {
        The number base may only be from 2 to 36 and the function will assert
        if it is not in this range.
 
-       This function uses the standard C library #strtol()# function.
+       This function uses the standard C library <code>strtol()</code> function.
 
        @return
        integer value for the string.
@@ -1754,7 +1529,7 @@ class PString : public PCharArray {
        The number base may only be from 2 to 36 and the function will assert
        if it is not in this range.
 
-       This function uses the standard C library #strtoul()# function.
+       This function uses the standard C library <code>strtoul()</code> function.
 
        @return
        integer value for the string.
@@ -1769,8 +1544,8 @@ class PString : public PCharArray {
        The number base may only be from 2 to 36 and the function will assert
        if it is not in this range.
 
-       This function uses the standard C library #strtoq()#
-       or #strtoul()# function.
+       This function uses the standard C library <code>strtoq()</code>
+       or <code>strtoul()</code> function.
 
        @return
        integer value for the string.
@@ -1785,8 +1560,8 @@ class PString : public PCharArray {
        The number base may only be from 2 to 36 and the function will assert
        if it is not in this range.
 
-       This function uses the standard C library #strtouq()#
-       or #strtoul()# function.
+       This function uses the standard C library <code>strtouq()</code>
+       or <code>strtoul()</code> function.
 
        @return
        integer value for the string.
@@ -1799,7 +1574,7 @@ class PString : public PCharArray {
        decimal or exponential form. All characters up to the first illegal
        character for a floting point number are converted.
 
-       This function uses the standard C library #strtod()#
+       This function uses the standard C library <code>strtod()</code>
        function.
 
        @return
@@ -1808,9 +1583,9 @@ class PString : public PCharArray {
     double AsReal() const;
      
     /**Convert UTF-8 string to UCS-2.
-       Note the resultant PWORDArray will have the trailing null included.
+       Note the resultant PWCharArray will have the trailing null included.
       */
-    PWORDArray AsUCS2() const;
+    PWCharArray AsUCS2() const;
 
     /**Convert a standard null terminated string to a "pascal" style string.
        This consists of a songle byte for the length of the string and then
@@ -1825,9 +1600,9 @@ class PString : public PCharArray {
     PBYTEArray ToPascal() const;
 
     /**Convert the string to C literal string format. This will convert non
-       printable characters to the \nnn form or for standard control characters
-       such as line feed, to \n form. Any '"' characters are also escaped with
-       a \ character and the entire string is enclosed in '"' characters.
+       printable characters to the \\nnn form or for standard control characters
+       such as line feed, to \\n form. Any '"' characters are also escaped with
+       a \\ character and the entire string is enclosed in '"' characters.
        
        @return
        string converted to a C language literal form.
@@ -1836,19 +1611,23 @@ class PString : public PCharArray {
 
     /**Get the internal buffer as a pointer to unsigned characters. The
        standard "operator const char *" function is provided by the
-       #PCharArray# ancestor class.
+       <code>PCharArray</code> ancestor class.
 
        @return
        pointer to character buffer.
      */
     operator const unsigned char *() const;
 
+    /** Cast the PString to a std::string
+      */
+    operator std::string () const
+    { return std::string(theArray); }
   //@}
 
 
   protected:
     void InternalFromUCS2(
-      const WORD * ptr,
+      const wchar_t * ptr,
       PINDEX len
     );
     virtual Comparison InternalCompare(
@@ -1860,14 +1639,16 @@ class PString : public PCharArray {
       PINDEX length,      // Number of characters to compare.
       const char * cstr   // C string to compare against.
     ) const;
+
     /* Internal function to compare the current string value against the
        specified C string.
 
        @return
        relative rank of the two strings.
      */
-
     PString(int dummy, const PString * str);
+
+    PString(PContainerReference & reference) : PCharArray(reference) { }
 };
 
 
@@ -1878,11 +1659,46 @@ inline ostream & operator<<(ostream & stream, const PString & string)
 }
 
 
+inline wostream & operator<<(wostream & stream, const PString & string)
+{
+  return stream << (const char *)string;
+}
+
+
+#ifdef _WIN32
+  class PWideString : public PWCharArray {
+    PCLASSINFO(PWideString, PWCharArray);
+
+    public:
+    typedef const wchar_t * Initialiser;
+
+      PWideString() { }
+      PWideString(const PWCharArray & arr) : PWCharArray(arr) { }
+      PWideString(const PString     & str) : PWCharArray(str.AsUCS2()) { }
+      PWideString(const char        * str) : PWCharArray(PString(str).AsUCS2()) { }
+      PWideString & operator=(const PWideString & str) { PWCharArray::operator=(str); return *this; }
+      PWideString & operator=(const PString     & str) { PWCharArray::operator=(str.AsUCS2()); return *this; }
+      PWideString & operator=(const std::string & str) { PWCharArray::operator=(PString(str.c_str()).AsUCS2()); return *this; }
+      PWideString & operator=(const char        * str) { PWCharArray::operator=(PString(str).AsUCS2()); return *this; }
+      friend inline ostream & operator<<(ostream & stream, const PWideString & string) { return stream << PString(string); }
+
+    protected:
+      PWideString(PContainerReference & reference) : PWCharArray(reference) { }
+  };
+
+  #ifdef UNICODE
+    typedef PWideString PVarString;
+  #else
+    typedef PString PVarString;
+  #endif
+#endif
+
+
 //////////////////////////////////////////////////////////////////////////////
 
 /**This class is a variation of a string that ignores case. Thus in all
-   standard comparison (#==#, #<# etc) and search
-   (#Find()# etc) functions the case of the characters and strings is
+   standard comparison (==, < etc) and search
+   (<code>Find()</code> etc) functions the case of the characters and strings is
    ignored.
    
    The characters in the string still maintain their case. Only the comparison
@@ -1906,7 +1722,7 @@ class PCaselessString : public PString
     );
 
     /**Create a caseless string, with a reference to the characters in the
-       normal #PString# provided. A PCaselessString may also be provided
+       normal <code>PString</code> provided. A PCaselessString may also be provided
        to this constructor.
      */
     PCaselessString(
@@ -1914,8 +1730,15 @@ class PCaselessString : public PString
     );
 
 
+    /**Create a caseless string from a std::string
+     */
+    PCaselessString(
+      const std::string & str  ///< String to initialise the caseless string from.
+      ) : PString(str)
+    { }
+
     /**Assign the string to the current object. The current instance then
-       becomes another reference to the same string in the #str#
+       becomes another reference to the same string in the <code>str</code>
        parameter.
        
        @return
@@ -1925,12 +1748,23 @@ class PCaselessString : public PString
       const PString & str  ///< New string to assign.
     );
 
+    /**Assign the string to the current object. The current instance then
+       becomes another reference to the same string in the <code>str</code>
+       parameter.
+       
+       @return
+       reference to the current PString object.
+     */
+    PCaselessString & operator=(
+      const std::string & str  ///< New string to assign.
+    ) { return operator=(str.c_str()); }
+
     /**Assign the C string to the current object. The current instance then
-       becomes a unique reference to a copy of the #cstr# parameter.
-       The #cstr# parameter is typically a literal string, eg:
-\begin{verbatim}
+       becomes a unique reference to a copy of the <code>cstr</code> parameter.
+       The <code>cstr</code> parameter is typically a literal string, eg:
+<pre><code>
           myStr = "fred";
-\end{verbatim}
+</code></pre>
        @return
        reference to the current PString object.
      */
@@ -1940,9 +1774,9 @@ class PCaselessString : public PString
 
     /**Assign the character to the current object. The current instance then
        becomes a unique reference to a copy of the character parameter. eg:
-\begin{verbatim}
+<pre><code>
           myStr = 'A';
-\end{verbatim}
+</code></pre>
        @return
        reference to the current PString object.
      */
@@ -1977,14 +1811,66 @@ class PCaselessString : public PString
      */
 
     PCaselessString(int dummy, const PCaselessString * str);
+    PCaselessString(PContainerReference & reference) : PString(reference) { }
 };
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+/**Create a constant string.
+   This is used to create a PString wrapper around a constant char string. Thus
+   internal memory allocations are avoided as it does not change. The resultant
+   object can be used in almost every way that a PString does, except being
+   able modify it. However, copying to another PString instance and then
+   making modifications is OK.
+   
+   It is particularly useful in static string declarations, e.g.
+   <CODE>
+   static const PConstantString<PString> str("A test string");
+   </CODE>
+   and is completely thread safe in it's construction.
+  */
+template <class ParentString>
+class PConstantString : public ParentString
+{
+  private:
+    PContainerReference m_staticReference;
+  public:
+    PConstantString(typename ParentString::Initialiser init)
+      : ParentString(m_staticReference)
+      , m_staticReference((PINDEX)strlen(init)+1, true)
+    {
+      this->theArray = (char *)init;
+    }
+    ~PConstantString() { this->Destruct(); }
+
+    virtual PBoolean SetSize(PINDEX) { return false; }
+    virtual void AssignContents(const PContainer &) { PAssertAlways(PInvalidParameter); }
+    virtual void DestroyReference() { }
+
+  private:
+    PConstantString(const PConstantString &)
+      : ParentString(m_staticReference)
+      , m_staticReference(0, true)
+      { }
+    void operator=(const PConstantString &) { }
+};
+
+
+/// Constant PString type. See PConstantString.
+typedef PConstantString<PString>         PConstString;
+
+/// Constant PCaselessString type. See PConstantString.
+typedef PConstantString<PCaselessString> PConstCaselessString;
+
+
 
 //////////////////////////////////////////////////////////////////////////////
 
 class PStringStream;
 
 /**This class is a standard C++ stream class descendent for reading or writing
-   streamed data to or from a #PString# class.
+   streamed data to or from a <code>PString</code> class.
    
    All of the standard stream I/O operators, manipulators etc will operate on
    the PStringStream class.
@@ -2010,7 +1896,7 @@ class PStringStream : public PString, public iostream
     );
 
     /**Create a new string stream and initialise it to the provided value. The
-       string stream references the same string buffer as the #str#
+       string stream references the same string buffer as the <code>str</code>
        parameter until any output to the string stream is attempted. The
        reference is then broken and the instance of the string stream becomes
        a unique reference to a string buffer.
@@ -2032,7 +1918,7 @@ class PStringStream : public PString, public iostream
     virtual PString & MakeEmpty();
 
     /**Assign the string part of the stream to the current object. The current
-       instance then becomes another reference to the same string in the #strm#
+       instance then becomes another reference to the same string in the <code>strm</code>
        parameter.
        
        This will reset the read pointer for input to the beginning of the
@@ -2047,7 +1933,7 @@ class PStringStream : public PString, public iostream
     );
 
     /**Assign the string to the current object. The current instance then
-       becomes another reference to the same string in the #str#
+       becomes another reference to the same string in the <code>str</code>
        parameter.
        
        This will reset the read pointer for input to the beginning of the
@@ -2062,12 +1948,12 @@ class PStringStream : public PString, public iostream
     );
 
     /**Assign the C string to the string stream. The current instance then
-       becomes a unique reference to a copy of the #cstr#
-       parameter. The #cstr# parameter is typically a literal
+       becomes a unique reference to a copy of the <code>cstr</code>
+       parameter. The <code>cstr</code> parameter is typically a literal
        string, eg:
-\begin{verbatim}
+<pre><code>
           myStr = "fred";
-\end{verbatim}
+</code></pre>
 
        This will reset the read pointer for input to the beginning of the
        string. Also, any data output to the string up until the asasignement
@@ -2082,9 +1968,9 @@ class PStringStream : public PString, public iostream
 
     /**Assign the character to the current object. The current instance then
        becomes a unique reference to a copy of the character parameter. eg:
-\begin{verbatim}
+<pre><code>
           myStr = 'A';
-\end{verbatim}
+</code></pre>
        @return
        reference to the current PString object.
      */
@@ -2108,17 +1994,13 @@ class PStringStream : public PString, public iostream
         Buffer(PStringStream & str, PINDEX size);
         Buffer(const Buffer & sbuf);
         Buffer & operator=(const Buffer & sbuf);
-        virtual int overflow(int=EOF);
-        virtual int underflow();
+        virtual int_type overflow(int_type = EOF);
+        virtual int_type underflow();
         virtual int sync();
-#ifdef __USE_STL__
         virtual pos_type seekoff(off_type, ios_base::seekdir, ios_base::openmode = ios_base::in | ios_base::out);
         virtual pos_type seekpos(pos_type, ios_base::openmode = ios_base::in | ios_base::out);
-#else
-        virtual streampos seekoff(streamoff, ios::seek_dir, int);
-#endif
         PStringStream & string;
-        BOOL            fixedBufferSize;
+        PBoolean            fixedBufferSize;
     };
 };
 
@@ -2126,17 +2008,17 @@ class PStringStream : public PString, public iostream
 class PStringList;
 class PSortedStringList;
 
-/**This is an array collection class of #PString# objects. It has all the
+/**This is an array collection class of <code>PString</code> objects. It has all the
    usual functions for a collection, with the object types set to
-   #PString# pointers.
+   <code>PString</code> pointers.
    
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
-   See the #PAbstractArray# and #PArray# classes and
-   #PDECLARE_ARRAY# macro for more information.
+   See the <code>PAbstractArray</code> and <code>PArray</code> classes and
+   <code>PDECLARE_ARRAY</code> macro for more information.
 */
 #ifdef DOC_PLUS_PLUS
 class PStringArray : public PArray {
@@ -2152,7 +2034,7 @@ class PStringArray : public PArray {
     PStringArray(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      BOOL caseless = FALSE         ///< New strings are to be PCaselessStrings
+      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PStringArray of length one from the single string.
      */
@@ -2211,9 +2093,10 @@ class PStringArray : public PArray {
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
@@ -2222,7 +2105,7 @@ class PStringArray : public PArray {
 
   /**@name New functions for class */
   //@{
-    /**As for #GetValuesIndex()# but takes a PString argument so that
+    /**As for <code>GetValuesIndex()</code> but takes a PString argument so that
        literals will be automatically converted.
 
        @return
@@ -2241,7 +2124,7 @@ class PStringArray : public PArray {
        array then the function will create a new one.
 
        @return
-       reference to the object at #index# position.
+       reference to the object at <code>index</code> position.
      */
     PString & operator[](
       PINDEX index  ///< Index position in the collection of the object.
@@ -2272,7 +2155,7 @@ class PStringArray : public PArray {
     PStringArray operator + (const PString & str);
 
     /**Create an array of C strings.
-       If storage is NULL then this returns a single pointer that may be
+       If storage is NULL then this returns a single pointer that must be
        disposed of using free(). Note that each of the strings are part of the
        same memory allocation so only one free() is required.
 
@@ -2285,17 +2168,17 @@ class PStringArray : public PArray {
 };
 
 
-/**This is a list collection class of #PString# objects. It has all the
+/**This is a list collection class of <code>PString</code> objects. It has all the
    usual functions for a collection, with the object types set to
-   #PString# pointers.
+   <code>PString</code> pointers.
    
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
-   See the #PAbstractList# and #PList# classes and
-   #PDECLARE_LIST# macro for more information.
+   See the <code>PAbstractList</code> and <code>PList</code> classes and
+   <code>PDECLARE_LIST</code> macro for more information.
  */
 #ifdef DOC_PLUS_PLUS
 class PStringList : public PList {
@@ -2309,7 +2192,7 @@ PDECLARE_LIST(PStringList, PString);
     PStringList(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      BOOL caseless = FALSE         ///< New strings are to be PCaselessStrings
+      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PStringList of length one from the single string.
      */
@@ -2331,9 +2214,10 @@ PDECLARE_LIST(PStringList, PString);
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
@@ -2397,17 +2281,16 @@ PDECLARE_LIST(PStringList, PString);
 };
 
 
-/**This is a sorted list collection class of #PString# objects. It has all
+/**This is a sorted list collection class of <code>PString</code> objects. It has all
    the usual functions for a collection, with the object types set to
-   #PString# pointers.
+   <code>PString</code> pointers.
    
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
-   See the #PAbstractSortedList# and #PSortedList# classes and
-   #PDECLARE_SORTEDLIST# macro for more information.
+   See the PAbstractSortedList and PSortedList classes for more information.
  */
 #ifdef DOC_PLUS_PLUS
 class PSortedStringList : public PSortedList {
@@ -2421,7 +2304,7 @@ PDECLARE_SORTED_LIST(PSortedStringList, PString);
     PSortedStringList(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      BOOL caseless = FALSE         ///< New strings are to be PCaselessStrings
+      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PSortedStringList of length one from the single string.
      */
@@ -2443,9 +2326,10 @@ PDECLARE_SORTED_LIST(PSortedStringList, PString);
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
@@ -2481,17 +2365,18 @@ PDECLARE_SORTED_LIST(PSortedStringList, PString);
     PINDEX InternalStringSelect(
       const char * str,
       PINDEX len,
-      Element * thisElement
+      Element * thisElement,
+      Element * & lastElement
     ) const;
 };
 
 
-/**This is a set collection class of #PString# objects. It has all the
+/**This is a set collection class of <code>PString</code> objects. It has all the
    usual functions for a collection, with the object types set to
-   #PString# pointers.
+   <code>PString</code> pointers.
 
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
@@ -2499,13 +2384,13 @@ PDECLARE_SORTED_LIST(PSortedStringList, PString);
    complements the automatic creation of new PString objects when literals or
    expressions are used.
 
-   See the #PAbstractSet# and #PSet# classes and #PDECLARE_SET#
+   See the <code>PAbstractSet</code> and <code>PSet</code> classes and <code>PDECLARE_SET</code>
    macro for more information.
  */
 #ifdef DOC_PLUS_PLUS
 class PStringSet : public PSet {
 #endif
-PDECLARE_SET(PStringSet, PString, TRUE);
+PDECLARE_SET(PStringSet, PString, true);
   public:
   /**@name Construction */
   //@{
@@ -2514,21 +2399,32 @@ PDECLARE_SET(PStringSet, PString, TRUE);
     PStringSet(
       PINDEX count,                 ///< Count of strings in array
       char const * const * strarr,  ///< Array of C strings
-      BOOL caseless = FALSE         ///< New strings are to be PCaselessStrings
+      PBoolean caseless = false         ///< New strings are to be PCaselessStrings
     );
     /**Create a PStringSet containing the single string.
      */
     PStringSet(
-      const PString & str  ///< Single string to convert to a list of one.
+      const PString & str  ///< Single string to convert to a set of one.
+    );
+    /**Create a PStringSet containing the strings.
+     */
+    PStringSet(
+      const PStringArray & strArray  ///< String to convert to a set.
+    );
+    /**Create a PStringSet containing the strings.
+     */
+    PStringSet(
+      const PStringList & strList  ///< String to convert to a set.
     );
   //@}
 
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   ///< Stream to read the objects contents from.
@@ -2557,13 +2453,11 @@ PDECLARE_SET(PStringSet, PString, TRUE);
 };
 
 
-#ifdef PHAS_TEMPLATES
-
 /**This template class maps the PAbstractDictionary to a specific key type and
-   a #PString# data type. The functions in this class primarily do all the
+   a <code>PString</code> data type. The functions in this class primarily do all the
    appropriate casting of types.
 
-   Note that if templates are not used the #PDECLARE_STRING_DICTIONARY#
+   Note that if templates are not used the <code>PDECLARE_STRING_DICTIONARY</code>
    macro will simulate the template instantiation.
  */
 template <class K> class PStringDictionary : public PAbstractDictionary
@@ -2595,7 +2489,7 @@ template <class K> class PStringDictionary : public PAbstractDictionary
 
   /**@name New functions for class */
   //@{
-    /**Get the string contained in the dictionary at the #key#
+    /**Get the string contained in the dictionary at the <code>key</code>
        position. The hash table is used to locate the data quickly via the
        hash function provided by the key.
 
@@ -2610,37 +2504,40 @@ template <class K> class PStringDictionary : public PAbstractDictionary
     const PString & operator[](const K & key) const
       { return (const PString &)GetRefAt(key); }
 
-    /**Get the string contained in the dictionary at the #key#
+    /**Get the string contained in the dictionary at the <code>key</code>
        position. The hash table is used to locate the data quickly via the
        hash function provided by the key.
 
        The last key/data pair is remembered by the class so that subseqent
        access is very fast.
 
-       This function returns the #dflt# value if there is no data
+       This function returns the <code>dflt</code> value if there is no data
        at the key position.
 
        @return
        reference to the object indexed by the key.
      */
-    PString operator()(const K & key, const char * dflt = "") const
-      { if (AbstractContains(key)) return (*this)[key]; return dflt; }
+    PString operator()(const K & key, const char * dflt = NULL) const
+    {
+      PString * str = this->GetAt(key);
+      return str != NULL ? *str : PString(dflt);
+    }
 
     /**Determine if the value of the object is contained in the hash table. The
        object values are compared, not the pointers.  So the objects in the
-       collection must correctly implement the #PObject::Compare()#
+       collection must correctly implement the <code>PObject::Compare()</code>
        function. The hash table is used to locate the entry.
 
        @return
-       TRUE if the object value is in the dictionary.
+       true if the object value is in the dictionary.
      */
-    BOOL Contains(
+    PBoolean Contains(
       const K & key   // Key to look for in the dictionary.
       ) const { return AbstractContains(key); }
 
     /**Remove an object at the specified key. The returned pointer is then
-       removed using the #SetAt()# function to set that key value to
-       NULL. If the #AllowDeleteObjects# option is set then the
+       removed using the <code>SetAt()</code> function to set that key value to
+       NULL. If the <code>AllowDeleteObjects</code> option is set then the
        object is also deleted.
 
        @return
@@ -2672,9 +2569,9 @@ template <class K> class PStringDictionary : public PAbstractDictionary
        of the keys and the order of insertion.
 
        @return
-       TRUE if the new object could be placed into the dictionary.
+       true if the new object could be placed into the dictionary.
      */
-    virtual BOOL SetDataAt(
+    virtual PBoolean SetDataAt(
       PINDEX index,        // Ordinal index in the dictionary.
       const PString & str  // New string value to put into the dictionary.
     ) { return PAbstractDictionary::SetDataAt(index, PNEW PString(str)); }
@@ -2688,9 +2585,9 @@ template <class K> class PStringDictionary : public PAbstractDictionary
        to the data item.
 
        @return
-       TRUE if the object was successfully added.
+       true if the object was successfully added.
      */
-    virtual BOOL SetAt(
+    virtual PBoolean SetAt(
       const K & key,       // Key for position in dictionary to add object.
       const PString & str  // New string value to put into the dictionary.
     ) { return AbstractSetAt(key, PNEW PString(str)); }
@@ -2732,16 +2629,16 @@ template <class K> class PStringDictionary : public PAbstractDictionary
 
 /**Begin declaration of a dictionary of strings class.
    This macro is used to declare a descendent of PAbstractList class,
-   customised for a particular key type {\bf K} and data object type
-   #PString#.
+   customised for a particular key type <b>K</b> and data object type
+   <code>PString</code>.
 
    If the compilation is using templates then this macro produces a descendent
-   of the #PStringDictionary# template class. If templates are not being
+   of the <code>PStringDictionary</code> template class. If templates are not being
    used then the macro defines a set of inline functions to do all casting of
    types. The resultant classes have an identical set of functions in either
    case.
 
-   See the #PStringDictionary# and #PAbstractDictionary# classes for
+   See the <code>PStringDictionary</code> and <code>PAbstractDictionary</code> classes for
    more information.
  */
 #define PDECLARE_STRING_DICTIONARY(cls, K) \
@@ -2758,81 +2655,31 @@ template <class K> class PStringDictionary : public PAbstractDictionary
 
 /**Declare a dictionary of strings class.
    This macro is used to declare a descendent of PAbstractDictionary class,
-   customised for a particular key type {\bf K} and data object type
-   #PString#. This macro closes the class declaration off so no additional
+   customised for a particular key type <b>K</b> and data object type
+   <code>PString</code>. This macro closes the class declaration off so no additional
    members can be added.
 
    If the compilation is using templates then this macro produces a typedef
-   of the #PStringDictionary# template class.
+   of the <code>PStringDictionary</code> template class.
 
-   See the #PStringDictionary# class and #PDECLARE_STRING_DICTIONARY#
+   See the <code>PStringDictionary</code> class and <code>PDECLARE_STRING_DICTIONARY</code>
    macro for more information.
  */
 #define PSTRING_DICTIONARY(cls, K) typedef PStringDictionary<K> cls
 
 
-#else // PHAS_TEMPLATES
-
-
-#define PSTRING_DICTIONARY(cls, K) \
-  class cls : public PAbstractDictionary { \
-  PCLASSINFO(cls, PAbstractDictionary) \
-  protected: \
-    inline cls(int dummy, const cls * c) \
-      : PAbstractDictionary(dummy, c) { } \
-  public: \
-    inline cls() \
-      : PAbstractDictionary() { } \
-    inline PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-    inline PString & operator[](const K & key) const \
-      { return (PString &)GetRefAt(key); } \
-    inline PString operator()(const K & key, const char * dflt = "") const \
-      { if (Contains(key)) return (PString &)GetRefAt(key); return dflt; } \
-    virtual BOOL Contains(const K & key) const \
-      { return AbstractContains(key); } \
-    virtual PString * RemoveAt(const K & key) \
-      { PString * s = GetAt(key); AbstractSetAt(key, NULL); \
-        return reference->deleteObjects ? (s ? (PString *)-1 : NULL) : s; } \
-    virtual PString * GetAt(const K & key) const \
-      { return (PString *)AbstractGetAt(key); } \
-    virtual BOOL SetDataAt(PINDEX index, const PString & str) \
-      { return PAbstractDictionary::SetDataAt(index,PNEW PString(str));} \
-    virtual BOOL SetAt(const K & key, const PString & str) \
-      { return AbstractSetAt(key, PNEW PString(str)); } \
-    inline const K & GetKeyAt(PINDEX index) const \
-      { return (const K &)AbstractGetKeyAt(index); } \
-    inline PString & GetDataAt(PINDEX index) const \
-      { return (PString &)AbstractGetDataAt(index); } \
-  }
-
-#define PDECLARE_STRING_DICTIONARY(cls, K) \
-  PSTRING_DICTIONARY(cls##_PTemplate, K); \
-  PDECLARE_CLASS(cls, cls##_PTemplate) \
-  protected: \
-    cls(int dummy, const cls * c) \
-      : cls##_PTemplate(dummy, c) { } \
-  public: \
-    cls() \
-      : cls##_PTemplate() { } \
-    virtual PObject * Clone() const \
-      { return PNEW cls(0, this); } \
-
-#endif // PHAS_TEMPLATES
-
-
-/**This is a dictionary collection class of #PString# objects, keyed by an
+/**This is a dictionary collection class of <code>PString</code> objects, keyed by an
    ordinal value. It has all the usual functions for a collection, with the
-   object types set to #PString# pointers. The class could be considered
+   object types set to <code>PString</code> pointers. The class could be considered
    like a sparse array of strings.
 
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
-   See the #PAbstractDictionary# and #PStringDictionary# classes and
-   #PDECLARE_DICTIONARY# and #PDECLARE_STRING_DICTIONARY# macros for
+   See the <code>PAbstractDictionary</code> and <code>PStringDictionary</code> classes and
+   <code>PDECLARE_DICTIONARY</code> and <code>PDECLARE_STRING_DICTIONARY</code> macros for
    more information.
  */
 #ifdef DOC_PLUS_PLUS
@@ -2860,9 +2707,10 @@ PDECLARE_STRING_DICTIONARY(POrdinalToString, POrdinalKey);
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
@@ -2871,16 +2719,15 @@ PDECLARE_STRING_DICTIONARY(POrdinalToString, POrdinalKey);
 };
 
 /**This is a dictionary collection class of ordinals keyed by
-   #PString# objects. It has all the usual functions for a collection,
-   with the object types set to #POrdinalKey# pointers.
+   <code>PString</code> objects. It has all the usual functions for a collection,
+   with the object types set to <code>POrdinalKey</code> pointers.
 
    In addition some addition functions are added that take a const
-   #POrdinalKey# reference or a simple #PINDEX# instead of a pointer
+   <code>POrdinalKey</code> reference or a simple <code>PINDEX</code> instead of a pointer
    as most standard collection functions do. This is more convenient for when
    integer expressions are used as parameters to function in the collection.
 
-   See the #PAbstractDicionary# and #POrdinalDictionary# classes and
-   #PDECLARE_ORDINAL_DICTIONARY# macro for more information.
+   See the PAbstractDicionary and POrdinalDictionary classes for more information.
  */
 #ifdef DOC_PLUS_PLUS
 class PStringToOrdinal : public POrdinalDictionary {
@@ -2901,16 +2748,17 @@ PDECLARE_ORDINAL_DICTIONARY(PStringToOrdinal, PString);
     PStringToOrdinal(
       PINDEX count,                ///< Count of strings in initialiser array
       const Initialiser * init,    ///< Array of Initialiser structures
-      BOOL caseless = FALSE        ///< New keys are to be PCaselessStrings
+      PBoolean caseless = false        ///< New keys are to be PCaselessStrings
     );
   //@}
 
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
@@ -2919,17 +2767,17 @@ PDECLARE_ORDINAL_DICTIONARY(PStringToOrdinal, PString);
 };
 
 
-/**This is a dictionary collection class of #PString# objects, keyed by
+/**This is a dictionary collection class of <code>PString</code> objects, keyed by
    another string. It has all the usual functions for a collection, with the
-   object types set to #PString# pointers.
+   object types set to <code>PString</code> pointers.
 
    In addition some addition functions are added that take a const
-   #PString# reference instead of a pointer as most standard collection
+   <code>PString</code> reference instead of a pointer as most standard collection
    functions do. This is more convenient for when string expressions are used
    as parameters to function in the collection.
 
-   See the #PAbstractDictionary# and #PStringDictionary# classes and
-   #PDECLARE_DICTIONARY# and #PDECLARE_STRING_DICTIONARY# macros for
+   See the <code>PAbstractDictionary</code> and <code>PStringDictionary</code> classes and
+   <code>PDECLARE_DICTIONARY</code> and <code>PDECLARE_STRING_DICTIONARY</code> macros for
    more information.
  */
 #ifdef DOC_PLUS_PLUS
@@ -2951,22 +2799,155 @@ PDECLARE_STRING_DICTIONARY(PStringToString, PString);
     PStringToString(
       PINDEX count,                ///< Count of strings in initialiser array
       const Initialiser * init,    ///< Array of Initialiser structures
-      BOOL caselessKeys = FALSE,   ///< New keys are to be PCaselessStrings
-      BOOL caselessValues = FALSE  ///< New values are to be PCaselessStrings
+      PBoolean caselessKeys = false,   ///< New keys are to be PCaselessStrings
+      PBoolean caselessValues = false  ///< New values are to be PCaselessStrings
     );
   //@}
 
   /**@name Overrides from class PObject */
   //@{
     /** Input the contents of the object from the stream. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>operator>></code> function.
 
-       The default behaviour reads '\n' separated strings until !strm.good().
+       The default behaviour reads '\\n' separated strings until
+       <code>!strm.good()</code>.
      */
     virtual void ReadFrom(
       istream &strm   // Stream to read the objects contents from.
     );
   //@}
+
+    /**Create an array of C strings.
+       If withEqualSign is true then array is GetSize()+1 strings of the form
+       key=value. If false then the array is GetSize()*2+1 strings where
+       consecutive pointers are the key and option respecitively of each
+       entry in the dictionary.
+
+       If storage is NULL then this returns a single pointer that must be
+       disposed of using free(). Note that each of the strings are part of the
+       same memory allocation so only one free() is required.
+
+       If storage is not null then that is used to allocate the memory.
+      */
+    char ** ToCharArray(
+      bool withEqualSign,
+      PCharArray * storage = NULL
+    ) const;
+};
+
+
+/** Specialised version of PStringToString to contain a dictionary of
+    options/attributes.
+
+    This assures that the keys are caseless and has some access functions for
+    bool/int types for ease of access with default values.
+  */
+class PStringOptions : public PStringToString 
+{
+  public:
+    PStringOptions() { }
+    PStringOptions(const PStringToString & other) : PStringToString(other) { }
+    PStringOptions & operator=(const PStringToString & other) { PStringToString::operator=(other); return *this; }
+
+    /// Determine if the specified key is present.
+    bool Contains(const char *              key   ) const { PConstCaselessString k(key); return PStringToString::Contains(k); }
+    bool Contains(const PString         &   key   ) const { return PStringToString::Contains(PCaselessString(key)); }
+    bool Contains(const PCaselessString &   key   ) const { return PStringToString::Contains(key); }
+    bool Contains(const PCaselessString & (*key)()) const { return PStringToString::Contains(key()); }
+
+    // Overide default PStringToString::SetAt() to make sure the key is caseless
+    PString * GetAt(const char *              key   ) const { PConstCaselessString k(key); return PStringToString::GetAt(k); }
+    PString * GetAt(const PString         &   key   ) const { return PStringToString::GetAt(PCaselessString(key)); }
+    PString * GetAt(const PCaselessString &   key   ) const { return PStringToString::GetAt(key); }
+    PString * GetAt(const PCaselessString & (*key)()) const { return PStringToString::GetAt(key()); }
+
+    // Overide default PStringToString::SetAt() to make sure the key is caseless
+    PBoolean SetAt(const char *              key,    const PString & data) { PConstCaselessString k(key); return SetAt(k, data); }
+    PBoolean SetAt(const PString         &   key,    const PString & data) { return SetAt(PCaselessString(key), data); }
+    PBoolean SetAt(const PCaselessString &   key,    const PString & data) { MakeUnique(); return PStringToString::SetAt(key, data); }
+    PBoolean SetAt(const PCaselessString & (*key)(), const PString & data) { return SetAt(key(), data); }
+
+    // Overide default PStringToString::RemoveAt() to make sure the key is caseless
+    PString * RemoveAt(const char *              key)    { PConstCaselessString k(key); return RemoveAt(k); }
+    PString * RemoveAt(const PString         &   key)    { return RemoveAt(PCaselessString(key)); }
+    PString * RemoveAt(const PCaselessString &   key)    { MakeUnique(); return PStringToString::RemoveAt(key); }
+    PString * RemoveAt(const PCaselessString & (*key)()) { return RemoveAt(key()); }
+
+    /// Get an option value.
+    PString GetString(const char *              key,    const char * dflt = NULL) const { PConstCaselessString k(key); return GetString(k, dflt); }
+    PString GetString(const PString         &   key,    const char * dflt = NULL) const { return GetString(PCaselessString(key), dflt); }
+    PString GetString(const PCaselessString &   key,    const char * dflt = NULL) const;
+    PString GetString(const PCaselessString & (*key)(), const char * dflt = NULL) const { return GetString(key(), dflt); }
+
+    /// Set the option value.
+    bool SetString(const char *              key,    const PString & value) { return SetAt(key, value); }
+    bool SetString(const PString         &   key,    const PString & value) { return SetAt(key, value); }
+    bool SetString(const PCaselessString &   key,    const PString & value) { return SetAt(key, value); }
+    bool SetString(const PCaselessString & (*key)(), const PString & value) { return SetAt(key, value); }
+
+    /// Get the option value as a boolean.
+    bool GetBoolean(const char *              key,    bool dflt = false) const { PConstCaselessString k(key); return GetBoolean(k, dflt); }
+    bool GetBoolean(const PString         &   key,    bool dflt = false) const { return GetBoolean(PCaselessString(key), dflt); }
+    bool GetBoolean(const PCaselessString &   key,    bool dflt = false) const;
+    bool GetBoolean(const PCaselessString & (*key)(), bool dflt = false) const { return GetBoolean(key(), dflt); }
+
+    /// Set the option value as a boolean.
+    void SetBoolean(const char *              key,    bool value) { PConstCaselessString k(key); SetBoolean(k, value); }
+    void SetBoolean(const PString         &   key,    bool value) { SetBoolean(PCaselessString(key), value); }
+    void SetBoolean(const PCaselessString &   key,    bool value) { SetAt(key, value ? "true" : "false"); }
+    void SetBoolean(const PCaselessString & (*key)(), bool value) { SetBoolean(key(), value); }
+
+    /// Get the option value as an integer.
+    long GetInteger(const char *              key,    long dflt = 0) const { PConstCaselessString k(key); return GetInteger(k, dflt); }
+    long GetInteger(const PString         &   key,    long dflt = 0) const { return GetInteger(PCaselessString(key), dflt); }
+    long GetInteger(const PCaselessString &   key,    long dflt = 0) const;
+    long GetInteger(const PCaselessString & (*key)(), long dflt = 0) const { return GetInteger(key(), dflt); }
+
+    /// Set an integer value for the particular MIME info field.
+    void SetInteger(const char *              key,    long value) { PConstCaselessString k(key); SetInteger(k, value); }
+    void SetInteger(const PString         &   key,    long value) { SetInteger(PCaselessString(key), value); }
+    void SetInteger(const PCaselessString &   key,    long value);
+    void SetInteger(const PCaselessString & (*key)(), long value) { SetInteger(key(), value); }
+
+    /// Get the option value as a floating point real.
+    double GetReal(const char *              key,    double dflt = 0) const { PConstCaselessString k(key); return GetReal(k, dflt); }
+    double GetReal(const PString         &   key,    double dflt = 0) const { return GetReal(PCaselessString(key), dflt); }
+    double GetReal(const PCaselessString &   key,    double dflt = 0) const;
+    double GetReal(const PCaselessString & (*key)(), double dflt = 0) const { return GetReal(key(), dflt); }
+
+    /// Set a floating point real value for the particular MIME info field.
+    void SetReal(const char *              key,    double value, int decimals) { PConstCaselessString k(key); SetReal(k, value, decimals); }
+    void SetReal(const PString         &   key,    double value, int decimals) { SetReal(PCaselessString(key), value, decimals); }
+    void SetReal(const PCaselessString &   key,    double value, int decimals);
+    void SetReal(const PCaselessString & (*key)(), double value, int decimals) { SetReal(key(), value, decimals); }
+
+    /// Determine of the option exists.
+    __inline bool Has(const char * key) const                 { return Contains(key); }
+    __inline bool Has(const PString & key) const              { return Contains(key); }
+    __inline bool Has(const PCaselessString & key) const      { return Contains(key); }
+    __inline bool Has(const PCaselessString & (*key)()) const { return Contains(key); }
+
+    /// Get the option value.
+    __inline PString Get(const char *              key,    const char * dflt = NULL) const { return GetString(key, dflt); }
+    __inline PString Get(const PString         &   key,    const char * dflt = NULL) const { return GetString(key, dflt); }
+    __inline PString Get(const PCaselessString &   key,    const char * dflt = NULL) const { return GetString(key, dflt); }
+    __inline PString Get(const PCaselessString & (*key)(), const char * dflt = NULL) const { return GetString(key, dflt); }
+    __inline PString Get(const char *              key,    const PString & dflt) const { return GetString(key, dflt); }
+    __inline PString Get(const PString         &   key,    const PString & dflt) const { return GetString(key, dflt); }
+    __inline PString Get(const PCaselessString &   key,    const PString & dflt) const { return GetString(key, dflt); }
+    __inline PString Get(const PCaselessString & (*key)(), const PString & dflt) const { return GetString(key, dflt); }
+
+    /// Set the option value.
+    __inline bool Set(const char *              key,    const PString & value) { return SetAt(key, value); }
+    __inline bool Set(const PString         &   key,    const PString & value) { return SetAt(key, value); }
+    __inline bool Set(const PCaselessString &   key,    const PString & value) { return SetAt(key, value); }
+    __inline bool Set(const PCaselessString & (*key)(), const PString & value) { return SetAt(key, value); }
+
+    /// Remove option value
+    __inline void Remove(const char *              key)    { RemoveAt(key); }
+    __inline void Remove(const PString         &   key)    { RemoveAt(key); }
+    __inline void Remove(const PCaselessString &   key)    { RemoveAt(key); }
+    __inline void Remove(const PCaselessString & (*key)()) { RemoveAt(key); }
 };
 
 
@@ -3003,7 +2984,7 @@ class PRegularExpression : public PObject
          beginning of the string.
       */
       NotBeginningOfLine = 1,
-      /**Like #NotBeginningOfLine#, except for the end-of-line.  */
+      /**Like <code>NotBeginningOfLine</code>, except for the end-of-line.  */
       NotEndofLine = 2
     };
 
@@ -3042,6 +3023,16 @@ class PRegularExpression : public PObject
     ~PRegularExpression();
   //@}
 
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Output the regular expression to the specified stream.
+     */
+    virtual void PrintOn(
+      ostream & strm  ///< I/O stream to output to.
+    ) const;
+  //@}
+
   /**@name Status functions */
   //@{
     /// Error codes.
@@ -3066,9 +3057,9 @@ class PRegularExpression : public PObject
       UnmatchedBracket, 
       /// Parenthesis imbalance.
       UnmatchedParen,
-      /// Unmatched #\{\}#.
+      /// Unmatched <b>\\</b>.
       UnmatchedBrace,
-      /// Invalid contents of #\{\}#.
+      /// Invalid contents of <b>\\</b>.
       BadBR,        
       /// Invalid range end.
       RangeError,  
@@ -3082,7 +3073,7 @@ class PRegularExpression : public PObject
       PrematureEnd,
       /// Compiled pattern bigger than 2^16 bytes.
       TooBig,
-      /// Unmatched ) or \); not returned from regcomp.
+      /// Unmatched ) or \\); not returned from regcomp.
       UnmatchedRParen,
       /// Miscellaneous error
       NotCompiled
@@ -3102,12 +3093,15 @@ class PRegularExpression : public PObject
        Error text string.
      */
     PString GetErrorText() const;
+
+    /** Return the string which represents the pattern matched by the regular expression. */
+    const PString & GetPattern() const { return patternSaved; }
   //@}
 
   /**@name Compile & Execute functions */
   //@{
     /** Compiler pattern. */
-    BOOL Compile(
+    PBoolean Compile(
       const PString & pattern,    ///< Pattern to compile
       int flags = IgnoreCase      ///< Pattern match options
     );
@@ -3116,89 +3110,111 @@ class PRegularExpression : public PObject
        execution of the pattern match algorithm.
 
        @return
-       TRUE if successfully compiled.
+       true if successfully compiled.
      */
-    BOOL Compile(
+    PBoolean Compile(
       const char * cpattern,      ///< Pattern to compile
       int flags = IgnoreCase      ///< Pattern match options
     );
 
 
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const PString & str,    ///< Source string to search
-      PINDEX & start,         ///< First match locations
+      PINDEX & start,         ///< First match location
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const PString & str,    ///< Source string to search
-      PINDEX & start,         ///< First match locations
+      PINDEX & start,         ///< First match location
       PINDEX & len,           ///< Length of match
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const char * cstr,      ///< Source string to search
-      PINDEX & start,         ///< First match locations
+      PINDEX & start,         ///< First match location
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const char * cstr,      ///< Source string to search
-      PINDEX & start,         ///< First match locations
+      PINDEX & start,         ///< First match location
       PINDEX & len,           ///< Length of match
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const PString & str,    ///< Source string to search
-      PIntArray & starts,     ///< List of match locations
+      PIntArray & starts,     ///< Array of match locations
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const PString & str,    ///< Source string to search
-      PIntArray & starts,     ///< List of match locations
-      PIntArray & ends,       ///< List of match ends
+      PIntArray & starts,     ///< Array of match locations
+      PIntArray & ends,       ///< Array of match ends
       int flags = 0           ///< Pattern match options
     ) const;
     /** Execute regular expression */
-    BOOL Execute(
+    PBoolean Execute(
       const char * cstr,      ///< Source string to search
-      PIntArray & starts,     ///< List of match locations
+      PIntArray & starts,     ///< Array of match locations
       int flags = 0           ///< Pattern match options
     ) const;
     /**Execute regular expression.
        Execute the pattern match algorithm using the previously compiled
        pattern.
 
-       The #starts# array is filled with as many matches as will fit
-       into the array. If the the array size is zero then it is set to at least
-       one for the first match found.
-       
-       The #ends# array is set to teh ending position of each
-       substring whose start is returned in the #starts# array. This
-       will always be set to the same size as that array.
+       The \p starts and \p ends arrays indicate the start and end positions
+       of the matched substrings in \p cstr. The 0th member is filled in to
+       indicate what substring was matched by the entire regular expression.
+       The remaining members report what substring was matched by parenthesized
+       subexpressions within the regular expression.
 
-       @return
-       TRUE if successfully compiled.
+       The caller should set the size of the \p starts array before calling to
+       indicated how many subexpressions are expected. If the \p starts array
+       is empty, it will be set to one entry.
+
+       @return true if successfully compiled.
      */
-    BOOL Execute(
+    PBoolean Execute(
       const char * cstr,      ///< Source string to search
-      PIntArray & starts,     ///< List of match locations
-      PIntArray & ends,       ///< List of match ends
+      PIntArray & starts,     ///< Array of match locations
+      PIntArray & ends,       ///< Array of match ends
       int flags = 0           ///< Pattern match options
+    ) const;
+    /**Execute regular expression.
+       Execute the pattern match algorithm using the previously compiled
+       pattern.
+
+       The \p substring arrays is filled with the matched substrings out of
+       \p cstr. The 0th member is filled in to indicate what substring was
+       matched by the entire regular expression. The remaining members report
+       what substring was matched by parenthesized subexpressions within the
+       regular expression.
+
+       The caller should set the size of the \p substring array before calling
+       to indicated how many subexpressions are expected. If the \p substring
+       array is empty, it will be set to one entry.
+
+       @return true if successfully compiled.
+     */
+    PBoolean Execute(
+      const char * cstr,        ///< Source string to search
+      PStringArray & substring, ///< Array of matched substrings
+      int flags = 0             ///< Pattern match options
     ) const;
   //@}
 
   /**@name Miscellaneous functions */
   //@{
-    /**Escape all characters in the #str# parameter that have a
+    /**Escape all characters in the <code>str</code> parameter that have a
        special meaning within a regular expression.
 
        @return
-       String with additional escape ('\') characters.
+       String with additional escape ('\\') characters.
      */
     static PString EscapeString(
       const PString & str     ///< String to add esacpes to.
@@ -3210,9 +3226,11 @@ class PRegularExpression : public PObject
     int flagsSaved;
 
     void * expression;
-    int lastError;
+    mutable ErrorCodes lastError;
 };
 
-PString psprintf(const char * cfmt, ...);
+
+#endif // PTLIB_STRING_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

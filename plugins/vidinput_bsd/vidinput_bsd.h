@@ -1,13 +1,25 @@
+#ifndef _PVIDEOIOBSDCAPTURE
 
-//#include <sys/mman.h>
-//#include <sys/time.h>
+#define _PVIDEOIOBSDCAPTURE
+
+#ifdef __GNUC__   
+#pragma interface
+#endif
+
+#include <sys/mman.h>
 
 #include <ptlib.h>
 #include <ptlib/videoio.h>
 #include <ptlib/vconvert.h>
+#include <ptclib/delaychan.h>
 
 #if defined(P_FREEBSD)
+#include <sys/param.h>
+# if __FreeBSD_version >= 502100
+#include <dev/bktr/ioctl_meteor.h>
+# else
 #include <machine/ioctl_meteor.h>
+# endif
 #endif
 
 #if defined(P_OPENBSD) || defined(P_NETBSD)
@@ -20,65 +32,83 @@
 #endif
 #endif
 
-class PVideoInputDevice_BSDCAPTURE: public PVideoInputDevice
+#if !P_USE_INLINES
+#include <ptlib/contain.inl>
+#endif
+
+
+class PVideoInputDevice_BSDCAPTURE : public PVideoInputDevice
 {
+
+  PCLASSINFO(PVideoInputDevice_BSDCAPTURE, PVideoInputDevice);
 
 public:
   PVideoInputDevice_BSDCAPTURE();
   ~PVideoInputDevice_BSDCAPTURE();
 
+  PBoolean Open(
+    const PString &deviceName,
+    PBoolean startImmediate = PTrue
+  );
+
+  PBoolean IsOpen();
+
+  PBoolean Close();
+
+  PBoolean Start();
+  PBoolean Stop();
+
+  PBoolean IsCapturing();
+
   static PStringList GetInputDeviceNames();
 
-  PStringList GetDeviceNames() const
+  PStringArray GetDeviceNames() const
   { return GetInputDeviceNames(); }
-
-  BOOL Open(const PString &deviceName, BOOL startImmediate);
-
-  BOOL IsOpen();
-
-  BOOL Close();
-
-  BOOL Start();
-  BOOL Stop();
-
-  BOOL IsCapturing();
 
   PINDEX GetMaxFrameBytes();
 
-  BOOL GetFrame(PBYTEArray & frame);
-  BOOL GetFrameData(BYTE*, PINDEX*);
-  BOOL GetFrameDataNoDelay(BYTE*, PINDEX*);
+//  PBoolean GetFrame(
+//    PBYTEArray & frame
+//  );
+  PBoolean GetFrameData(
+    BYTE * buffer,
+    PINDEX * bytesReturned = NULL
+  );
+  PBoolean GetFrameDataNoDelay(
+    BYTE * buffer,
+    PINDEX * bytesReturned = NULL
+  );
 
-  BOOL GetFrameSizeLimits(unsigned int&, unsigned int&,
+  PBoolean GetFrameSizeLimits(unsigned int&, unsigned int&,
 			  unsigned int&, unsigned int&);
 
-  BOOL TestAllFormats();
+  PBoolean TestAllFormats();
 
-  BOOL SetFrameSize(unsigned int, unsigned int);
-  BOOL SetFrameRate(unsigned int);
-  BOOL VerifyHardwareFrameSize(unsigned int, unsigned int);
+  PBoolean SetFrameSize(unsigned int, unsigned int);
+  PBoolean SetFrameRate(unsigned int);
+  PBoolean VerifyHardwareFrameSize(unsigned int, unsigned int);
 
-  BOOL GetParameters(int*, int*, int*, int*, int*);
+  PBoolean GetParameters(int*, int*, int*, int*, int*);
 
-  BOOL SetColourFormat(const PString&);
+  PBoolean SetColourFormat(const PString&);
 
   int GetContrast();
-  BOOL SetContrast(unsigned int);
+  PBoolean SetContrast(unsigned int);
   int GetBrightness();
-  BOOL SetBrightness(unsigned int);
+  PBoolean SetBrightness(unsigned int);
 //  int GetWhiteness();
-//  BOOL SetWhiteness(unsigned int);
+//  PBoolean SetWhiteness(unsigned int);
 //  int GetColour();
-//  BOOL SetColour(unsigned int);
+//  PBoolean SetColour(unsigned int);
   int GetHue();
-  BOOL SetHue(unsigned int);
+  PBoolean SetHue(unsigned int);
 
-//  BOOL SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
-  BOOL SetVideoFormat(PVideoDevice::VideoFormat);
+//  PBoolean SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
+  PBoolean SetVideoFormat(PVideoDevice::VideoFormat);
   int GetNumChannels();
-  BOOL SetChannel(int);
+  PBoolean SetChannel(int);
 
-  BOOL NormalReadProcess(BYTE*, PINDEX*);
+  PBoolean NormalReadProcess(BYTE*, PINDEX*);
 
   void ClearMapping();
 
@@ -97,5 +127,8 @@ public:
   BYTE * videoBuffer;
   PINDEX frameBytes;
   int    mmap_size;
+  PAdaptiveDelay m_pacing;
  
 };
+
+#endif

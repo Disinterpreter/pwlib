@@ -23,97 +23,25 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: cypher.h,v $
- * Revision 1.23  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.22  2005/01/26 05:37:40  csoutheren
- * Added ability to remove config file support
- *
- * Revision 1.21  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.20  2004/03/23 05:59:17  csoutheren
- * Moved the Base64 routines into cypher.cxx, which is a more sensible
- * place and reduces the inclusion of unrelated code
- *
- * Revision 1.19  2004/02/04 02:31:34  csoutheren
- * Remove SHA-1 functions when OpenSSL is disabled
- *
- * Revision 1.18  2003/04/17 03:34:07  craigs
- * Fixed problem with delete'ing a void *
- *
- * Revision 1.17  2003/04/10 07:02:38  craigs
- * Fixed link problem in MD5 class
- *
- * Revision 1.16  2003/04/10 06:16:30  craigs
- * Added SHA-1 digest
- *
- * Revision 1.15  2002/11/06 22:47:23  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.14  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.13  2001/09/10 00:28:21  robertj
- * Fixed extra CR in comments.
- *
- * Revision 1.12  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.11  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.10  1998/09/23 06:19:24  robertj
- * Added open source copyright license.
- *
- * Revision 1.9  1997/10/10 10:44:01  robertj
- * Fixed bug in password encryption, missing string terminator.
- *
- * Revision 1.8  1996/11/16 10:50:24  robertj
- * Fixed bug in registration order form showing incorrect check code when have key.
- *
- * Revision 1.7  1996/07/15 10:29:38  robertj
- * Changed memory block cypher conversion functions to be void *.
- * Changed key types to be structures rather than arrays to avoid pinter/reference confusion by compilers.
- *
- * Revision 1.6  1996/03/17 05:47:00  robertj
- * Changed secured config to allow for expiry dates.
- *
- * Revision 1.5  1996/03/16 04:36:43  robertj
- * Redesign of secure config to accommodate expiry dates and option values passed in security key code.
- *
- * Revision 1.4  1996/02/25 02:52:46  robertj
- * Further secure config development.
- *
- * Revision 1.3  1996/01/28 14:16:11  robertj
- * Further implementation of secure config.
- *
- * Revision 1.2  1996/01/28 02:41:00  robertj
- * Removal of MemoryPointer classes as usage didn't work for GNU.
- * Added the secure configuration mechanism for protecting applications.
- *
- * Revision 1.1  1996/01/23 13:04:20  robertj
- * Initial revision
- *
+ * $Revision: 24983 $
+ * $Author: rjongbloed $
+ * $Date: 2010-12-22 23:23:23 -0600 (Wed, 22 Dec 2010) $
  */
 
 
-#ifndef _PCYPHER
-#define _PCYPHER
+#ifndef PTLIB_CYPHER_H
+#define PTLIB_CYPHER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
 
 /** This class is used to encode/decode data using the MIME standard base64
    encoding mechanism as defined in RFC1521.
 
    To encode a large block of data use the following seqeunce:
-\begin{verbatim}
+<pre><code>
       PBase64 base;
       base.StartEncoding();
       while (Read(dataChunk)) {
@@ -121,23 +49,23 @@
         out << base.GetEncodedString();
       }
       out << base.CompleteEncoding();
-\end{verbatim}
+</code></pre>
 
     if smaller blocks that fit easily in memory are to be encoded the
-    #Encode()# functions can be used to everything in one go.
+    <code>Encode()</code> functions can be used to everything in one go.
 
     To decode a large block of data use the following sequence:
-\begin{verbatim}
+<pre><code>
 
       PBase64 base;
       base.StartDecoding();
       while (Read(str) && ProcessDecoding(str))
         Write(base.GetDecodedData());
       Write(base.GetDecodedData());
-\end{verbatim}
+</code></pre>
 
     if smaller blocks that fit easily in memory are to be decoded the
-    #Decode()# functions can be used to everything in one go.
+    <code>Decode()</code> functions can be used to everything in one go.
  */
 class PBase64 : public PObject
 {
@@ -145,12 +73,15 @@ class PBase64 : public PObject
 
   public:
     /** Construct a base 64 encoder/decoder and initialise both encode and
-       decode members as in #StartEncoding()# and #StartDecoding()#.
+       decode members as in <code>StartEncoding()</code> and <code>StartDecoding()</code>.
      */
     PBase64();
 
     void StartEncoding(
-      BOOL useCRLFs = TRUE  // Use CR, LF pairs in end of line characters.
+      bool useCRLFs = true  ///< Use CR, LF pairs in end of line characters.
+    );
+    void StartEncoding(
+      const char * endOfLine  ///< String to use for end of line.
     );
     // Begin a base 64 encoding operation, initialising the object instance.
 
@@ -177,8 +108,7 @@ class PBase64 : public PObject
     PString GetEncodedString();
 
     /** Complete the base 64 encoding and return the remainder of the encoded
-       Base64 string. Previous data may have been already removed by the
-       #GetInterim()# function.
+       Base64 string.
     
        @return
        Base64 encoded string for the processed data.
@@ -187,17 +117,21 @@ class PBase64 : public PObject
 
 
     static PString Encode(
-      const PString & str     // String to be encoded to Base64
+      const PString & str,          ///< String to be encoded to Base64
+      const char * endOfLine = "\n" ///< String to use for end of line.
     );
     static PString Encode(
-      const char * cstr       // C String to be encoded to Base64
+      const char * cstr,            ///< C String to be encoded to Base64
+      const char * endOfLine = "\n" ///< String to use for end of line.
     );
     static PString Encode(
-      const PBYTEArray & data // Data block to be encoded to Base64
+      const PBYTEArray & data,      ///< Data block to be encoded to Base64
+      const char * endOfLine = "\n" ///< String to use for end of line.
     );
     static PString Encode(
-      const void * dataBlock, // Pointer to data to be encoded to Base64
-      PINDEX length           // Length of the data block.
+      const void * dataBlock,       ///< Pointer to data to be encoded to Base64
+      PINDEX length,                ///< Length of the data block.
+      const char * endOfLine = "\n" ///< String to use for end of line.
     );
     // Encode the data in memory to Base 64 data returnin the string.
 
@@ -208,12 +142,12 @@ class PBase64 : public PObject
     /** Incorporate the specified data into the base 64 decoding.
     
        @return
-       TRUE if block was last in the Base64 encoded string.
+       true if block was last in the Base64 encoded string.
      */
-    BOOL ProcessDecoding(
+    PBoolean ProcessDecoding(
       const PString & str      // String to be encoded
     );
-    BOOL ProcessDecoding(
+    PBoolean ProcessDecoding(
       const char * cstr        // C String to be encoded
     );
 
@@ -222,7 +156,7 @@ class PBase64 : public PObject
        @return
        Decoded data for the processed Base64 string.
      */
-    BOOL GetDecodedData(
+    PBoolean GetDecodedData(
       void * dataBlock,    // Pointer to data to be decoded from base64
       PINDEX length        // Length of the data block.
     );
@@ -235,14 +169,14 @@ class PBase64 : public PObject
        @return
        Decoded data for the processed Base64 string.
      */
-    BOOL IsDecodeOK() { return perfectDecode; }
+    PBoolean IsDecodeOK() { return perfectDecode; }
 
 
     /** Convert a printable text string to binary data using the Internet MIME
        standard base 64 content transfer encoding.
 
-       The base64 string is checked and TRUE returned if all perfectly correct.
-       If FALSE is returned then the string had extraneous or illegal
+       The base64 string is checked and true returned if all perfectly correct.
+       If false is returned then the string had extraneous or illegal
        characters in it that were ignored. This does not mean that the data is
        not valid, only that it is suspect.
     
@@ -252,11 +186,11 @@ class PBase64 : public PObject
     static PString Decode(
       const PString & str // Encoded base64 string to be decoded.
     );
-    static BOOL Decode(
+    static PBoolean Decode(
       const PString & str, // Encoded base64 string to be decoded.
       PBYTEArray & data    // Converted binary data from base64.
     );
-    static BOOL Decode(
+    static PBoolean Decode(
       const PString & str, // Encoded base64 string to be decoded.
       void * dataBlock,    // Pointer to data to be decoded from base64
       PINDEX length        // Length of the data block.
@@ -272,9 +206,9 @@ class PBase64 : public PObject
     BYTE    saveTriple[3];
     PINDEX  saveCount;
     PINDEX  nextLine;
-    BOOL    useCRLFs;
+    PString endOfLine;
 
-    BOOL       perfectDecode;
+    PBoolean       perfectDecode;
     PINDEX     quadPosition;
     PBYTEArray decodedData;
     PINDEX     decodeSize;
@@ -604,12 +538,12 @@ class PCypher : public PObject
       const PString & cypher   ///< Base64 Cypher text string to be decoded.
     );
     /**Decode the data. */
-    BOOL Decode(
+    PBoolean Decode(
       const PString & cypher,  ///< Base64 Cypher text string to be decoded.
       PString & clear          ///< Clear text string decoded.
     );
     /**Decode the data. */
-    BOOL Decode(
+    PBoolean Decode(
       const PString & cypher,  ///< Base64 Cypher text string to be decoded.
       PBYTEArray & clear       ///< Clear text binary data decoded.
     );
@@ -640,7 +574,7 @@ class PCypher : public PObject
     @return
       decoded string.
     */
-    BOOL Decode(
+    PBoolean Decode(
       const PBYTEArray & coded, ///< Encoded data (cyphertext).
       PBYTEArray & clear       ///< Clear text binary data decoded.
     );
@@ -664,7 +598,7 @@ class PCypher : public PObject
 
     /** Initialise the encoding/decoding sequence. */
     virtual void Initialise(
-      BOOL encoding   ///< Flag for encoding/decoding sequence about to start.
+      PBoolean encoding   ///< Flag for encoding/decoding sequence about to start.
     ) = 0;
 
     /** Encode an n bit block of memory according to the encryption algorithm. */
@@ -739,7 +673,7 @@ class PTEACypher : public PCypher
   protected:
     /** Initialise the encoding/decoding sequence. */
     virtual void Initialise(
-      BOOL encoding   ///< Flag for encoding/decoding sequence about to start.
+      PBoolean encoding   ///< Flag for encoding/decoding sequence about to start.
     );
 
     /** Encode an n bit block of memory according to the encryption algorithm. */
@@ -851,14 +785,14 @@ class PSecureConfig : public PConfig
        State of the validation keys.
      */
 
-    BOOL ValidatePending();
+    PBoolean ValidatePending();
     /* Validate a pending secured option list for the product. All secured
        keys with the <CODE>pendingPrefix</CODE> name will be checked against
        the value of the field <CODE>securityKey</CODE>. If they match then
        they are copied to the secured variables.
 
        @return
-       TRUE if secure key values are valid.
+       true if secure key values are valid.
      */
 
     void ResetPending();
@@ -879,7 +813,7 @@ class PSecureConfig : public PConfig
 
 #endif // P_CONFIG_FILE
 
-#endif // _PCYPHER
+#endif // PTLIB_CYPHER_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

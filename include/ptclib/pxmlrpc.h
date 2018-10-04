@@ -23,86 +23,22 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pxmlrpc.h,v $
- * Revision 1.20  2004/05/17 06:05:20  csoutheren
- * Changed "make docs" to use doxygen
- * Added new config file and main page
- *
- * Revision 1.19  2003/04/15 07:08:36  robertj
- * Changed read and write from streams for base array classes so operates in
- *   the same way for both PIntArray and PArray<int> etc
- *
- * Revision 1.18  2003/04/15 03:00:41  robertj
- * Added array support to XML/RPC
- * Fixed XML/RPC parsing when lots of white space in raw XML, caused by
- *   big fix to base XML parser not returning internal data elements.
- *
- * Revision 1.17  2003/01/28 05:08:07  robertj
- * Fixed copy constructor on function arguments and return value
- *
- * Revision 1.16  2002/12/16 06:57:15  robertj
- * Added ability to specify certain elemets (by name) that are exempt from
- *   the indent formatting. Useful for XML/RPC where leading white space is
- *   not ignored by all servers.
- * Improved the macros for defining RPC functions.
- *
- * Revision 1.15  2002/12/13 01:04:56  robertj
- * Added copy constructor and assignment operator to XML/RPC structs
- *
- * Revision 1.14  2002/12/10 04:44:43  robertj
- * Added support in PTime for ISO 8601 format.
- *
- * Revision 1.13  2002/12/09 04:06:18  robertj
- * Added macros for defining multi-argument functions
- *
- * Revision 1.12  2002/12/04 02:09:26  robertj
- * Changed macro name prefix to PXMLRPC
- *
- * Revision 1.11  2002/12/04 00:31:13  robertj
- * Fixed GNU compatibility
- *
- * Revision 1.10  2002/12/04 00:15:56  robertj
- * Large enhancement to create automatically encoding and decoding structures
- *   using macros to build a class.
- *
- * Revision 1.9  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.8  2002/10/02 08:54:34  craigs
- * Added support for XMLRPC server
- *
- * Revision 1.7  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.6  2002/08/13 03:02:07  robertj
- * Removed previous fix for memory leak, as object was already deleted.
- *
- * Revision 1.5  2002/08/13 01:55:00  craigs
- * Fixed memory leak on PXMLRPCRequest class
- *
- * Revision 1.4  2002/08/06 01:04:03  robertj
- * Fixed missing pragma interface/implementation
- *
- * Revision 1.3  2002/07/12 05:51:14  craigs
- * Added structs to XMLRPC response types
- *
- * Revision 1.2  2002/03/27 00:50:44  craigs
- * Fixed problems with parsing faults and creating structs
- *
- * Revision 1.1  2002/03/26 07:06:50  craigs
- * Initial version
- *
+ * $Revision: 23711 $
+ * $Author: rjongbloed $
+ * $Date: 2009-10-28 03:45:13 -0500 (Wed, 28 Oct 2009) $
  */
 
-#ifndef _PXMLRPC_H
-#define _PXMLRPC_H
+#ifndef PTLIB_PXMLRPC_H
+#define PTLIB_PXMLRPC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
 #include <ptclib/pxml.h>
+
+#if P_XMLRPC
+
 #include <ptclib/url.h>
 
 
@@ -144,30 +80,30 @@ class PXMLRPC : public PObject
 
     PXMLRPC(
       const PURL & url,
-      unsigned options = 0
+      PXML::Options options = PXML::NoOptions
     );
 
-    void SetTimeout(const PTimeInterval & _timeout) { timeout = _timeout; }
+    void SetTimeout(const PTimeInterval & t) { timeout = t; }
 
-    BOOL MakeRequest(const PString & method);
-    BOOL MakeRequest(const PString & method,  PXMLRPCBlock & response);
-    BOOL MakeRequest(PXMLRPCBlock & request, PXMLRPCBlock & response);
-    BOOL MakeRequest(const PString & method, const PXMLRPCStructBase & args, PXMLRPCStructBase & reply);
+    PBoolean MakeRequest(const PString & method);
+    PBoolean MakeRequest(const PString & method,  PXMLRPCBlock & response);
+    PBoolean MakeRequest(PXMLRPCBlock & request, PXMLRPCBlock & response);
+    PBoolean MakeRequest(const PString & method, const PXMLRPCStructBase & args, PXMLRPCStructBase & reply);
 
     PString GetFaultText() const { return faultText; }
     PINDEX  GetFaultCode() const { return faultCode; }
 
-    static BOOL    ISO8601ToPTime(const PString & iso8601, PTime & val, int tz = PTime::GMT);
+    static PBoolean    ISO8601ToPTime(const PString & iso8601, PTime & val, int tz = PTime::GMT);
     static PString PTimeToISO8601(const PTime & val);
 
   protected:
-    BOOL PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response);
+    PBoolean PerformRequest(PXMLRPCBlock & request, PXMLRPCBlock & response);
 
     PURL          url;
     PINDEX        faultCode;
     PString       faultText;
     PTimeInterval timeout;
-    unsigned      options;
+    PXML::Options m_options;
 };
 
 /////////////////////////////////////////////////////////////////
@@ -180,7 +116,7 @@ class PXMLRPCBlock : public PXML
     PXMLRPCBlock(const PString & method);
     PXMLRPCBlock(const PString & method, const PXMLRPCStructBase & structData);
 
-    BOOL Load(const PString & str);
+    PBoolean Load(const PString & str);
 
     PXMLElement * GetParams();
     PXMLElement * GetParam(PINDEX idx) const;
@@ -190,29 +126,29 @@ class PXMLRPCBlock : public PXML
     PINDEX  GetFaultCode() const                     { return faultCode; }
     PString GetFaultText() const                     { return faultText; }
     void SetFault(PINDEX code, const PString & text) { faultCode = code; faultText = text; }
-    BOOL ValidateResponse();
+    PBoolean ValidateResponse();
 
     // helper functions for getting parameters
-    BOOL GetParams(PXMLRPCStructBase & data);
-    BOOL GetParam(PINDEX idx, PString & type, PString & result);
-    BOOL GetExpectedParam(PINDEX idx, const PString & expectedType, PString & value);
+    PBoolean GetParams(PXMLRPCStructBase & data);
+    PBoolean GetParam(PINDEX idx, PString & type, PString & result);
+    PBoolean GetExpectedParam(PINDEX idx, const PString & expectedType, PString & value);
 
-    BOOL GetParam(PINDEX idx, PString & result);
-    BOOL GetParam(PINDEX idx, int & result);
-    BOOL GetParam(PINDEX idx, double & result);
-    BOOL GetParam(PINDEX idx, PTime & result, int tz = PTime::GMT);
-    BOOL GetParam(PINDEX idx, PStringToString & result);
-    BOOL GetParam(PINDEX idx, PXMLRPCStructBase & result);
-    BOOL GetParam(PINDEX idx, PStringArray & result);
-    BOOL GetParam(PINDEX idx, PArray<PStringToString> & result);
+    PBoolean GetParam(PINDEX idx, PString & result);
+    PBoolean GetParam(PINDEX idx, int & result);
+    PBoolean GetParam(PINDEX idx, double & result);
+    PBoolean GetParam(PINDEX idx, PTime & result, int tz = PTime::GMT);
+    PBoolean GetParam(PINDEX idx, PStringToString & result);
+    PBoolean GetParam(PINDEX idx, PXMLRPCStructBase & result);
+    PBoolean GetParam(PINDEX idx, PStringArray & result);
+    PBoolean GetParam(PINDEX idx, PArray<PStringToString> & result);
 
     // static functions for parsing values
-    BOOL ParseScalar(PXMLElement * element, PString & type, PString & value);
-    BOOL ParseStruct(PXMLElement * element, PStringToString & structDict);
-    BOOL ParseStruct(PXMLElement * element, PXMLRPCStructBase & structData);
-    BOOL ParseArray(PXMLElement * element, PStringArray & array);
-    BOOL ParseArray(PXMLElement * element, PArray<PStringToString> & array);
-    BOOL ParseArray(PXMLElement * element, PXMLRPCVariableBase & array);
+    PBoolean ParseScalar(PXMLElement * element, PString & type, PString & value);
+    PBoolean ParseStruct(PXMLElement * element, PStringToString & structDict);
+    PBoolean ParseStruct(PXMLElement * element, PXMLRPCStructBase & structData);
+    PBoolean ParseArray(PXMLElement * element, PStringArray & array);
+    PBoolean ParseArray(PXMLElement * element, PArray<PStringToString> & array);
+    PBoolean ParseArray(PXMLElement * element, PXMLRPCVariableBase & array);
 
     // static functions for creating values
     static PXMLElement * CreateValueElement(PXMLElement * element);
@@ -273,9 +209,9 @@ class PXMLRPCVariableBase : public PObject {
     virtual PString ToString(PINDEX i) const;
     virtual void FromString(PINDEX i, const PString & str);
     virtual PXMLRPCStructBase * GetStruct(PINDEX i) const;
-    virtual BOOL IsArray() const;
+    virtual PBoolean IsArray() const;
     virtual PINDEX GetSize() const;
-    virtual BOOL SetSize(PINDEX);
+    virtual PBoolean SetSize(PINDEX);
 
     PString ToBase64(PAbstractArray & data) const;
     void FromBase64(const PString & str, PAbstractArray & data);
@@ -285,7 +221,7 @@ class PXMLRPCVariableBase : public PObject {
     const char * type;
 
   private:
-    PXMLRPCVariableBase(const PXMLRPCVariableBase &) { }
+    PXMLRPCVariableBase(const PXMLRPCVariableBase &) : PObject() { }
 };
 
 
@@ -298,9 +234,9 @@ class PXMLRPCArrayBase : public PXMLRPCVariableBase {
   public:
     virtual void PrintOn(ostream & strm) const;
     virtual void Copy(const PXMLRPCVariableBase & other);
-    virtual BOOL IsArray() const;
+    virtual PBoolean IsArray() const;
     virtual PINDEX GetSize() const;
-    virtual BOOL SetSize(PINDEX);
+    virtual PBoolean SetSize(PINDEX);
 
   protected:
     PContainer & array;
@@ -316,7 +252,7 @@ class PXMLRPCArrayObjectsBase : public PXMLRPCArrayBase {
   public:
     virtual PString ToString(PINDEX i) const;
     virtual void FromString(PINDEX i, const PString & str);
-    virtual BOOL SetSize(PINDEX);
+    virtual PBoolean SetSize(PINDEX);
 
     virtual PObject * CreateObject() const = 0;
 
@@ -331,7 +267,7 @@ class PXMLRPCStructBase : public PObject {
     PXMLRPCStructBase();
     PXMLRPCStructBase & operator=(const PXMLRPCStructBase &);
   private:
-    PXMLRPCStructBase(const PXMLRPCStructBase &) { }
+    PXMLRPCStructBase(const PXMLRPCStructBase &) : PObject() { }
 
   public:
     void PrintOn(ostream & strm) const;
@@ -346,7 +282,7 @@ class PXMLRPCStructBase : public PObject {
   protected:
     void EndConstructor();
 
-    PList<PXMLRPCVariableBase>                variablesByOrder;
+    PArray<PXMLRPCVariableBase>               variablesByOrder;
     PDictionary<PString, PXMLRPCVariableBase> variablesByName;
 
     PXMLRPCStructBase        * initialiserStack;
@@ -479,7 +415,7 @@ class PXMLRPCStructBase : public PObject {
 
 
 #define PXMLRPC_FUNC_NOARG_NOREPLY(name) \
-  BOOL name() { return MakeRequest(#name); }
+  PBoolean name() { return MakeRequest(#name); }
 
 
 #define PXMLRPC_FUNC_SINGLE_ARG(name, vartype, argtype) \
@@ -504,7 +440,7 @@ class PXMLRPCStructBase : public PObject {
 #endif
 #define PXMLRPC_FUNC_NO_ARGS(name) \
   }; \
-  BOOL name(name##_out & reply) \
+  PBoolean name(name##_out & reply) \
     { return MakeRequest(#name, name##_in(), reply); }
 
 
@@ -524,7 +460,7 @@ class PXMLRPCStructBase : public PObject {
       const name##_in & instance; \
     } variable; \
   }; \
-  BOOL name(const name##_in & args, name##_out & reply) \
+  PBoolean name(const name##_in & args, name##_out & reply) \
     { return MakeRequest(#name, name##_in_carrier(args), reply); }
 
 
@@ -533,12 +469,16 @@ class PXMLRPCStructBase : public PObject {
 #endif
 #define PXMLRPC_FUNC_NORM_ARGS(name) \
   }; \
-  BOOL name(const name##_in & args, name##_out & reply) \
+  PBoolean name(const name##_in & args, name##_out & reply) \
     { return MakeRequest(#name, args, reply); }
 
 
 
 /////////////////////////////////////////////////////////////////
 
+#endif // P_XMLRPC
 
-#endif
+#endif // PTLIB_PXMLRPC_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

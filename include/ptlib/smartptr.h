@@ -1,5 +1,38 @@
-#ifndef _PSMARTPTR_H
-#define _PSMARTPTR_H
+/*
+ * smartptr.h
+ *
+ * Smart pointer template class.
+ *
+ * Portable Tools Library
+ *
+ * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
+ *
+ * The contents of this file are subject to the Mozilla Public License
+ * Version 1.0 (the "License"); you may not use this file except in
+ * compliance with the License. You may obtain a copy of the License at
+ * http://www.mozilla.org/MPL/
+ *
+ * Software distributed under the License is distributed on an "AS IS"
+ * basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+ * the License for the specific language governing rights and limitations
+ * under the License.
+ *
+ * The Original Code is Portable Windows Library.
+ *
+ * The Initial Developer of the Original Code is Equivalence Pty. Ltd.
+ *
+ * Portions are Copyright (C) 1993 Free Software Foundation, Inc.
+ * All Rights Reserved.
+ *
+ * Contributor(s): ______________________________________.
+ *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
+ */
+
+#ifndef PTLIB_SMARTPTR_H
+#define PTLIB_SMARTPTR_H
 
 #include <ptlib.h>
 #include <ptlib/object.h>
@@ -7,12 +40,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 // "Smart" pointers.
 
-/** This is the base class for objects that use the {\it smart pointer} system.
-   In conjunction with the #PSmartPointer# class, this class creates
+/** This is the base class for objects that use the <i>smart pointer</i> system.
+   In conjunction with the <code>PSmartPointer</code> class, this class creates
    objects that can have the automatic deletion of the object instance when
    there are no more smart pointer instances pointing to it.
 
-   A #PSmartObject# carries the reference count that the #PSmartPointer# 
+   A <code>PSmartObject</code> carries the reference count that the <code>PSmartPointer</code> 
    requires to determine if the pointer is needed any more and should be
    deleted.
  */
@@ -21,14 +54,14 @@ class PSmartObject : public PObject
   PCLASSINFO(PSmartObject, PObject);
 
   public:
-    /** Construct a new smart object, subject to a #PSmartPointer# instance
+    /** Construct a new smart object, subject to a <code>PSmartPointer</code> instance
        referencing it.
      */
     PSmartObject()
       :referenceCount(1) { }
 
   protected:
-    /** Count of number of instances of #PSmartPointer# that currently
+    /** Count of number of instances of <code>PSmartPointer</code> that currently
        reference the object instance.
      */
     PAtomicInteger referenceCount;
@@ -38,19 +71,19 @@ class PSmartObject : public PObject
 };
 
 
-/** This is the class for pointers to objects that use the {\it smart pointer}
-   system. In conjunction with the #PSmartObject# class, this class
+/** This is the class for pointers to objects that use the <i>smart pointer</i>
+   system. In conjunction with the <code>PSmartObject</code> class, this class
    references objects that can have the automatic deletion of the object
    instance when there are no more smart pointer instances pointing to it.
 
-   A PSmartPointer carries the pointer to a #PSmartObject# instance which
+   A PSmartPointer carries the pointer to a <code>PSmartObject</code> instance which
    contains a reference count. Assigning or copying instances of smart pointers
    will automatically increment and decrement the reference count. When the
-   last instance that references a #PSmartObject# instance is destroyed or
-   overwritten, the #PSmartObject# is deleted.
+   last instance that references a <code>PSmartObject</code> instance is destroyed or
+   overwritten, the <code>PSmartObject</code> is deleted.
 
    A NULL value is possible for a smart pointer. It can be detected via the
-   #IsNULL()# function.
+   <code>IsNULL()</code> function.
  */
 class PSmartPointer : public PObject
 {
@@ -60,18 +93,18 @@ class PSmartPointer : public PObject
   /**@name Construction */
   //@{
     /** Create a new smart pointer instance and have it point to the specified
-       #PSmartObject# instance.
+       <code>PSmartObject</code> instance.
      */
     PSmartPointer(
-      PSmartObject * obj = NULL   /// Smart object to point to.
+      PSmartObject * obj = NULL   ///< Smart object to point to.
     ) { object = obj; }
 
     /** Create a new smart pointer and point it at the data pointed to by the
-       #ptr# parameter. The reference count for the object being
+       <code>ptr</code> parameter. The reference count for the object being
        pointed at is incremented.
      */
     PSmartPointer(
-      const PSmartPointer & ptr  /// Smart pointer to make a copy of.
+      const PSmartPointer & ptr  ///< Smart pointer to make a copy of.
     );
 
     /** Destroy the smart pointer and decrement the reference count on the
@@ -80,7 +113,7 @@ class PSmartPointer : public PObject
      */
     virtual ~PSmartPointer();
 
-    /** Assign this pointer to the value specified in the #ptr#
+    /** Assign this pointer to the value specified in the <code>ptr</code>
        parameter.
 
        The previous object being pointed to has its reference count
@@ -91,7 +124,7 @@ class PSmartPointer : public PObject
        count incremented.
      */
     PSmartPointer & operator=(
-      const PSmartPointer & ptr  /// Smart pointer to assign.
+      const PSmartPointer & ptr  ///< Smart pointer to assign.
     );
   //@}
 
@@ -102,12 +135,12 @@ class PSmartPointer : public PObject
        memory pointers.
 
        @return
-       #EqualTo# if objects point to the same object instance,
-       otherwise #LessThan# and #GreaterThan# may be
+       <code>EqualTo</code> if objects point to the same object instance,
+       otherwise <code>LessThan</code> and <code>GreaterThan</code> may be
        returned depending on the relative values of the memory pointers.
      */
     virtual Comparison Compare(
-      const PObject & obj   // Other smart pointer to compare against.
+      const PObject & obj   ///< Other smart pointer to compare against.
     ) const;
   //@}
 
@@ -117,9 +150,9 @@ class PSmartPointer : public PObject
        object instance.
 
        @return
-       TRUE if the pointer is NULL.
+       true if the pointer is NULL.
      */
-    BOOL IsNULL() const { return object == NULL; }
+    PBoolean IsNULL() const { return object == NULL; }
 
     /** Get the current value if the internal smart object pointer.
 
@@ -136,31 +169,31 @@ class PSmartPointer : public PObject
 };
 
 
-/** This macro is used to declare a smart pointer class members.
-The class #cls# is the smart pointer, descended from the #par# class, to the
-#type# class.
-
-The macro declares in the class the following functions:
-\begin{verbatim}
-      PCLASSINFO(cls, par);
-        Standard class info.
-
-      type * operator->() const;
-        Access to the members of the smart object in the smart pointer.
-
-      type & operator*() const;
-        Access to the value of the smart object in the smart pointer.
-\end{verbatim}
+/** This template class creates a type safe version of PSmartPointer.
 */
-#define PSMART_POINTER_INFO(cls, par, type) \
-  PCLASSINFO(cls, par) \
-  public: \
-    type * operator->() const \
-      { return (type *)PAssertNULL(object); } \
-    type & operator*() const \
-      { return *(type *)PAssertNULL(object); } \
-    operator type*() const \
-      { return (type *)object; }
+template <class T> class PSmartPtr : public PSmartPointer
+{
+  PCLASSINFO(PSmartPtr, PSmartPointer);
+  public:
+    /// Constructor
+    PSmartPtr(T * ptr = NULL)
+      : PSmartPointer(ptr) { }
 
-#endif
+    /// Access to the members of the smart object in the smart pointer.
+    T * operator->() const
+      { return (T *)PAssertNULL(object); }
 
+    /// Access to the dereferenced smart object in the smart pointer.
+    T & operator*() const
+      { return *(T *)PAssertNULL(object); }
+
+    /// Access to the value of the smart pointer.
+    operator T*() const
+      { return (T *)object; }
+};
+
+
+#endif // PTLIB_SMARTPTR_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

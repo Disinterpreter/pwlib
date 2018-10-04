@@ -7,32 +7,9 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.cxx,v $
- * Revision 1.7  2003/09/26 13:41:32  rjongbloed
- * Added special test to give more indicative error if try to compile without Expat support.
- *
- * Revision 1.6  2003/04/15 03:00:41  robertj
- * Added array support to XML/RPC
- * Fixed XML/RPC parsing when lots of white space in raw XML, caused by
- *   big fix to base XML parser not returning internal data elements.
- *
- * Revision 1.5  2002/12/04 02:09:17  robertj
- * Changed macro name prefix to PXMLRPC
- *
- * Revision 1.4  2002/12/04 00:16:18  robertj
- * Large enhancement to create automatically encoding and decoding structures
- *   using macros to build a class.
- *
- * Revision 1.3  2002/10/04 05:16:44  craigs
- * Changed for new XMLRPC code
- *
- * Revision 1.2  2002/03/27 01:54:40  craigs
- * Added ability to send random struct as request
- * Added ability to preview request without sending
- *
- * Revision 1.1  2002/03/26 07:05:28  craigs
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 /*
@@ -77,7 +54,7 @@ PXMLRPC_STRUCT_END()
 PXMLRPC_STRUCT_BEGIN     (TestStruct)
     PXMLRPC_STRING_INIT  (TestStruct, PString, a_string, "A string!");
     PXMLRPC_INTEGER_INIT (TestStruct, int, an_integer, 12);
-    PXMLRPC_BOOLEAN_INIT (TestStruct, BOOL, a_boolean, TRUE);
+    PXMLRPC_BOOLEAN_INIT (TestStruct, PBoolean, a_boolean, PTrue);
     PXMLRPC_DOUBLE_INIT  (TestStruct, double, a_float, 3.14159);
     PXMLRPC_DATETIME     (TestStruct, PTime, a_date);
     PXMLRPC_BINARY       (TestStruct, PBYTEArray, a_binary);
@@ -108,14 +85,18 @@ void XMLRPCApp::Main()
              "d-debug."
              "f-float."
              "i-integer."
-             "o-output:"
              "s-struct."
+#if PTRACING
              "t-trace."
+             "o-output:"
+#endif
              "-echo-struct."
              );
 
+#if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL);
+#endif
 
   if (args.GetCount() < 2) {
     PError << "usage: xmlrpc url method [parms...]" << endl;
@@ -208,7 +189,7 @@ void XMLRPCApp::Main()
     else {
       for (i = 2; i < args.GetCount(); i++) {
         if (args.HasOption('i'))
-          request.AddParam(args[i].AsInteger());
+          request.AddParam((int)args[i].AsInteger());
         else if (args.HasOption('f'))
           request.AddParam(args[i].AsReal());
         else

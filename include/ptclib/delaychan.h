@@ -23,38 +23,23 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: delaychan.h,v $
- * Revision 1.6  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.5  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.4  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.3  2002/02/25 11:05:02  rogerh
- * New Delay code which solves the accumulated error problem. Based on ideas
- * by Tomasz Motylewski <T.Motylewski@bfad.de>, Roger and Craig.
- *
- * Revision 1.2  2002/01/15 03:55:43  craigs
- * Added PAdaptiveDelay class
- *
- * Revision 1.1  2001/07/10 03:07:07  robertj
- * Added queue channel and delay channel classes to ptclib.
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _DELAYCHAN_H
-#define _DELAYCHAN_H
-
+#ifndef PTLIB_DELAYCHAN_H
+#define PTLIB_DELAYCHAN_H
+#include <ptlib/contain.h>
+#include <ptlib/object.h>
+#include <ptlib/timeint.h>
+#include <ptlib/ptime.h>
+#include <ptlib/indchan.h>
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
 
 /** Class for implementing an "adaptive" delay.
     This class will cause the the caller to, on average, delay
@@ -69,13 +54,65 @@ class PAdaptiveDelay : public PObject
   PCLASSINFO(PAdaptiveDelay, PObject);
   
   public:
-    PAdaptiveDelay();
-    BOOL Delay(int time);
+
+  /**@name Construction */
+  //@{
+    /**Create a new adaptive delay with the specified parameters.
+
+       The maximum slip time can also be set later using SetMaximumSlip.
+      */
+    PAdaptiveDelay(
+      unsigned maximumSlip = 0,   ///< Maximum slip time in milliseconds
+      unsigned minimumDelay = 0   ///< Minimum delay (usually OS time slice)
+    );
+  //@}
+
+  /**@name Operating Parameters */
+  //@{
+    /**Set the number of milliseconds that the delay may "catch up" by
+       using zero delays. This is caused by the Delay() function not
+       being called for a time by external factors.
+
+       If @a maximumSlip is 0, this feature is disabled.
+      */
+    void SetMaximumSlip(PTimeInterval maximumSlip)
+    { jitterLimit = maximumSlip; }
+
+    /**Get the current slip time. */
+    PTimeInterval GetMaximumSlip() const
+    { return jitterLimit; }
+  //@}
+
+  /**@name Functionality */
+  //@{
+    /**Wait until the specified number of milliseconds have elapsed from
+       the previous call (on average). The first time the function is called,
+       no delay occurs. If the maximum slip time is set and the caller
+       is "too late", the timer is restarted automatically and no delay
+       occurs.
+
+       If the calculated delay is less than the OS timer resolution
+       specified on costruction, no delay occurs now ("better sooner
+       than later" strategy).
+
+       @return
+       true if we are "too late" of @a time milliseconds (unrelated to
+       the maximum slip time).
+      */
+    PBoolean Delay(int time);
+
+    /**Invalidate the timer. The timing of this function call is not
+       important, the timer will restart at the next call to Delay().
+      */
     void Restart();
+  //@}
  
   protected:
-    BOOL   firstTime;
+    PBoolean   firstTime;
     PTime  targetTime;
+
+    PTimeInterval  jitterLimit;
+    PTimeInterval  minimumDelay;
 };
 
 
@@ -120,6 +157,22 @@ class PDelayChannel : public PIndirectChannel
       unsigned maximumSlip = 250, ///< Maximum slip time in milliseconds
       unsigned minimumDelay = 10  ///< Minimim delay (usually OS time slice)
     );
+    
+    /** Create a new delay channel with the specified delays and channel. A value of zero
+    for the numBytes parameter indicates that the delay is in frame mode.
+
+    The maximum skip time is the number of milliseconds that the delay
+    may "catch up" by using zero delays. This is caused by the Read() or
+    Write() not being called for a time by external factors.
+     */
+    PDelayChannel(
+        PChannel &channel,          ///< channel to use 
+        Mode mode,                  ///< Mode for delay channel
+        unsigned frameDelay,        ///< Delay time in milliseconds
+        PINDEX frameSize = 0,       ///< Bytes to apply to the delay time.
+        unsigned maximumSlip = 250, ///< Maximum slip time in milliseconds
+        unsigned minimumDelay = 10  ///< Minimim delay (usually OS time slice)
+                 );    
   //@}
 
 
@@ -130,13 +183,13 @@ class PDelayChannel : public PIndirectChannel
        of bytes read.
 
        The GetErrorCode() function should be consulted after Read() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE indicates that at least one character was read from the channel.
-       FALSE means no bytes were read due to timeout or some other I/O error.
+       true indicates that at least one character was read from the channel.
+       false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -146,11 +199,11 @@ class PDelayChannel : public PIndirectChannel
        of bytes written.
 
        The GetErrorCode() function should be consulted after Write() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
-       @return TRUE if at least len bytes were written to the channel.
+       @return true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -171,7 +224,7 @@ class PDelayChannel : public PIndirectChannel
 };
 
 
-#endif // _DELAYCHAN_H
+#endif // PTLIB_DELAYCHAN_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

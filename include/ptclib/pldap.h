@@ -23,55 +23,24 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pldap.h,v $
- * Revision 1.10  2006/01/16 19:52:05  dsandras
- * Applied patch from Brian Lu <brian lu sun com> to allow compilation on
- * Solaris using SUN's LDAP. Thanks!!
- *
- * Revision 1.9  2004/05/24 12:02:49  csoutheren
- * Add function to permit setting a limit on the number of results returned
- * from an LDAP query. Change the default number of results to unlimited,
- * rather than MAX_INT which apparently is clamped to some arbitrary low value.
- * Thanks to Damien Sandras
- *
- * Revision 1.8  2004/02/20 16:28:27  ykiryanov
- * if'd LDAP code to enable non-LDAP builds
- *
- * Revision 1.7  2003/06/05 23:17:07  rjongbloed
- * Added functions to get and set LDAP operation timeout.
- *
- * Revision 1.6  2003/06/05 05:29:30  rjongbloed
- * Fixed LDAP bind authentication methods, thanks Ravelli Rossano
- *
- * Revision 1.5  2003/04/07 12:00:04  robertj
- * Fixed search function returning an error if can't find anything for filter.
- *
- * Revision 1.4  2003/04/01 07:05:29  robertj
- * Added ability to specify host:port in opening an LDAP server
- *
- * Revision 1.3  2003/03/31 09:02:43  robertj
- * Added missing return for error number.
- *
- * Revision 1.2  2003/03/31 03:32:41  robertj
- * Major addition of functionality.
- *
- * Revision 1.1  2003/03/28 01:15:44  robertj
- * OpenLDAP support.
- *
- *
+ * $Revision: 27535 $
+ * $Author: rjongbloed $
+ * $Date: 2012-04-26 02:48:22 -0500 (Thu, 26 Apr 2012) $
  */
 
-#ifndef _PLDAP_H
-#define _PLDAP_H
+#ifndef PTLIB_PLDAP_H
+#define PTLIB_PLDAP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#if P_LDAP
+#if defined(P_LDAP) && !defined(_WIN32_WCE)
 
 #include <ptlib/sockets.h>
-
+#include <ptlib/pluginmgr.h>
+#include <map>
+#include <list>
 
 struct ldap;
 struct ldapmsg;
@@ -103,29 +72,29 @@ class PLDAPSession : public PObject
        not present then the port variable is used. If that is also zero then
        the default port of 369 is used.
       */
-    BOOL Open(
+    PBoolean Open(
       const PString & server,
       WORD port = 0
     );
 
     /**Close the LDAP session
       */
-    BOOL Close();
+    PBoolean Close();
 
     /**Determine of session is open.
       */
-    BOOL IsOpen() const { return ldapContext != NULL; }
+    PBoolean IsOpen() const { return ldapContext != NULL; }
 
     /**Set LDAP option parameter (OpenLDAp specific values)
       */
-    BOOL SetOption(
+    PBoolean SetOption(
       int optcode,
       int value
     );
 
     /**Set LDAP option parameter (OpenLDAP specific values)
       */
-    BOOL SetOption(
+    PBoolean SetOption(
       int optcode,
       void * value
     );
@@ -142,9 +111,13 @@ class PLDAPSession : public PObject
 #endif
     };
 
+    /**Start encrypted connection
+      */
+    PBoolean StartTLS();
+
     /**Bind to the remote LDAP server.
       */
-    BOOL Bind(
+    PBoolean Bind(
       const PString & who = PString::Empty(),
       const PString & passwd = PString::Empty(),
       AuthenticationMethod authMethod = AuthSimple
@@ -177,7 +150,7 @@ class PLDAPSession : public PObject
         );
 
       protected:
-        virtual BOOL IsBinary() const = 0;
+        virtual PBoolean IsBinary() const = 0;
         virtual void SetLDAPModVars(struct ldapmod & mod) = 0;
 
         PString   name;
@@ -208,10 +181,10 @@ class PLDAPSession : public PObject
           const PString & value
         );
       protected:
-        virtual BOOL IsBinary() const;
+        virtual PBoolean IsBinary() const;
         virtual void SetLDAPModVars(struct ldapmod & mod);
 
-        PStringList values;
+        PStringArray values;
         PBaseArray<char *> pointers;
     };
 
@@ -229,7 +202,7 @@ class PLDAPSession : public PObject
         );
         BinaryModAttrib(
           const PString & name,
-          const PList<PBYTEArray> & values,
+          const PArray<PBYTEArray> & values,
           Operation op = Add
         );
         void SetValue(
@@ -239,24 +212,24 @@ class PLDAPSession : public PObject
           const PBYTEArray & value
         );
       protected:
-        virtual BOOL IsBinary() const;
+        virtual PBoolean IsBinary() const;
         virtual void SetLDAPModVars(struct ldapmod & mod);
 
-        PList<PBYTEArray> values;
+        PArray<PBYTEArray> values;
         PBaseArray<struct berval *> pointers;
         PBYTEArray bervals;
     };
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    BOOL Add(
+    PBoolean Add(
       const PString & dn,
-      const PList<ModAttrib> & attributes
+      const PArray<ModAttrib> & attributes
     );
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    BOOL Add(
+    PBoolean Add(
       const PString & dn,
       const PStringToString & attributes
     );
@@ -264,7 +237,7 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    BOOL Add(
+    PBoolean Add(
       const PString & dn,
       const PStringArray & attributes
     );
@@ -272,21 +245,21 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    BOOL Add(
+    PBoolean Add(
       const PString & dn,
       const PLDAPStructBase & data
     );
 
     /**Modify an existing distringuished name to LDAP dirctory.
       */
-    BOOL Modify(
+    PBoolean Modify(
       const PString & dn,
-      const PList<ModAttrib> & attributes
+      const PArray<ModAttrib> & attributes
     );
 
     /**Add a new distringuished name to LDAP dirctory.
       */
-    BOOL Modify(
+    PBoolean Modify(
       const PString & dn,
       const PStringToString & attributes
     );
@@ -294,7 +267,7 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    BOOL Modify(
+    PBoolean Modify(
       const PString & dn,
       const PStringArray & attributes
     );
@@ -302,14 +275,14 @@ class PLDAPSession : public PObject
     /**Add a new distringuished name to LDAP dirctory.
        The attributes list is a string array of the form attr=value
       */
-    BOOL Modify(
+    PBoolean Modify(
       const PString & dn,
       const PLDAPStructBase & data
     );
 
     /**Delete the distinguished name from LDAP directory.
       */
-    BOOL Delete(
+    PBoolean Delete(
       const PString & dn
     );
 
@@ -326,21 +299,21 @@ class PLDAPSession : public PObject
         SearchContext();
         ~SearchContext();
 
-        BOOL IsCompleted() const { return completed; }
+        PBoolean IsCompleted() const { return completed; }
 
       private:
         int              msgid;
         struct ldapmsg * result;
         struct ldapmsg * message;
-        BOOL             found;
-        BOOL             completed;
+        PBoolean             found;
+        PBoolean             completed;
 
       friend class PLDAPSession;
     };
 
     /**Start search for specified information.
       */
-    BOOL Search(
+    PBoolean Search(
       SearchContext & context,
       const PString & filter,
       const PStringArray & attributes = PStringList(),
@@ -350,14 +323,14 @@ class PLDAPSession : public PObject
 
     /**Get the current search result entry.
       */
-    BOOL GetSearchResult(
+    PBoolean GetSearchResult(
       SearchContext & context,
       PStringToString & data
     );
 
     /**Get an attribute of the current search result entry.
       */
-    BOOL GetSearchResult(
+    PBoolean GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PString & data
@@ -365,7 +338,7 @@ class PLDAPSession : public PObject
 
     /**Get an attribute of the current search result entry.
       */
-    BOOL GetSearchResult(
+    PBoolean GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PStringArray & data
@@ -373,7 +346,7 @@ class PLDAPSession : public PObject
 
     /**Get an attribute of the current search result entry.
       */
-    BOOL GetSearchResult(
+    PBoolean GetSearchResult(
       SearchContext & context,
       const PString & attribute,
       PArray<PBYTEArray> & data
@@ -381,7 +354,7 @@ class PLDAPSession : public PObject
 
     /**Get all attributes of the current search result entry.
       */
-    BOOL GetSearchResult(
+    PBoolean GetSearchResult(
       SearchContext & context,
       PLDAPStructBase & data
     );
@@ -394,7 +367,7 @@ class PLDAPSession : public PObject
 
     /**Get the next search result.
       */
-    BOOL GetNextSearchResult(
+    PBoolean GetNextSearchResult(
       SearchContext & context
     );
 
@@ -469,7 +442,7 @@ class PLDAPAttributeBase : public PObject
     PLDAPAttributeBase(const char * name, void * pointer, PINDEX size);
 
     const char * GetName() const { return name; }
-    BOOL IsBinary() const { return pointer != NULL; }
+    PBoolean IsBinary() const { return pointer != NULL; }
 
     virtual void Copy(const PLDAPAttributeBase & other) = 0;
 
@@ -493,7 +466,7 @@ class PLDAPStructBase : public PObject {
     PLDAPStructBase & operator=(const PStringArray & array);
     PLDAPStructBase & operator=(const PStringToString & dict);
   private:
-    PLDAPStructBase(const PLDAPStructBase &) { }
+    PLDAPStructBase(const PLDAPStructBase & obj) : PObject(obj) { }
 
   public:
     void PrintOn(ostream & strm) const;
@@ -515,13 +488,88 @@ class PLDAPStructBase : public PObject {
     static PLDAPStructBase * initialiserInstance;
 };
 
+///////////////////////////////////////////////////////////////////////////
+
+class PLDAPSchema : public PObject
+{
+  public:
+    PLDAPSchema();
+
+    enum AttributeType {
+        AttibuteUnknown = -1,
+        AttributeString,
+        AttributeBinary,
+        AttributeNumeric
+    };
+
+    class Attribute
+    {
+    public:
+        Attribute() : m_type(AttibuteUnknown) { }
+        Attribute(const PString & name, AttributeType type);
+        PString       m_name;
+        AttributeType m_type;
+    };
+
+    typedef std::list<Attribute> attributeList;
+
+    static PLDAPSchema * CreateSchema(const PString & schemaname, PPluginManager * pluginMgr = NULL);
+    static PStringList GetSchemaNames(PPluginManager * pluginMgr = NULL);
+    static PStringList GetSchemaFriendlyNames(const PString & schema, PPluginManager * pluginMgr = NULL);
+
+    void OnReceivedAttribute(const PString & attribute, const PString & value);
+
+    void OnSendSchema(PArray<PLDAPSession::ModAttrib> & attributes,
+        PLDAPSession::ModAttrib::Operation op=PLDAPSession::ModAttrib::Add);
+
+    void LoadSchema();
+
+    PStringList SchemaName() { return PStringList(); }
+    virtual void AttributeList(attributeList & /*attrib*/) {};
+
+
+    PStringList GetAttributeList();
+    PBoolean Exists(const PString & attribute);
+
+    PBoolean SetAttribute(const PString & attribute, const PString & value);
+    PBoolean SetAttribute(const PString & attribute, const PBYTEArray & value);
+
+    PBoolean GetAttribute(const PString & attribute, PString & value);
+    PBoolean GetAttribute(const PString & attribute, PBYTEArray & value);
+
+    AttributeType GetAttributeType(const PString & attribute);
+
+
+  protected:
+    typedef std::map<PString,PString> ldapAttributes;
+    typedef std::map<PString,PBYTEArray> ldapBinAttributes;
+
+
+    attributeList           attributelist;
+    ldapAttributes          attributes;
+    ldapBinAttributes       binattributes;   
+};
+
+
+template <class className> class LDAPPluginServiceDescriptor : public PDevicePluginServiceDescriptor
+{
+  public:
+    virtual PObject *    CreateInstance(int /*userData*/) const { return new className; }
+    virtual PStringArray GetDeviceNames(int /*userData*/) const { return className::SchemaName(); } 
+};
+
+#define LDAP_Schema(name)    \
+  static LDAPPluginServiceDescriptor<name##_schema> name##_schema_descriptor; \
+  PCREATE_PLUGIN(name##_schema, PLDAPSchema, &name##_schema_descriptor)
+
+////////////////////////////////////////////////////////////////////////////////////////////
 
 #define PLDAP_STRUCT_BEGIN(name) \
   class name : public PLDAPStructBase { \
-    public: name() { EndConstructor(); } \
-    public: name(const name & other) { EndConstructor(); operator=(other); } \
-    public: name(const PStringArray & array) { EndConstructor(); operator=(array); } \
-    public: name(const PStringToString & dict) { EndConstructor(); operator=(dict); } \
+    public: name() : PLDAPStructBase() { EndConstructor(); } \
+    public: name(const name & other) : PLDAPStructBase() { EndConstructor(); operator=(other); } \
+    public: name(const PStringArray & array) : PLDAPStructBase() { EndConstructor(); operator=(array); } \
+    public: name(const PStringToString & dict) : PLDAPStructBase() { EndConstructor(); operator=(dict); } \
     public: name & operator=(const name & other) { PLDAPStructBase::operator=(other); return *this; } \
     public: name & operator=(const PStringArray & array) { PLDAPStructBase::operator=(array); return *this; } \
     public: name & operator=(const PStringToString & dict) { PLDAPStructBase::operator=(dict); return *this; } \
@@ -555,7 +603,7 @@ class PLDAPStructBase : public PObject {
 
 #endif // P_LDAP
 
-#endif // _PLDAP_H
+#endif // PTLIB_PLDAP_H
 
 
 // End of file ////////////////////////////////////////////////////////////////

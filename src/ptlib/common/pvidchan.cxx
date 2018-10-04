@@ -26,75 +26,20 @@
  *
  * Contributor(s): Derek Smithies (derek@indranet.co.nz)
  *
- * $Log: pvidchan.cxx,v $
- * Revision 1.17  2006/02/20 06:14:41  csoutheren
- * Return FALSE if video channel read fails
- *
- * Revision 1.16  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.15  2003/05/27 04:22:54  dereksmithies
- * Test grabber size before issuing a grabber resize command.
- *
- * Revision 1.14  2003/04/14 21:18:41  dereks
- * Formatting change.
- *
- * Revision 1.13  2003/03/20 23:40:51  dereks
- * Fix minor problems with using null pointers.
- *
- * Revision 1.12  2003/03/17 07:47:42  robertj
- * Removed redundant "render now" function.
- * Made significant enhancements to PVideoOutputDevice class.
- *
- * Revision 1.11  2003/01/06 18:41:08  rogerh
- * Add NetBSD patches, taken from the NetBSD pkg patches.
- * Submitted by Andreas Wrede
- *
- * Revision 1.10  2002/05/08 22:38:53  dereks
- * Adjust formatting to the pwlib standard.
- *
- * Revision 1.9  2002/02/08 00:57:33  dereks
- * Modify PTRACE level to reduce debug information to reasonable level.
- *
- * Revision 1.8  2002/01/04 04:11:45  dereks
- * Add video flip code from Walter Whitlock, which flips code at the grabber.
- *
- * Revision 1.7  2001/12/03 03:44:52  dereks
- * Add method to retrive pointer to the attached video display class.
- *
- * Revision 1.6  2001/11/28 00:07:32  dereks
- * Locking added to PVideoChannel, allowing reader/writer to be changed mid call
- * Enabled adjustment of the video frame rate
- * New fictitous image, a blank grey area
- *
- * Revision 1.5  2001/10/23 02:11:00  dereks
- * Extend video channel so it can display raw data, using attached video devices.
- *
- * Revision 1.4  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.3  2001/06/19 00:51:57  dereks
- * The ::Write method now returns the result of mpOutput->Redraw(), rather than
- *   always true.
- *
- * Revision 1.2  2001/03/23 20:24:23  yurik
- * Got rid of "unknown pragma" for WinCE port
- *
- * Revision 1.1  2000/12/19 22:20:26  dereks
- * Add video channel classes to connect to the PwLib PVideoInputDevice class.
- * Add PFakeVideoInput class to generate test images for video.
- *
- *
- *
+ * $Revision: 24459 $
+ * $Author: shorne $
+ * $Date: 2010-06-06 08:59:59 -0500 (Sun, 06 Jun 2010) $
  */
 
-#ifndef _WIN32_WCE
+#ifdef __GNUC__
 #pragma implementation "video.h"
 #endif
 
 #include <ptlib.h>
 
+#if P_VIDEO 
+
+#include <ptlib/video.h>
 
 PVideoChannel::PVideoChannel() 
 {
@@ -117,19 +62,15 @@ PVideoChannel::~PVideoChannel()
 }
 
 
-PStringList PVideoChannel::GetDeviceNames(Directions /*dir*/)
+PStringArray PVideoChannel::GetDeviceNames(Directions /*dir*/)
 {
-  PStringList list;
-
-  list.AppendString("Video Channel Base");
-
-  return list;
+  return PString("Video Channel Base");
 }
 
 
 PString PVideoChannel::GetDefaultDevice(Directions /*dir*/)
 {
-#if defined(P_FREEBSD) || defined(P_OPENBSD)  || defined(P_NETBSD)
+#if defined(P_FREEBSD) || defined(P_OPENBSD)
   return "/dev/bktr0";
 #endif
 
@@ -141,7 +82,7 @@ PString PVideoChannel::GetDefaultDevice(Directions /*dir*/)
 }
 
 
-BOOL PVideoChannel::Open(const PString & dev,
+PBoolean PVideoChannel::Open(const PString & dev,
                          Directions dir)
 {
   PWaitAndSignal m(accessMutex);
@@ -151,17 +92,17 @@ BOOL PVideoChannel::Open(const PString & dev,
   deviceName = dev;
   direction = dir;
   
-  return TRUE;
+  return PTrue;
 }
 
 
 
-BOOL PVideoChannel::Read(void * buf, PINDEX  len)
+PBoolean PVideoChannel::Read(void * buf, PINDEX  len)
 {
   PWaitAndSignal m(accessMutex);
 
   if (mpInput == NULL)  
-    return FALSE;
+    return PFalse;
 
   BYTE * dataBuf;
   PINDEX dataLen;
@@ -169,23 +110,31 @@ BOOL PVideoChannel::Read(void * buf, PINDEX  len)
   dataLen = len;
   return mpInput->GetFrameData(dataBuf, &dataLen);
 
-  // CHANGED  return TRUE;
+  // CHANGED  return PTrue;
 }
 
-BOOL PVideoChannel::Write(const void * buf,  //image data to be rendered
-                          PINDEX      /* len */)
+PBoolean PVideoChannel::Write(const void * buf,  //image data to be rendered
+                          PINDEX len )
+{
+	return Write(buf, len, 0);
+}
+
+PBoolean PVideoChannel::Write(const void * buf, PINDEX /*len*/, void * mark)
 {
   PWaitAndSignal m(accessMutex);
 
   if (mpOutput == NULL)
-    return FALSE;
+    return PFalse;
 
 
   if (mpInput == NULL) {
     PTRACE(6,"PVC\t::Write, frame size is "
               << mpOutput->GetFrameWidth() << "x" << mpOutput->GetFrameHeight() << 
-              " VideoGrabber is unavailabile");
-    return mpOutput->SetFrameData(0, 0, mpOutput->GetFrameWidth(), mpOutput->GetFrameHeight(), (const BYTE *)buf, TRUE);
+              " VideoGrabber is unavailable");
+    return mpOutput->SetFrameData(0, 0,
+        mpOutput->GetFrameWidth(), mpOutput->GetFrameHeight(),
+        mpOutput->GetSarWidth(),   mpOutput->GetSarHeight(),
+        (const BYTE *)buf, PTrue,0, mark);
   }
 
   PTRACE(6,"PVC\t::Write, frame size is " 
@@ -193,21 +142,23 @@ BOOL PVideoChannel::Write(const void * buf,  //image data to be rendered
                " VideoGrabber is source of size");
   return mpOutput->SetFrameData(0, 0,
         mpInput->GetFrameWidth(), mpInput->GetFrameHeight(),
-           (const BYTE *)buf, TRUE);  
+        mpInput->GetSarWidth(),   mpInput->GetSarHeight(),
+           (const BYTE *)buf, PTrue,0, mark);  
+
 }
 
-BOOL PVideoChannel::Close()
+PBoolean PVideoChannel::Close()
 {
   PWaitAndSignal m(accessMutex);
 
   CloseVideoReader();
   CloseVideoPlayer();
 
-  return TRUE;
+  return PTrue;
 }
 
 /*returns true if either input or output is open */
-BOOL PVideoChannel::IsOpen() const 
+PBoolean PVideoChannel::IsOpen() const 
 {
    PWaitAndSignal m(accessMutex);
 
@@ -220,7 +171,7 @@ PString PVideoChannel::GetName() const
   return deviceName;
 }
 
-void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, BOOL keepCurrent)
+void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, PBoolean keepCurrent)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -232,7 +183,7 @@ void PVideoChannel::AttachVideoPlayer(PVideoOutputDevice * device, BOOL keepCurr
   mpOutput = device;
 }
 
-void PVideoChannel::AttachVideoReader(PVideoInputDevice * device, BOOL keepCurrent)
+void PVideoChannel::AttachVideoReader(PVideoInputDevice * device, PBoolean keepCurrent)
 {
   PWaitAndSignal m(accessMutex);
 
@@ -284,44 +235,53 @@ PINDEX  PVideoChannel::GetGrabWidth()
      return 0;
 }
 
-BOOL PVideoChannel::IsGrabberOpen()
+PBoolean PVideoChannel::IsGrabberOpen()
 {
   PWaitAndSignal m(accessMutex);
 
   if (mpInput != NULL)
     return mpInput->IsOpen();
   else
-    return FALSE; 
+    return PFalse; 
 }
 
-BOOL PVideoChannel::IsRenderOpen()      
+PBoolean PVideoChannel::IsRenderOpen()      
 {
   PWaitAndSignal m(accessMutex);
 
   if (mpOutput != NULL)
     return mpOutput->IsOpen();
   else
-    return FALSE; 
+    return PFalse; 
 }
 
-BOOL PVideoChannel::DisplayRawData(void *videoBuffer)
+PBoolean PVideoChannel::DisableDecode()
+{
+  if (mpOutput != NULL)
+    return mpOutput->DisableDecode();
+  else
+    return PFalse; 
+}
+
+PBoolean PVideoChannel::DisplayRawData(void *videoBuffer)
 {
   PWaitAndSignal m(accessMutex);
 
   if ((mpOutput == NULL) || (mpInput == NULL))
-    return FALSE;
+    return PFalse;
   
   PINDEX length=0;
 
   int frameWidth  = GetGrabWidth();
   int frameHeight = GetGrabHeight();
   PTRACE(6,"Video\t data direct:: camera-->render, size " << frameWidth << "x" << frameHeight );
-  
+
+  // TODO sar default to 1:1
   SetRenderFrameSize(frameWidth, frameHeight);
   Read(videoBuffer, length);
   Write((const void *)videoBuffer, length);
   
-  return TRUE;      
+  return PTrue;      
 }
 
 void  PVideoChannel::SetGrabberFrameSize(int _width, int _height)     
@@ -336,12 +296,20 @@ void  PVideoChannel::SetGrabberFrameSize(int _width, int _height)
 }
 
 void  PVideoChannel::SetRenderFrameSize(int _width, int _height) 
+{
+   SetRenderFrameSize(_width, _height, 1, 1);
+} 
+
+void  PVideoChannel::SetRenderFrameSize(int _width, int _height, int _sarwidth,int _sarheight) 
 { 
   PTRACE(6, "PVC\t Set Renderer frame size to " << _width << "x" << _height);
   PWaitAndSignal m(accessMutex);
 
   if (mpOutput != NULL)
-    mpOutput->SetFrameSize(_width, _height); 
+  {
+        mpOutput->SetFrameSize(_width, _height);
+        mpOutput->SetFrameSar(_sarwidth, _sarheight);
+  }
 }
 
 PVideoInputDevice *PVideoChannel::GetVideoReader()
@@ -354,7 +322,7 @@ PVideoOutputDevice *PVideoChannel::GetVideoPlayer()
   return mpOutput;
 }
 
-BOOL  PVideoChannel::Redraw(const void * frame) 
+PBoolean  PVideoChannel::Redraw(const void * frame) 
 { 
   PTRACE(6,"PVC\t::Redraw a frame");
   return Write(frame, 0);
@@ -392,16 +360,24 @@ void PVideoChannel::EnableAccess()
 }
 
 
-BOOL PVideoChannel::ToggleVFlipInput()
+PBoolean PVideoChannel::ToggleVFlipInput()
 {
   PWaitAndSignal m(accessMutex);
 
  if (mpOutput != NULL)
   return mpInput->SetVFlipState(mpInput->GetVFlipState()); 
 
- return FALSE;
+ return PFalse;
 }
 
+bool PVideoChannel::FlowControl(const void* flowData)
+{
+    if(mpInput)
+        return mpInput->FlowControl(flowData);
+    return false;
+}
+
+#endif
 
 ///////////////////////////////////////////////////////////////////////////
 // End of file

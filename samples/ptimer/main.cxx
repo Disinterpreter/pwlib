@@ -23,17 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.2  2006/05/24 02:28:18  dereksmithies
- * add separate thread to get the timer to start.
- * Add option to check if the timer has started.
- * Fix use of the parameters.
- *
- * Revision 1.1  2006/05/23 04:36:49  dereksmithies
- * Initial release of a test program to examine the operation of PTimer.
- *
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include "precompile.h"
@@ -56,6 +48,16 @@ PTimerTest::PTimerTest()
 {
 }
 
+class MyTimerTester : public PTimer
+{
+  public:
+    MyTimerTester(PSyncPoint & _sync)
+      : sync(_sync) { }
+    void OnTimeout()
+    { sync.Signal(); }
+    PSyncPoint & sync;
+};
+
 void PTimerTest::Main()
 {
   PArgList & args = GetArguments();
@@ -65,10 +67,11 @@ void PTimerTest::Main()
 	     "c-check."
              "d-delay:"       
 	     "i-interval:"
+	     "s-reset."
 #if PTRACING
              "o-output:"      
              "t-trace."       
-#endif
+#endif	     
              "v-version."
   );
 
@@ -81,7 +84,7 @@ void PTimerTest::Main()
   if (args.HasOption('v')) {
     cout << "Product Name: " << GetName() << endl
          << "Manufacturer: " << GetManufacturer() << endl
-         << "Version     : " << GetVersion(TRUE) << endl
+         << "Version     : " << GetVersion(PTrue) << endl
          << "System      : " << GetOSName() << '-'
          << GetOSHardware() << ' '
          << GetOSVersion() << endl;
@@ -95,6 +98,7 @@ void PTimerTest::Main()
            << "-v  or --version      print version info" << endl
            << "-d  or --delay ##     duration (ms) the timer waits for" << endl
 	   << "-i  or --interval ##  interval (ms) between timer tests" << endl
+	   << "-s  or --second       A second test, which repeatedly resets two internal timers." << endl
 #if PTRACING
            << "o-output              output file name for trace" << endl
            << "t-trace.              trace level to use." << endl
@@ -102,6 +106,34 @@ void PTimerTest::Main()
            << endl
            << endl << endl;
     return;
+  }
+
+  {
+    PTime then;
+    cout << "Starting 5 second timer for poll check..." << endl;
+    PTimer timer(5000);
+    while (timer.IsRunning())
+      Sleep(100);
+    PTime now;
+    cout << "Finished - duration = " << (now - then).GetMilliSeconds() << " ms" << endl;
+  }
+
+  {
+    PTime then;
+    cout << "Starting 5 second timer for callback check..." << endl;
+    PSyncPoint sync;
+    MyTimerTester timer(sync);
+    timer.SetInterval(5000);
+    sync.Wait();
+    PTime now;
+    cout << "Finished - duration = " << (now - then).GetMilliSeconds() << " ms" << endl;
+  }
+
+  return;
+
+  if (args.HasOption('s')) {
+      RunSecondTest();
+      return;
   }
 
   checkTimer = args.HasOption('c');
@@ -128,7 +160,72 @@ void PTimerTest::Main()
   ui.Resume();
   ui.WaitForTermination();
 }
+/////////////////////////////////////////////////////////////////////////////
+void PTimerTest::RunSecondTest()
+{
+    cerr << "Will run the second test, which goes forever (if pwlib works correctly)" << endl
+	 << "or stops, on detecting an error" << endl
+	 << " " << endl
+	 << "This test runs two threads, which continually restart two timer instances " << endl
+	 << " " << endl
+	 <<"---There is no output, until an error is detected. All going well, you will have" << endl
+	 << "to stop this program with Ctrl-C" << endl;
 
+    firstTimer.SetNotifier(PCREATE_NOTIFIER(OnFirstTimerExpired));
+    secondTimer.SetNotifier(PCREATE_NOTIFIER(OnSecondTimerExpired));
+
+    PThread::Create(PCREATE_NOTIFIER(RestartFirstTimerMain), 30000,
+				    PThread::NoAutoDeleteThread,
+				    PThread::NormalPriority);
+
+    PThread::Create(PCREATE_NOTIFIER(RestartSecondTimerMain), 30000,
+				    PThread::NoAutoDeleteThread,
+				    PThread::NormalPriority);
+
+
+    PTime restartActive;
+    PTimeInterval quietPeriod(4000);
+
+    for (;;) {
+	    if (restartActivity > 0) {
+	        restartActive = PTime();
+	        restartActivity.SetValue(0);
+	    }
+	    if ((restartActive + quietPeriod) < PTime()) {
+	        cerr << "No activity for four seconds. Timers Locked up. PWlib Error" << endl;
+	        exit(0);
+	    }
+	    PThread::Sleep(100);
+    }
+}
+
+void PTimerTest::OnFirstTimerExpired(PTimer &, INT)
+{
+    cerr << "The first timer has expired " << endl;
+}
+
+void PTimerTest::OnSecondTimerExpired(PTimer &, INT)
+{
+    cerr << "The second timer has expired " << endl;
+}
+
+void PTimerTest::RestartFirstTimerMain(PThread &, INT)
+{
+    for (;;) {
+	    firstTimer = PTimeInterval(1900);
+	    restartActivity.SetValue(1);
+	    PThread::Sleep(400);
+    }
+}
+
+void PTimerTest::RestartSecondTimerMain(PThread &, INT)
+{
+    for (;;) {
+	    secondTimer = PTimeInterval(2000);
+	    restartActivity.SetValue(1);
+	    PThread::Sleep(300);
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 MyTimer::MyTimer()
@@ -165,7 +262,7 @@ void MyTimer::OnTimeout()
 
 /////////////////////////////////////////////////////////////////////////////
 
-DelayThread::DelayThread(PINDEX _delay, BOOL _checkTimer)
+DelayThread::DelayThread(PINDEX _delay, PBoolean _checkTimer)
   : PThread(10000, AutoDeleteThread), delay(_delay), checkTimer(_checkTimer)
 {
   PTRACE(5, "Constructor for a auto deleted PTimer test thread");
@@ -211,14 +308,14 @@ void LauncherThread::Main()
 {
   PINDEX delay      = PTimerTest::Current().Delay();
   PINDEX interval   = PTimerTest::Current().Interval();
-  BOOL   checkTimer = PTimerTest::Current().CheckTimer();
+  PBoolean   checkTimer = PTimerTest::Current().CheckTimer();
 
   while (keepGoing) {
-	PThread * thread = new DelayThread(delay, checkTimer);
-	thread->Resume();
-	PThread::Sleep(interval);
-	iteration++;
-      }
+	  PThread * thread = new DelayThread(delay, checkTimer);
+	  thread->Resume();
+	  PThread::Sleep(interval);
+	  iteration++;
+  }
 
   return;
 }
@@ -248,7 +345,7 @@ void UserInterfaceThread::Main()
 
   console.SetReadTimeout(P_MAX_INDEX);
   for (;;) {
-    char ch = console.ReadChar();
+    int ch = console.ReadChar();
 
     switch (tolower(ch)) {
     case 'd' :

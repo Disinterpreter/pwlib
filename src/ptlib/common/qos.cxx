@@ -17,15 +17,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: qos.cxx,v $
- * Revision 1.2  2003/10/27 04:06:13  csoutheren
- * Added code to allow compilation of new QoS code on Unix
- *
- * Revision 1.1  2003/10/27 03:20:10  csoutheren
- * Initial version of QoS implementation
- *   Thanks to Henry Harrison of AliceStreet
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 
@@ -80,7 +74,7 @@ void PQoS::SetAvgBytesPerSec(DWORD avgBytesPerSec)
 
 void PQoS::SetDSCP(int DSCPvalue)
 {
-    if (DSCPvalue < 63)
+    if (DSCPvalue <= 63)
         dscp = DSCPvalue;
 }
 

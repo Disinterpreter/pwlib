@@ -23,59 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psnmp.cxx,v $
- * Revision 1.9  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.8  1998/11/30 04:52:06  robertj
- * New directory structure
- *
- * Revision 1.7  1998/10/13 14:06:32  robertj
- * Complete rewrite of memory leak detection code.
- *
- * Revision 1.6  1998/09/23 06:22:33  robertj
- * Added open source copyright license.
- *
- * Revision 1.5  1998/01/26 02:50:17  robertj
- * GNU Support
- *
- * Revision 1.4  1997/07/20 08:50:04  craigs
- * Changed var binding list to use ASN NULL rather than empty string
- *
- * Revision 1.3  1997/07/14 11:47:17  robertj
- * Added "const" to numerous variables.
- *
- * Revision 1.2  1996/11/04 03:59:19  robertj
- * Added selectable read buffer size.
- *
- * Revision 1.1  1996/09/14 13:02:18  robertj
- * Initial revision
- *
- * Revision 1.9  1996/05/29 10:44:51  craigs
- * Latest version wil traps and discovery
- *
- * Revision 1.8  1996/05/09 13:23:49  craigs
- * Added trap functions
- *
- * Revision 1.7  1996/04/23 12:12:46  craigs
- * Changed to use GetErrorText function
- *
- * Revision 1.6  1996/04/16 13:20:43  craigs
- * Final version prior to beta1 release
- *
- * Revision 1.5  1996/04/15 09:05:30  craigs
- * Latest version prior to integration with Robert's changes
- *
- * Revision 1.4  1996/04/06 11:38:35  craigs
- * Lots of changes - working version prior to discover changes
- *
- * Revision 1.3  1996/04/01 12:50:44  craigs
- * CHanged for clean compile under NT
- *
- * Revision 1.2  1996/04/01 12:34:06  craigs
- * Added RCS header
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifdef __GNUC__
@@ -83,6 +33,9 @@
 #endif
 
 #include <ptlib.h>
+#include <ptbuildopts.h>
+
+#ifdef P_SNMP
 #include <ptclib/psnmp.h>
 
 #define new PNEW
@@ -152,6 +105,11 @@ PINDEX PSNMPVarBindingList::GetSize() const
   return objectIds.GetSize();
 }
 
+PINDEX PSNMPVarBindingList::GetIndex(const PString & objectID) const
+{
+  return objectIds.GetStringsIndex(objectID);
+}
+
 
 PASNObject & PSNMPVarBindingList::operator[](PINDEX idx) const
 {
@@ -192,5 +150,6 @@ PString PSNMP::GetErrorText(ErrorType err)
     return SnmpErrorCodeTable[err];
 }
 
+#endif // P_SNMP
 
 // End Of File ///////////////////////////////////////////////////////////////

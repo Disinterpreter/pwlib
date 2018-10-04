@@ -16,34 +16,13 @@
  * Copied by Derek Smithies, 1)Add soundtest code from ohphone.
  *                           2)Add headers.
  *
- * $Log: audio.cxx,v $
- * Revision 1.8  2006/04/14 08:01:36  dereksmithies
- * Minor tidyup, totally close the sound device, so that there is only 2
- * (and no more than two) available PSoundChannel devices.
- *
- * Revision 1.7  2006/04/09 07:08:13  dereksmithies
- * Add reporting functions.
- * Use the selected device to open the sound card for volume levels.
- *
- * Revision 1.6  2006/04/09 05:13:06  dereksmithies
- * add a means to write the collected audio to disk (as a wav file),
- *    or to the trace log (as text data)
- *
- * Revision 1.5  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.4  2005/08/18 22:29:15  dereksmithies
- * Add a full duplex sound card test (which was excised from ohphone).
- * Add copyright header and cvs log statements.
- * Fix startup and closedown segfaults.
- * Add safety mechanism so it can never fill up all computer memory.
- *
- *
- *
- *
+ * $Revision: 28674 $
+ * $Author: rjongbloed $
+ * $Date: 2012-12-14 19:45:47 -0600 (Fri, 14 Dec 2012) $
  */
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 #include "version.h"
 #include "audio.h"
 #include <ptclib/pwavfile.h>
@@ -60,24 +39,26 @@ PCREATE_PROCESS(Audio)
 void Audio::Main()
 {
   PArgList & args = GetArguments();
-  args.Parse("r.    "
-       "f.    "
-       "h.    "
+  args.Parse("r."
+             "f."	     
+             "h."
 #if PTRACING
-             "o-output:"             "-no-output."
-             "t-trace."              "-no-trace."
+             "o-output:"
+             "t-trace."
 #endif
-       "v.    "
-       "w:    "
-       "s:    ");
+             "p:"
+             "v."
+             "w:"
+             "s:");
  
   if (args.HasOption('h')) {
     cout << "usage: audio " 
          << endl
          << "     -r        : report available sound devices" << endl
-         << "     -f.       : do a full duplex sound test on a sound device" << endl
+         << "     -f        : do a full duplex sound test on a sound device" << endl
          << "     -s  dev   : use this device in full duplex test " << endl
          << "     -h        : get help on usage " << endl
+         << "     -p file   : play audio from the file out the specified sound device" << endl
          << "     -v        : report program version " << endl
 	 << "     -w file   : write the captured audio to this file" << endl
 #if PTRACING
@@ -97,7 +78,7 @@ void Audio::Main()
     cout << endl
          << "Product Name: " <<  (const char *)GetName() << endl
          << "Manufacturer: " <<  (const char *)GetManufacturer() << endl
-         << "Version     : " <<  (const char *)GetVersion(TRUE) << endl
+         << "Version     : " <<  (const char *)GetVersion(PTrue) << endl
          << "System      : " <<  (const char *)GetOSName() << '-'
          <<  (const char *)GetOSHardware() << ' '
          <<  (const char *)GetOSVersion() << endl
@@ -106,34 +87,26 @@ void Audio::Main()
   }
   
 
-  cout << "Audio Test Program\n";
+  cout << "Audio Test Program\n\n";
 
   PSoundChannel::Directions dir;
   PStringArray namesPlay, namesRecord;
+  namesPlay = PSoundChannel::GetDeviceNames(PSoundChannel::Player);
+  namesRecord = PSoundChannel::GetDeviceNames(PSoundChannel::Recorder);
 
-  cout << "\n";
-  cout << "List of play devices\n";
-
-  dir = PSoundChannel::Player;
-  namesPlay = PSoundChannel::GetDeviceNames(dir);
-  for (PINDEX i = 0; i < namesPlay.GetSize(); i++)
-    cout << "  \"" << namesPlay[i] << "\"\n";
-
-  cout << "The default play device is \"" << PSoundChannel::GetDefaultDevice(dir) << "\"\n";
-
-
-  cout << "\n";
-  cout << "List of Record devices\n";
-
-  dir = PSoundChannel::Recorder;
-  namesRecord = PSoundChannel::GetDeviceNames(dir);
-  for (PINDEX i = 0; i < namesRecord.GetSize(); i++)
-    cout << "  \"" << namesRecord[i] << "\"\n";
-
-  cout << "The default record device is \"" << PSoundChannel::GetDefaultDevice(dir) << "\"\n";
-
-  cout << "\n";
-
+  if (args.HasOption('r')) {
+      cout << "List of play devices\n";
+      for (PINDEX i = 0; i < namesPlay.GetSize(); i++)
+	  cout << "  \"" << namesPlay[i] << "\"\n";      
+      cout << "The default play device is \"" 
+	   << PSoundChannel::GetDefaultDevice(PSoundChannel::Player) << "\"\n";
+      
+      cout << "List of Record devices\n";
+      for (PINDEX i = 0; i < namesRecord.GetSize(); i++)
+	  cout << "  \"" << namesRecord[i] << "\"\n";      
+      cout << "The default record device is \"" 
+	   << PSoundChannel::GetDefaultDevice(PSoundChannel::Recorder) << "\"\n\n";
+  }
 
   // Display the mixer settings for the default devices (or device if specified)
   {
@@ -142,28 +115,34 @@ void Audio::Main()
       devName = args.GetOptionString('s');
       if (devName.IsEmpty())
 	  devName = PSoundChannel::GetDefaultDevice(dir);
-      sound.Open(devName, dir);
       
-      unsigned int vol;
-      if (sound.GetVolume(vol))
-	  cout << "Play volume is (for " << devName << ")" << vol << endl;
-      else
-	  cout << "Play volume cannot be obtained (for " << devName << ")" << endl;
-      
-      sound.Close();
-      
+      if (sound.Open(devName, dir)) {     
+	  unsigned int vol;
+	  if (sound.GetVolume(vol))
+	      cout << "Play volume is (for " << devName << ")" << vol << endl;
+	  else
+	      cout << "Play volume cannot be obtained (for " << devName << ")" << endl;      
+	  sound.Close();
+      } else
+	  cerr << "Failed to open play device (" 
+	       << devName << ") to get volume settings" << endl;
+  }
+  {
+      PSoundChannel sound;
       dir = PSoundChannel::Recorder;
       devName = args.GetOptionString('s');
       if (devName.IsEmpty())
 	  devName = PSoundChannel::GetDefaultDevice(dir);
-      sound.Open(devName, dir);
-      
-      if (sound.GetVolume(vol))
-	  cout << "Record volume is (for " << devName << ")" << vol << endl;
-      else
-	  cout << "Record volume cannot be obtained (for " << devName << ")" << endl;
-      
-      sound.Close();
+      if (sound.Open(devName, dir)) {     
+	  unsigned int vol;
+	  if (sound.GetVolume(vol))
+	      cout << "Record volume is (for " << devName << ")" << vol << endl;
+	  else
+	      cout << "Record volume cannot be obtained (for " << devName << ")" << endl;
+	  sound.Close();
+      } else
+	  cerr << "Failed to open record device (" 
+	       << devName << ") to get volume settings" << endl;
   }
 
   if (args.HasOption('f')) {
@@ -190,6 +169,48 @@ void Audio::Main()
     return;
   }
 
+  if (args.HasOption('p')) {
+      PString playFileName = args.GetOptionString('p');
+      if (playFileName.IsEmpty()) {
+	  cerr << "The p option requires an arguement - the name of the file to play" << endl;
+	  cerr << "Terminating" << endl;
+	  return;
+      }
+
+      PWAVFile audioFile;
+      BYTE buffer[500];
+      if (!audioFile.Open(playFileName)) {
+	  cerr << "Failed to open the file \"" << playFileName << "\" to read audio from." << endl;
+	  return;
+      }
+
+      PSoundChannel sound;
+      dir = PSoundChannel::Player;
+      devName = args.GetOptionString('s');
+      if (devName.IsEmpty())
+	  devName = PSoundChannel::GetDefaultDevice(dir);
+      
+      if (sound.Open(devName, PSoundChannel::Player, 1, 8000, 16)) {
+	  PTRACE(3, "Open sound device " << devName << " to put audio to");
+	  cerr << devName << " opened fine for playing to" << endl;
+      } else {
+	  cerr << "Failed to open play device (" 
+	       << devName << ") for putting audio to speaker" << endl;
+	  return;
+      }
+      sound.SetBuffers(480, 3);
+      
+      PINDEX readCounter = 0;
+      while (audioFile.Read(buffer, 480)) {
+	  PTRACE(3, "Read buffer " << readCounter << " from audio file " << playFileName);
+	  readCounter++;
+	  if (!sound.Write(buffer, 480)) {
+	      cerr << " failed to write a buffer to sound device. Ending" << endl;
+	      return;
+	  }
+      }
+	  
+  }
 #if PTRACING
   if (args.GetOptionCount('t') > 0) {
     PTrace::ClearOptions(0);
@@ -206,17 +227,17 @@ TestAudioDevice::~TestAudioDevice()
   AllowDeleteObjects();
   access.Wait();
   RemoveAll();
-  endNow = TRUE;
+  endNow = PTrue;
   access.Signal();
   PThread::Sleep(100);
 }
 
 void TestAudioDevice::Test(const PString & captureFileName)
 {
-   endNow = FALSE;
+   endNow = PFalse;
    PConsoleChannel console(PConsoleChannel::StandardInput);
 
-   AllowDeleteObjects(FALSE);
+   AllowDeleteObjects(PFalse);
    PTRACE(3, "Start operation of TestAudioDevice");
 
    TestAudioRead reader(*this, captureFileName);
@@ -282,7 +303,7 @@ void TestAudioDevice::Test(const PString & captureFileName)
   }
 
 endAudioTest:
-  endNow = TRUE;
+  endNow = PTrue;
   cout  << "end audio test" << endl;
 
   reader.WaitForTermination();
@@ -323,12 +344,12 @@ void TestAudioDevice::WriteAudioFrame(PBYTEArray *data)
   Append(data);
   if (GetSize() > 50) {
     cout << "The audio reader thread is not working - exit now before memory is exhausted" << endl;
-    endNow = TRUE;
+    endNow = PTrue;
   }
   return;
 }
 
-BOOL TestAudioDevice::DoEndNow()
+PBoolean TestAudioDevice::DoEndNow()
 {
     return endNow;
 }
@@ -340,6 +361,7 @@ TestAudioRead::TestAudioRead(TestAudioDevice &master, const PString & _captureFi
      captureFileName(_captureFileName)
 {    
   PTRACE(3, "Reader\tInitiate thread for reading " );
+  Resume();
 }
 
 void TestAudioRead::ReportIterations()
@@ -356,8 +378,10 @@ void TestAudioRead::Main()
     return;
   }
   PWAVFile audioFile;
-  if (!audioFile.Open(captureFileName, PFile::WriteOnly, PFile::Create | PFile::Truncate))
-      cerr << "Cannot create the file " << captureFileName << " to write audio to" << endl;
+  if (!captureFileName.IsEmpty()) {
+      if (!audioFile.Open(captureFileName, PFile::WriteOnly, PFile::Create | PFile::Truncate))
+	  cerr << "Cannot create the file " << captureFileName << " to write audio to" << endl;
+  }
 
   PTRACE(3, "TestAduioRead\tSound device is now open, start running");
 
@@ -384,6 +408,7 @@ TestAudioWrite::TestAudioWrite(TestAudioDevice &master)
    : TestAudio(master)
 {
   PTRACE(3, "Reader\tInitiate thread for writing " );
+  Resume();
 }
 
 void TestAudioWrite::ReportIterations()
@@ -421,8 +446,7 @@ TestAudio::TestAudio(TestAudioDevice &master)
      controller(master)
 {
     iterations = 0;
-    keepGoing = TRUE;
-    Resume();
+    keepGoing = PTrue;
 }
 
 TestAudio::~TestAudio()
@@ -431,7 +455,7 @@ TestAudio::~TestAudio()
 }
 
 
-BOOL TestAudio::OpenAudio(enum PSoundChannel::Directions dir)
+PBoolean TestAudio::OpenAudio(enum PSoundChannel::Directions dir)
 {
   if (dir == PSoundChannel::Recorder) 
     name = "Recorder";
@@ -450,14 +474,14 @@ BOOL TestAudio::OpenAudio(enum PSoundChannel::Directions dir)
       cerr <<  "Please check that \"" << devName << "\" is a valid device name" << endl;
       PTRACE(3, "TestAudio\tFailed to open device for " << name << " and device name of " << devName);
 
-    return FALSE;
+    return PFalse;
   }
   
   currentVolume = 90;
   sound.SetVolume(currentVolume);
   
   sound.SetBuffers(480, 2);
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -480,5 +504,14 @@ void TestAudio::LowerVolume()
 }
 ////////////////////////////////////////////////////////////////////////////////
 
+/* The comment below is magic for those who use emacs to edit this file. 
+ * With the comment below, the tab key does auto indent to 4 spaces.     
+ *
+ *
+ * Local Variables:
+ * mode:c
+ * c-basic-offset:4
+ * End:
+ */
 
 // End of hello.cxx

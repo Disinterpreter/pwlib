@@ -23,23 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pxmlrpcs.h,v $
- * Revision 1.4  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.3  2003/02/19 01:50:31  robertj
- * Change to make it easier to set a fault from the server function handler.
- *
- * Revision 1.2  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.1  2002/10/02 08:54:34  craigs
- * Added support for XMLRPC server
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef _PXMLRPCSRVR_H
-#define _PXMLRPCSRVR_H
+#ifndef PTLIB_XMLRPCSRVR_H
+#define PTLIB_XMLRPCSRVR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -80,12 +70,12 @@ class PXMLRPCServerResource : public PHTTPResource
     );
 
     // overrides from PHTTPResource
-    BOOL LoadHeaders(PHTTPRequest & request);
-    BOOL OnPOSTData(PHTTPRequest & request, const PStringToString & data);
+    PBoolean LoadHeaders(PHTTPRequest & request);
+    PBoolean OnPOSTData(PHTTPRequest & request, const PStringToString & data);
 
     // new functions
     virtual void OnXMLRPCRequest(const PString & body, PString & reply);
-    virtual BOOL SetMethod(const PString & methodName, const PNotifier & func);
+    virtual PBoolean SetMethod(const PString & methodName, const PNotifier & func);
     void OnXMLRPCRequest(const PString & methodName, PXMLRPCBlock & request, PString & reply);
 
     virtual PString FormatFault(
@@ -104,9 +94,9 @@ class PXMLRPCServerParms : public PObject
   PCLASSINFO(PXMLRPCServerParms, PObject);
   public:
     PXMLRPCServerParms(
-      PXMLRPCServerResource & _resource,
-      PXMLRPCBlock & _request
-    ) : resource(_resource), request(_request) { }
+      PXMLRPCServerResource & res,
+      PXMLRPCBlock & req
+    ) : resource(res), request(req) { }
 
     void SetFault(
       PINDEX code,
@@ -119,6 +109,7 @@ class PXMLRPCServerParms : public PObject
 };
 
 
-#endif
+#endif // PTLIB_XMLRPCSRVR_H
 
 
+// End Of File ///////////////////////////////////////////////////////////////

@@ -23,45 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.11  2006/04/09 04:28:13  dereksmithies
- * Make it 64 bit safe.
- *
- * Revision 1.10  2006/03/25 09:01:44  dereksmithies
- * Add reporting options, and different methods for spawning threads. All stable and reliable.
- *
- * Revision 1.9  2006/03/23 05:07:28  dereksmithies
- * Fix threading issues - I think.
- *
- * Revision 1.8  2006/03/22 04:24:51  dereksmithies
- * Tidyups. Add Pragmas. make it slightly more friendly for 1 cpu boxes.
- *
- * Revision 1.7  2006/02/13 04:17:22  dereksmithies
- * Formatting fixes.
- *
- * Revision 1.6  2006/02/12 21:42:07  dereksmithies
- * Add lots of doxygen style comments, and an introductory page.
- *
- * Revision 1.5  2006/02/10 03:51:12  dereksmithies
- * rename threads: place identifying digits at the start of the string.
- * This lead to an increase in reliability on a quad cpu machine.
- *
- * Revision 1.4  2006/02/09 21:43:15  dereksmithies
- * Remove the notion of CleanerThread. This just confuses things.
- *
- * Revision 1.3  2006/02/09 21:07:23  dereksmithies
- * Add new (and temporary) thread to close down each DelayThread instance.
- * Now, it is less cpu intensive. No need for garbage thread to run.
- *
- * Revision 1.2  2006/02/07 02:02:00  dereksmithies
- * use a more sane method to keep track of the number of running DelayThread instances.
- *
- * Revision 1.1  2006/02/07 01:02:56  dereksmithies
- * Initial release of code to test the PSafeDictionary structure in pwlib.
- * Thanks to Indranet Technologies for supporting this work.
- *
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 
@@ -73,7 +37,6 @@
 #include "precompile.h"
 #include "main.h"
 #include "version.h"
-#include <mcheck.h>
 
 PCREATE_PROCESS(SafeTest);
 
@@ -89,7 +52,6 @@ SafeTest::SafeTest()
 
 void SafeTest::Main()
 {
-  mtrace();
   PArgList & args = GetArguments();
 
   args.Parse(
@@ -115,7 +77,7 @@ void SafeTest::Main()
   if (args.HasOption('v')) {
     cout << "Product Name: " << GetName() << endl
          << "Manufacturer: " << GetManufacturer() << endl
-         << "Version     : " << GetVersion(TRUE) << endl
+         << "Version     : " << GetVersion(PTrue) << endl
          << "System      : " << GetOSName() << '-'
          << GetOSHardware() << ' '
          << GetOSVersion() << endl;
@@ -171,25 +133,16 @@ void SafeTest::Main()
   activeCount = PMIN(100, PMAX(1, activeCount));
   cout << "There will be " << activeCount << " threads in operation" << endl;
 
-  MakeGarbageCollector();
+  delayThreadsActive.SetAutoDeleteObjects();
 
   UserInterfaceThread ui(*this);
   ui.Resume();
   ui.WaitForTermination();
 
-  exitNow = TRUE;
-  garbageCollector->WaitForTermination();
-  delete garbageCollector;
-  garbageCollector = NULL;
-}
+  exitNow = PTrue;
 
-
-void SafeTest::MakeGarbageCollector()
-{
-  garbageCollector = PThread::Create(PCREATE_NOTIFIER(GarbageMain), 30000,
-                                     PThread::NoAutoDeleteThread,
-                                     PThread::NormalPriority,
-                                     "DelayThread Purger");
+  cerr << "in preexit delay, let all threads die" << endl;
+  PThread::Sleep(delay * 2);
 }
 
 void SafeTest::OnReleased(DelayThread & delayThread)
@@ -229,25 +182,7 @@ void SafeTest::DelayThreadsDict::DeleteObject(PObject * object) const
   }
 }
 
-void SafeTest::GarbageMain(PThread &, INT)
-{
-  while(!exitNow) {
-    PThread::Sleep(40);
-    CollectGarbage();
-  }
-
-  while(delayThreadsActive.GetSize() > 0) {
-    PThread::Sleep(40);
-    CollectGarbage();
-  }
-}
-
-void SafeTest::CollectGarbage()
-{
-  delayThreadsActive.DeleteObjectsToBeRemoved();
-}
-
-BOOL SafeTest::UseOnThreadEnd()
+PBoolean SafeTest::UseOnThreadEnd()
 {
   return useOnThreadEnd;
 }
@@ -308,7 +243,7 @@ DelayThread::DelayThread(SafeTest &_safeTest, PINDEX _delay, PInt64 iteration)
   : safeTest(_safeTest),
     delay(_delay)
 {
-  threadRunning = TRUE;
+  threadRunning = PTrue;
 
   PTRACE(5, "Constructor for a non auto deleted delay thread");
 
@@ -342,7 +277,7 @@ void DelayThread::DelayThreadMain(PThread &thisThread, INT)
 
 
   if (safeTest.UseOnThreadEnd()) {
-    threadRunning = FALSE;
+    threadRunning = PFalse;
     new OnDelayThreadEnd(safeTest, id);
   } else {
     SafeReference();    
@@ -366,7 +301,7 @@ void DelayThread::Release()
 void DelayThread::OnReleaseThreadMain(PThread &, INT)
 {
   safeTest.OnReleased(*this);
-  threadRunning = FALSE;
+  threadRunning = PFalse;
   SafeDereference();
 }
 
@@ -381,13 +316,13 @@ ReporterThread::ReporterThread(LauncherThread & _launcher)
   : PThread(10000, NoAutoDeleteThread),
     launcher(_launcher)
 {
-  terminateNow = FALSE;
+  terminateNow = PFalse;
   Resume();
 }
 
 void ReporterThread::Terminate()
 {
-  terminateNow = TRUE;
+  terminateNow = PTrue;
   exitFlag.Signal();
 }
 
@@ -408,7 +343,7 @@ LauncherThread::LauncherThread(SafeTest &_safeTest)
     safeTest(_safeTest)
 { 
   iteration = 0; 
-  keepGoing = TRUE; 
+  keepGoing = PTrue; 
 
   if (safeTest.RegularReporting())
     reporter = new ReporterThread(*this);
@@ -495,7 +430,7 @@ void UserInterfaceThread::Main()
 
   console.SetReadTimeout(P_MAX_INDEX);
   for (;;) {
-    char ch = console.ReadChar();
+    int ch = console.ReadChar();
 
     switch (tolower(ch)) {
     case 'd' :

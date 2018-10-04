@@ -26,238 +26,60 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: contain.h,v $
- * Revision 1.66  2006/04/10 23:57:27  csoutheren
- * Checked in changes to remove some warnings with gcc effc++ flag
- *
- * Revision 1.65  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.64  2004/04/15 22:44:52  csoutheren
- * Re-applied gcc 2.95 patch as CVS screwed up
- *
- * Revision 1.63  2004/04/14 23:34:52  csoutheren
- * Added plugin for data access
- *
- * Revision 1.61  2004/04/12 00:36:04  csoutheren
- * Added new class PAtomicInteger and added Windows implementation
- *
- * Revision 1.60  2004/04/11 06:15:27  csoutheren
- * Modified to use Atomic_word if available
- *
- * Revision 1.59  2004/04/11 02:55:17  csoutheren
- * Added PCriticalSection for Windows
- * Added compile time option for PContainer to use critical sections to provide thread safety under some circumstances
- *
- * Revision 1.58  2004/04/09 03:42:34  csoutheren
- * Removed all usages of "virtual inline" and "inline virtual"
- *
- * Revision 1.57  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.56  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.55  2003/03/31 01:23:56  robertj
- * Added ReadFrom functions for standard container classes such as
- *   PIntArray and PStringList etc
- *
- * Revision 1.54  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.53  2001/02/13 04:39:08  robertj
- * Fixed problem with operator= in container classes. Some containers will
- *   break unless the copy is virtual (eg PStringStream's buffer pointers) so
- *   needed to add a new AssignContents() function to all containers.
- *
- * Revision 1.52  1999/11/30 00:22:54  robertj
- * Updated documentation for doc++
- *
- * Revision 1.51  1999/08/22 12:13:42  robertj
- * Fixed warning when using inlines on older GNU compiler
- *
- * Revision 1.50  1999/08/17 03:46:40  robertj
- * Fixed usage of inlines in optimised version.
- *
- * Revision 1.49  1999/03/09 02:59:49  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.48  1999/02/16 08:07:11  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.47  1998/09/23 06:20:23  robertj
- * Added open source copyright license.
- *
- * Revision 1.46  1997/07/08 13:15:04  robertj
- * DLL support.
- *
- * Revision 1.45  1996/08/17 10:00:20  robertj
- * Changes for Windows DLL support.
- *
- * Revision 1.44  1996/08/08 10:08:41  robertj
- * Directory structure changes for common files.
- *
- * Revision 1.43  1995/06/17 11:12:26  robertj
- * Documentation update.
- *
- * Revision 1.42  1995/03/14 12:41:13  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.41  1995/01/09  12:36:18  robertj
- * Removed unnecesary return value from I/O functions.
- * Changes due to Mac port.
- *
- * Revision 1.40  1994/12/13  11:50:45  robertj
- * Added MakeUnique() function to all container classes.
- *
- * Revision 1.39  1994/12/12  10:16:18  robertj
- * Restructuring and documentation of container classes.
- * Renaming of some macros for declaring container classes.
- * Added some extra functionality to PString.
- * Added start to 2 byte characters in PString.
- * Fixed incorrect overrides in PCaselessString.
- *
- * Revision 1.38  1994/12/05  11:18:58  robertj
- * Moved SetMinSize from PAbstractArray to PContainer.
- *
- * Revision 1.37  1994/11/28  12:33:44  robertj
- * Added dummy parameter for cls* constructor in containers. This prevents some very
- * strange an undesirable default construction of clones.
- *
- * Revision 1.36  1994/10/30  11:50:09  robertj
- * Split into Object classes and Container classes.
- * Changed mechanism for doing notification callback functions.
- *
- * Revision 1.35  1994/10/23  04:40:50  robertj
- * Made container * constractor protected.
- * Shorted OS Error assert.
- * Added printf constructor to PString.
- *
- * Revision 1.34  1994/09/25  10:36:41  robertj
- * Improved const behavious of container class macros.
- *
- * Revision 1.33  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.32  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.31  1994/08/21  23:43:02  robertj
- * Changed parameter before variable argument list to NOT be a reference.
- * Added object serialisation classes.
- *
- * Revision 1.30  1994/08/04  11:51:39  robertj
- * Rewrite of memory check functions.
- *
- * Revision 1.29  1994/07/27  05:58:07  robertj
- * Synchronisation.
- *
- * Revision 1.28  1994/07/25  03:33:50  robertj
- * Extra memory tests.
- *
- * Revision 1.27  1994/07/17  10:46:06  robertj
- * Added functions to strings in containers.
- *
- * Revision 1.26  1994/07/02  03:03:49  robertj
- * Addition of container searching facilities.
- *
- * Revision 1.25  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.24  1994/04/20  12:17:44  robertj
- * Added code to assert
- *
- * Revision 1.23  1994/04/11  14:17:27  robertj
- * Made standard operators new and delete only declared for GNU C++
- *
- * Revision 1.22  1994/04/01  14:09:46  robertj
- * Removed PDECLARE_ABSTRACT_CONTAINER.
- * Added string stream class.
- * Added string containers.
- *
- * Revision 1.21  1994/03/07  07:38:19  robertj
- * Major enhancementsacross the board.
- *
- * Revision 1.20  1994/01/13  08:42:29  robertj
- * Fixed missing copy constuctor and assignment operator for PString.
- *
- * Revision 1.19  1994/01/13  05:33:41  robertj
- * Added contructor to get caseless string from ordinary string.
- *
- * Revision 1.18  1994/01/03  04:42:23  robertj
- * Mass changes to common container classes and interactors etc etc etc.
- *
- * Revision 1.17  1993/12/31  06:40:34  robertj
- * Made inlines optional for debugging purposes.
- * Added default to DeleteObjects() function.
- *
- * Revision 1.16  1993/12/24  04:20:52  robertj
- * Mac CFront port.
- *
- * Revision 1.15  1993/12/16  00:51:46  robertj
- * Made some container functions const.
- *
- * Revision 1.14  1993/12/15  21:10:10  robertj
- * Changes to fix inadequate reference system for containers.
- *
- * Revision 1.13  1993/12/14  18:44:56  robertj
- * Added RemoveAll() to collection classes.
- * Fixed incorrect destruction of objects in containers.
- *
- * Revision 1.12  1993/12/04  05:23:58  robertj
- * Added more string functions
- *
- * Revision 1.11  1993/09/27  16:35:25  robertj
- * Fixed bug in sorted lists.
- * Changed simple function for array of strings to a constructor.
- * Capitalised all macros.
- *
- * Revision 1.10  1993/08/27  18:17:47  robertj
- * Fixed bug with default number of elements in a collection.
- * Added missing Compare function to PAbstractSortedList
- * Added inline keywords for CFront compatibility.
- *
- * Revision 1.9  1993/08/21  01:50:33  robertj
- * Made Clone() function optional, default will assert if called.
- *
- * Revision 1.8  1993/08/19  18:00:32  robertj
- * Added two more standard base array classes
- *
- * Revision 1.7  1993/08/01  14:05:27  robertj
- * Added const to ToLower() and ToUpper() in the PString class.
- *
- * Revision 1.6  1993/07/16  14:40:55  robertj
- * Added PString constructor for individual characters.
- * Added string to C style literal format.
- *
- * Revision 1.5  1993/07/15  05:02:57  robertj
- * Removed redundant word in PString enum for string types.
- *
- * Revision 1.4  1993/07/15  04:23:39  robertj
- * Added constructor to PString to allow conversion from other string formats.
- * Fixed problem with variable parameter lists in sprintf() functions.
- *
- * Revision 1.3  1993/07/14  12:49:16  robertj
- * Fixed RCS keywords.
- *
+ * $Revision: 25387 $
+ * $Author: rjongbloed $
+ * $Date: 2011-03-22 22:51:09 -0500 (Tue, 22 Mar 2011) $
  */
 
-#ifndef _CONTAIN_H
-#define _CONTAIN_H
+#ifndef PTLIB_CONTAIN_H
+#define PTLIB_CONTAIN_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib/object.h>
+
 #include <ptlib/critsec.h>
+#include <ptlib/object.h>
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Abstract container class
 
-/** Abstract class to embody the base functionality of a {\it container}.
+// The type below cannot be nested into PContainer as DevStudio 2005 AUTOEXP.DAT doesn't like it
+class PContainerReference
+{
+  public:
+    __inline PContainerReference(PINDEX initialSize, bool isConst = false)
+      : size(initialSize)
+      , count(1)
+      , deleteObjects(true)
+      , constObject(isConst)
+    {
+    }
+
+    __inline PContainerReference(const PContainerReference & ref)
+      : size(ref.size)
+      , count(1)
+      , deleteObjects(ref.deleteObjects)
+      , constObject(false)
+    {  
+    }
+
+    PINDEX         size;          // Size of what the container contains
+    PAtomicInteger count;         // reference count to the container content - guaranteed to be atomic
+    bool           deleteObjects; // Used by PCollection but put here for efficiency
+    bool           constObject;   // Indicates object is constant/static, copy on write.
+
+    PDECLARE_POOL_ALLOCATOR();
+
+  private:
+    void operator=(const PContainerReference &) { }
+};
+
+
+/** Abstract class to embody the base functionality of a <code>container</code>.
 
 Fundamentally, a container is an object that contains other objects. There
 are two main areas of support for tha that are provided by this class. The
@@ -269,13 +91,13 @@ and so is a pure function.
 The second area of support is for reference integrity. When an instance of
 a container is copied to another instance, the two instance contain the
 same thing. There can therefore be multiple references to the same things.
-When one reference is destroyed this must {\bf not} destroy the contained
+When one reference is destroyed this must {\b not} destroy the contained
 object as it may be referenced by another instance of a container class.
 To this end a reference count is provided by the PContainer class. This
 assures that the container only destroys the objects it contains when there
 are no more references to them.
 
-In support of this, descendent classes must provide a #DestroyContents()#
+In support of this, descendent classes must provide a <code>DestroyContents()</code>
 function. As the normal destructor cannot be used, this function will free
 the memory or unlock the resource the container is wrapping.
 */
@@ -313,7 +135,7 @@ class PContainer : public PObject
 
     /**Destroy the container class.
        This will decrement the reference count on the contents and if unique,
-       will destroy it using the #DestroyContents()# function.
+       will destroy it using the <code>DestroyContents()</code> function.
      */
     virtual ~PContainer()
     { Destruct(); }
@@ -336,23 +158,23 @@ class PContainer : public PObject
        new number of elements.
 
        Note for some types of containers this does not do anything as they
-       inherently only contain one item. The function returns TRUE always and
+       inherently only contain one item. The function returns true always and
        the new value is ignored.
 
        @return
-       TRUE if the size was successfully changed. The value FALSE usually
+       true if the size was successfully changed. The value false usually
        indicates failure due to insufficient memory.
      */
-    virtual BOOL SetSize(
+    virtual PBoolean SetSize(
       PINDEX newSize  ///< New size for the container.
     ) = 0;
 
     /**Set the minimum size of container.
        This function will set the size of the object to be at least the size
-       specified. The #SetSize()# function is always called, either with the
+       specified. The <code>SetSize()</code> function is always called, either with the
        new value or the previous size, whichever is the larger.
      */
-    BOOL SetMinSize(
+    PBoolean SetMinSize(
       PINDEX minSize  ///< Possible, new size for the container.
     );
 
@@ -360,17 +182,17 @@ class PContainer : public PObject
        Determine if the container that this object references contains any
        elements.
 
-       @return TRUE if #GetSize()# returns zero.
+       @return true if <code>GetSize()</code> returns zero.
      */
-    virtual BOOL IsEmpty() const;
+    virtual PBoolean IsEmpty() const;
 
     /**Determine if container is unique reference.
        Determine if this instance is the one and only reference to the
        container contents.
 
-       @return TRUE if the reference count is one.
+       @return true if the reference count is one.
      */
-    BOOL IsUnique() const;
+    PBoolean IsUnique() const;
 
     /**Make this instance to be the one and only reference to the container
        contents. This implicitly does a clone of the contents of the container
@@ -378,14 +200,14 @@ class PContainer : public PObject
        the function does nothing.
 
        @return
-       TRUE if the instance was already unique.
+       true if the instance was already unique.
      */
-    virtual BOOL MakeUnique();
+    virtual PBoolean MakeUnique();
   //@}
 
   protected:
     /**Constructor used in support of the Clone() function. This creates a
-       new unique reference of a copy of the contents. It does {\bf not}
+       new unique reference of a copy of the contents. It does {\b not}
        create another reference.
 
        The dummy parameter is there to prevent the contructor from being
@@ -399,9 +221,12 @@ class PContainer : public PObject
       const PContainer * cont  ///< Container class to clone.
     );
 
+    /// Construct using static PContainerReference.
+    PContainer(PContainerReference & reference);
+
     /**Destroy the container contents. This function must be defined by the
        descendent class to do the actual destruction of the contents. It is
-       automatically declared when the #PDECLARE_CONTAINER()# macro is used.
+       automatically declared when the <code>PCONTAINERINFO()</code> macro is used.
 
        For all descendent classes not immediately inheriting off the PContainer
        itself, the implementation of DestroyContents() should always call its
@@ -423,7 +248,7 @@ class PContainer : public PObject
     virtual void AssignContents(const PContainer & c);
 
     /**Copy the container contents. This copies the contents from one reference
-       to another. It is automatically declared when the #PDECLARE_CONTAINER()#
+       to another. It is automatically declared when the <code>PCONTAINERINFO()</code>
        macro is used.
        
        No duplication of contents occurs, for instance if the container is an
@@ -431,52 +256,39 @@ class PContainer : public PObject
        block itself.
 
        This function will get called once for every class in the heirarchy, so
-       the ancestor function should {\bf not} be called.
+       the ancestor function should {\b not} be called.
      */
     void CopyContents(const PContainer & c);
 
     /**Create a duplicate of the container contents. This copies the contents
        from one container to another, unique container. It is automatically
-       declared when the #PDECLARE_CONTAINER()# macro is used.
+       declared when the <code>PCONTAINERINFO()</code> macro is used.
        
        This class will duplicate the contents completely, for instance if the
        container is an array, the actual array memory is copied, not just the
-       pointer. If the container contains objects that descend from #PObject#,
+       pointer. If the container contains objects that descend from <code>PObject</code>,
        they too should also be cloned and not simply copied.
 
        This function will get called once for every class in the heirarchy, so
-       the ancestor function should {\bf not} be called.
+       the ancestor function should {\b not} be called.
        
-       {\it {\bf Note well}}, the logic of the function must be able to
+       <i><b>Note well</b></i>, the logic of the function must be able to
        accept the passed in parameter to clone being the same instance as the
-       destination object, ie during execution #this == src#.
+       destination object, ie during execution <code>this == src</code>.
      */
     void CloneContents(const PContainer * src);
 
     /**Internal function called from container destructors. This will
-       conditionally call #DestroyContents()# to destroy the container contents.
+       conditionally call <code>DestroyContents()</code> to destroy the container contents.
      */
     void Destruct();
 
+    /** Destroy the PContainerReference instance.
+        Override if passing a static vallue in via ctor.
+      */
+    virtual void DestroyReference();
 
-    class Reference {
-      public:
-        inline Reference(PINDEX initialSize)
-          : size(initialSize), count(1), deleteObjects(TRUE) { }
-
-        Reference(const Reference & ref)
-          : size(ref.size), count(1), deleteObjects(ref.deleteObjects)
-        {  
-        }
-
-        PINDEX   size;         // Size of what the container contains
-        PAtomicInteger count;  // reference count to the container content - guaranteed to be atomic
-        BOOL deleteObjects;    // Used by PCollection but put here for efficiency
-
-      private:
-        Reference & operator=(const Reference &) 
-        { return *this; }
-    } * reference;
+    PContainerReference * reference;
 };
 
 
@@ -487,12 +299,12 @@ class PContainer : public PObject
    some standard function behaviour.
 
    This may be used when multiple inheritance requires a special class
-   declaration. Normally, the #PDECLARE_CONTAINER# macro would be used,
+   declaration. Normally, the <code>PCONTAINERINFO</code> macro would be used,
    which includes this macro in it.
 
    The default implementation for contructors, destructor, the assignment
    operator and the MakeUnique() function is as follows:
-\begin{verbatim}
+<pre><code>
         cls(const cls & c)
           : par(c)
         {
@@ -516,17 +328,17 @@ class PContainer : public PObject
           Destruct();
         }
 
-        BOOL MakeUnique()
+        PBoolean MakeUnique()
         {
           if (par::MakeUnique())
-            return TRUE;
+            return true;
           CloneContents(c);
-          return FALSE;
+          return false;
         }
-\end{verbatim}
-    Then the #DestroyContents()#, #CloneContents()# and #CopyContents()# functions
+</code></pre>
+    Then the <code>DestroyContents()</code>, <code>CloneContents()</code> and <code>CopyContents()</code> functions
     are declared and must be implemented by the programmer. See the
-    #PContainer# class for more information on these functions.
+    <code>PContainer</code> class for more information on these functions.
  */
 #define PCONTAINERINFO(cls, par) \
     PCLASSINFO(cls, par) \
@@ -535,8 +347,8 @@ class PContainer : public PObject
     cls & operator=(const cls & c) \
       { AssignContents(c); return *this; } \
     virtual ~cls() { Destruct(); } \
-    virtual BOOL MakeUnique() \
-      { if(par::MakeUnique())return TRUE; CloneContents(this);return FALSE; } \
+    virtual PBoolean MakeUnique() \
+      { if(par::MakeUnique())return true; CloneContents(this);return false; } \
   protected: \
     cls(int dummy, const cls * c) : par(dummy, c) { CloneContents(c); } \
     virtual void DestroyContents(); \
@@ -550,7 +362,7 @@ class PContainer : public PObject
 // Abstract collection of objects class
 
 /**A collection is a container that collects together descendents of the
-   #PObject# class. The objects contained in the collection are always
+   <code>PObject</code> class. The objects contained in the collection are always
    pointers to objects, not the objects themselves. The life of an object in
    the collection should be carefully considered. Typically, it is allocated
    by the user of the collection when it is added. The collection then
@@ -577,8 +389,8 @@ class PContainer : public PObject
    last location or an end of the list, incurring an overhead.
 
    All collection classes implement a base set of functions, though they may
-   be meaningless or degenerative in some collection types eg #Insert()#
-   for #PSortedList# will degenerate to be the same as #Append()#.
+   be meaningless or degenerative in some collection types eg <code>Insert()</code>
+   for <code>PSortedList</code> will degenerate to be the same as <code>Append()</code>.
  */
 class PCollection : public PContainer
 {
@@ -597,7 +409,7 @@ class PCollection : public PContainer
   /**@name Overrides from class PObject */
   //@{
     /**Print the collection on the stream. This simply executes the
-       #PObject::PrintOn()# function on each element in the
+       <code>PObject::PrintOn()</code> function on each element in the
        collection.
 
        The default behaviour for collections is to print each element
@@ -620,7 +432,7 @@ class PCollection : public PContainer
     
        The exact semantics depends on the specific type of the collection. So
        the function may not place the object at the "end" of the collection at
-       all. For example, in a #PSortedList# the object is placed in the
+       all. For example, in a <code>PSortedList</code> the object is placed in the
        correct ordinal position in the list.
 
        @return index of the newly added object.
@@ -631,16 +443,16 @@ class PCollection : public PContainer
 
     /**Insert a new object immediately before the specified object. If the
        object to insert before is not in the collection then the equivalent of
-       the #Append()# function is performed.
+       the <code>Append()</code> function is performed.
        
        The exact semantics depends on the specific type of the collection. So
        the function may not place the object before the specified object at
-       all. For example, in a #PSortedList# the object is placed in the
+       all. For example, in a <code>PSortedList</code> the object is placed in the
        correct ordinal position in the list.
 
        Note that the object values are compared for the search of the
-       #before# parameter, not the pointers. So the objects in the
-       collection must correctly implement the #PObject::Compare()#
+       <code>before</code> parameter, not the pointers. So the objects in the
+       collection must correctly implement the <code>PObject::Compare()</code>
        function.
 
        @return index of the newly inserted object.
@@ -652,11 +464,11 @@ class PCollection : public PContainer
 
     /**Insert a new object at the specified ordinal index. If the index is
        greater than the number of objects in the collection then the
-       equivalent of the #Append()# function is performed.
+       equivalent of the <code>Append()</code> function is performed.
 
        The exact semantics depends on the specific type of the collection. So
        the function may not place the object at the specified index at all.
-       For example, in a #PSortedList# the object is placed in the correct
+       For example, in a <code>PSortedList</code> the object is placed in the correct
        ordinal position in the list.
 
        @return index of the newly inserted object.
@@ -673,9 +485,9 @@ class PCollection : public PContainer
        made by pointer, not by value. Thus the parameter must point to the
        same instance of the object that is in the collection.
 
-       @return TRUE if the object was in the collection.
+       @return true if the object was in the collection.
      */
-    virtual BOOL Remove(
+    virtual PBoolean Remove(
       const PObject * obj   ///< Existing object to remove from the collection.
     ) = 0;
 
@@ -692,10 +504,10 @@ class PCollection : public PContainer
     ) = 0;
 
     /**Remove all of the elements in the collection. This operates by
-       continually calling #RemoveAt()# until there are no objects left.
+       continually calling <code>RemoveAt()</code> until there are no objects left.
 
        The objects are removed from the last, at index
-       #(GetSize()-1)# toward the first at index zero.
+       <code>(GetSize()-1)</code> toward the first at index zero.
      */
     virtual void RemoveAll();
 
@@ -704,15 +516,15 @@ class PCollection : public PContainer
        set then the old object is also deleted.
 
        The exact semantics depends on the specific type of the collection. For
-       some, eg #PSortedList#, the object inserted will not stay at the
+       some, eg <code>PSortedList</code>, the object inserted will not stay at the
        ordinal position. Also the exact behaviour when the index is greater
        than the size of the collection depends on the collection type, eg in
        an array collection the array is expanded to accommodate the new index,
-       whereas in a list it will return FALSE.
+       whereas in a list it will return false.
 
-       @return TRUE if the object was successfully added.
+       @return true if the object was successfully added.
      */
-    virtual BOOL SetAt(
+    virtual PBoolean SetAt(
       PINDEX index,   ///< Index position in collection to set.
       PObject * val   ///< New value to place into the collection.
     ) = 0;
@@ -738,7 +550,7 @@ class PCollection : public PContainer
 
     /**Search the collection for the specified value of the object. The object
        values are compared, not the pointers.  So the objects in the
-       collection must correctly implement the #PObject::Compare()#
+       collection must correctly implement the <code>PObject::Compare()</code>
        function. The fastest search algorithm is employed depending on the
        collection type.
 
@@ -749,31 +561,31 @@ class PCollection : public PContainer
     ) const = 0;
 
     /**Allow or disallow the deletion of the objects contained in the
-       collection. If TRUE then whenever an object is removed, overwritten or
+       collection. If true then whenever an object is removed, overwritten or
        the colelction is deleted due to all references being destroyed, the
        object is deleted.
 
        For example:
-\begin{verbatim}
+<pre><code>
               coll.SetAt(2, new PString("one"));
               coll.SetAt(2, new PString("Two"));
-\end{verbatim}
+</code></pre>
        would automatically delete the string containing "one" on the second
        call to SetAt().
      */
     PINLINE void AllowDeleteObjects(
-      BOOL yes = TRUE   ///< New value for flag for deleting objects
+      PBoolean yes = true   ///< New value for flag for deleting objects
     );
 
     /**Disallow the deletion of the objects contained in the collection. See
-       the #AllowDeleteObjects()# function for more details.
+       the <code>AllowDeleteObjects()</code> function for more details.
      */
     void DisallowDeleteObjects();
   //@}
 
   protected:
     /**Constructor used in support of the Clone() function. This creates a
-       new unique reference of a copy of the contents. It does {\bf not}
+       new unique reference of a copy of the contents. It does {\b not}
        create another reference.
 
        The dummy parameter is there to prevent the contructor from being
@@ -820,7 +632,8 @@ class PCollection : public PContainer
 #include <ptlib/contain.inl>
 #endif
 
-#endif // _CONTAIN_H
+
+#endif // PTLIB_CONTAIN_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

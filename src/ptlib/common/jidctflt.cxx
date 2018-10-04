@@ -71,6 +71,13 @@
  * we use floating point arithmetic.
  *
  *$Log: jidctflt.cxx,v $
+ *Revision 1.7  2007/03/04 19:34:22  dsandras
+ *Fixed green screen problem with some MJPEG cameras thanks Luc Saillard
+ *<luc saillard org>.
+ *
+ *Revision 1.6  2006/06/21 05:28:33  csoutheren
+ *Fixed compatibility with gcc < 3
+ *
  *Revision 1.5  2006/06/07 08:13:16  hfriederich
  *Fixing compiler error on Apple x86 machines
  *
@@ -80,8 +87,12 @@
  *
  *
  */   
-#include <stdint.h>
+#include <inttypes.h>
 #include "tinyjpeg-internal.h"
+#include "ptbuildopts.h"
+#ifdef P_MEDIALIB
+#include <mlib.h>
+#endif
 
 #define FAST_FLOAT float
 #define DCTSIZE	   8
@@ -90,7 +101,7 @@
 #define DEQUANTIZE(coef,quantval)  (((FAST_FLOAT) (coef)) * (quantval))
 
 
-#if defined(__GNUC__) && (defined(__i686__) || defined(__x86_64__)) && (!defined(P_64BIT)) && (!defined(__MACOSX__))
+#if defined(__GNUC__) && (__GNUC__ >= 3) && (defined(__i686__) || defined(__x86_64__)) && (!defined(P_64BIT)) && (!defined(__MACOSX__)) && (!defined(P_LPIA))
 
 static inline unsigned char descale_and_clamp(int x, int shift)
 {
@@ -99,10 +110,10 @@ static inline unsigned char descale_and_clamp(int x, int shift)
       "\tsar %2,%1\n"
       "\tsub $-128,%1\n"
       "\tcmovl %5,%1\n"	/* Use the sub to compare to 0 */
-      "\tcmpl %4,%1\n" 
+      "\tcmp %4,%1\n" 
       "\tcmovg %4,%1\n"
       : "=r"(x) 
-      : "0"(x), "Ir"(shift), "ir"(1UL<<(shift-1)), "r" (0xff), "r" (0)
+      : "0"((unsigned long)x), "c"((char)shift), "ir"(1UL<<(shift-1)), "r" (0xffUL), "r" (0UL)
       );
   return x;
 }
@@ -130,8 +141,9 @@ static inline unsigned char descale_and_clamp(int x, int shift)
  */
 
 void
-jpeg_idct_float (struct component *compptr, uint8_t *output_buf, int stride)
+tinyjpeg_idct_float (struct component *compptr, uint8_t *output_buf, int stride)
 {
+#ifndef P_MEDIALIB
   FAST_FLOAT tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp7;
   FAST_FLOAT tmp10, tmp11, tmp12, tmp13;
   FAST_FLOAT z5, z10, z11, z12, z13;
@@ -292,5 +304,8 @@ jpeg_idct_float (struct component *compptr, uint8_t *output_buf, int stride)
     wsptr += DCTSIZE;		/* advance pointer to next row */
     outptr += stride;
   }
+#else
+  mlib_VideoIDCT8x8_U8_S16_NA(output_buf, compptr->DCT, stride);
+#endif  
 }
 

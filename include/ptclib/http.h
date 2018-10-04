@@ -23,226 +23,26 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: http.h,v $
- * Revision 1.60  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.59  2005/01/03 12:48:41  csoutheren
- * Added new configure options and ability to disable/enable modules
- *
- * Revision 1.58  2004/10/23 11:34:59  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.57  2002/12/03 22:37:36  robertj
- * Removed get document that just returns a content length as the chunked
- *   transfer encoding makes this very dangerous.
- * Added GetTextDocument() to get a URL content into a PString.
- * Added a version pf PostData() that gets the reponse content into a PString.
- * Added ReadContentBody() that takes a PString, not just PBYTEArray.
- *
- * Revision 1.56  2002/11/06 22:47:23  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.55  2002/10/10 04:43:43  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.54  2002/10/02 08:54:34  craigs
- * Added support for XMLRPC server
- *
- * Revision 1.53  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.52  2002/05/08 05:38:53  robertj
- * Added PHTTPTailFile resource to do a unix 'tail -f' of a file.
- *
- * Revision 1.51  2001/10/31 01:34:47  robertj
- * Added extra const for constant HTTP tag name strings.
- * Changes to support HTTP v1.1 chunked transfer encoding.
- *
- * Revision 1.50  2001/10/03 00:26:34  robertj
- * Upgraded client to HTTP/1.1 and for chunked mode entity bodies.
- *
- * Revision 1.49  2001/09/28 08:55:15  robertj
- * More changes to support restartable PHTTPClient
- *
- * Revision 1.48  2001/09/28 00:42:54  robertj
- * Added automatic setting of some outward MIME fields.
- * Added "user agent" string field for automatic inclusion.
- * Added function to read the contents of the HTTP request.
- *
- * Revision 1.47  2001/08/28 06:44:30  craigs
- * Added ability to override PHTTPServer creation
- *
- * Revision 1.46  2001/03/14 01:49:54  craigs
- * Added ability to handle multi-part form POST commands
- *
- * Revision 1.45  2001/02/22 05:26:47  robertj
- * Added "nicer" version of GetDocument in HTTP client class.
- *
- * Revision 1.44  2001/01/15 06:16:53  robertj
- * Set HTTP resource members to private to assure are not modified by
- *   dscendents in non-threadsafe manner.
- *
- * Revision 1.43  2000/09/04 03:57:58  robertj
- * Added ability to change the persistent connection parameters (timeout etc).
- *
- * Revision 1.42  2000/05/02 08:28:10  craigs
- * Removed "memory leaks" caused by brain-dead GNU linker
- *
- * Revision 1.41  1999/09/17 01:11:14  robertj
- * Fixed some documentation typos.
- *
- * Revision 1.40  1999/05/13 04:04:04  robertj
- * Fixed problem of initialised commandName in ConnectionInfo.
- *
- * Revision 1.39  1999/05/04 15:26:01  robertj
- * Improved HTTP/1.1 compatibility (pass through user commands).
- * Fixed problems with quicktime installer.
- *
- * Revision 1.38  1999/04/21 01:58:08  robertj
- * Fixed problem with reading data for request using second form of PHTTPRequestInfo constructor.
- *
- * Revision 1.37  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.36  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.35  1998/11/30 02:50:47  robertj
- * New directory structure
- *
- * Revision 1.34  1998/10/31 12:49:21  robertj
- * Added read/write mutex to the HTTP space variable to avoid thread crashes.
- *
- * Revision 1.33  1998/10/25 01:00:46  craigs
- * Added ability to specify per-directory authorisation for PHTTPDirectory
- *
- * Revision 1.32  1998/09/23 06:19:29  robertj
- * Added open source copyright license.
- *
- * Revision 1.31  1998/07/24 06:58:42  robertj
- * Changed PostData function so just has string for data instead of dictionary.
- *
- * Revision 1.30  1998/06/16 03:33:33  robertj
- * Changed TCP connection shutdown to be parameterised.
- * Propagated persistence and proxy flags in new connection info instances.
- *
- * Revision 1.29  1998/04/14 03:42:59  robertj
- * Fixed error code propagation in HTTP client.
- *
- * Revision 1.28  1998/02/03 06:29:38  robertj
- * Added local address and port to PHTTPRequest.
- *
- * Revision 1.27  1998/01/26 00:24:24  robertj
- * Added more information to PHTTPConnectionInfo.
- * Added function to allow HTTPClient to automatically connect if URL has hostname.
- *
- * Revision 1.26  1997/10/30 10:22:52  robertj
- * Added multiple user basic authorisation scheme.
- *
- * Revision 1.25  1997/10/03 13:30:15  craigs
- * Added ability to access client socket from within HTTP resources
- *
- * Revision 1.24  1997/03/28 04:40:22  robertj
- * Added tags for cookies.
- *
- * Revision 1.23  1997/01/12 04:15:19  robertj
- * Globalised MIME tag strings.
- *
- * Revision 1.22  1996/10/26 03:31:05  robertj
- * Changed OnError so can pass in full HTML page as parameter.
- *
- * Revision 1.21  1996/09/14 13:09:10  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.20  1996/08/22 13:20:55  robertj
- * Fixed bug in authorisation, missing virtual prevented polymorphism.
- *
- * Revision 1.19  1996/08/19 13:44:06  robertj
- * Fixed authorisation so if have no user/password on basic authentication, does not require it.
- *
- * Revision 1.18  1996/06/28 13:15:23  robertj
- * Modified HTTPAuthority so gets PHTTPReqest (mainly for URL) passed in.
- * Moved HTTP form resource to another compilation module.
- *
- * Revision 1.17  1996/06/07 13:52:20  robertj
- * Added PUT to HTTP proxy FTP. Necessitating redisign of entity body processing.
- *
- * Revision 1.16  1996/05/23 10:00:52  robertj
- * Added common function for GET and HEAD commands.
- * Fixed status codes to be the actual status code instead of sequential enum.
- * This fixed some problems with proxy pass through of status codes.
- *
- * Revision 1.14  1996/03/31 08:46:51  robertj
- * HTTP 1.1 upgrade.
- *
- * Revision 1.13  1996/03/17 05:41:57  robertj
- * Added hit count to PHTTPResource.
- *
- * Revision 1.12  1996/03/16 04:39:55  robertj
- * Added ParseReponse() for splitting reponse line into code and info.
- * Added client side support for HTTP socket.
- * Added hooks for proxy support in HTTP socket.
- *
- * Revision 1.11  1996/03/10 13:15:23  robertj
- * Redesign to make resources thread safe.
- *
- * Revision 1.10  1996/03/02 03:12:55  robertj
- * Added radio button and selection boxes to HTTP form resource.
- *
- * Revision 1.9  1996/02/25 11:14:21  robertj
- * Radio button support for forms.
- *
- * Revision 1.8  1996/02/25 02:57:48  robertj
- * Removed pass through HTTP resource.
- *
- * Revision 1.7  1996/02/19 13:25:43  robertj
- * Added overwrite option to AddResource().
- * Added get/set string to PHTTPString resource.
- * Moved nested classes from PHTTPForm.
- *
- * Revision 1.6  1996/02/13 13:09:16  robertj
- * Added extra parameters to callback function in PHTTPResources, required
- *   by descendants to make informed decisions on data being loaded.
- *
- * Revision 1.5  1996/02/08 12:04:19  robertj
- * Redesign of resource object callback virtuals.
- * Added HTML form resource type.
- *
- * Revision 1.4  1996/02/03 11:03:32  robertj
- * Added ismodified since and expires time checking.
- * Added PHTTPString that defaults to empty string.
- *
- * Revision 1.3  1996/01/28 14:15:38  robertj
- * Changed PCharArray in OnLoadData to PString for convenience in mangling data.
- * Beginning of pass through resource type.
- *
- * Revision 1.2  1996/01/26 02:24:26  robertj
- * Further implemetation.
- *
- * Revision 1.1  1996/01/23 13:04:20  robertj
- * Initial revision
- *
+ * $Revision: 29065 $
+ * $Author: rjongbloed $
+ * $Date: 2013-02-11 18:26:26 -0600 (Mon, 11 Feb 2013) $
  */
 
-#ifndef _PHTTP
-#define _PHTTP
+#ifndef PTLIB_HTTP_H
+#define PTLIB_HTTP_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#if P_HTTP
+
 #include <ptclib/inetprot.h>
 #include <ptclib/mime.h>
 #include <ptclib/url.h>
 #include <ptlib/ipsock.h>
+#include <ptlib/pfactory.h>
 
-
-#ifdef P_HTTPSVC
 
 #include <ptclib/html.h>
 
@@ -265,10 +65,8 @@ class PHTTPSpace : public PContainer
 
   // New functions for class.
     enum AddOptions {
-      /// Generate error if resource already exists
-      ErrorOnExist,
-      /// Overwrite the existing resource at URL location
-      Overwrite
+      ErrorOnExist, ///< Generate error if resource already exists
+      Overwrite     ///< Overwrite the existing resource at URL location
     };
 
 
@@ -281,9 +79,9 @@ class PHTTPSpace : public PContainer
        path to another resource but not if it is a leaf node.
 
        @return
-       TRUE if resource added, FALSE if failed.
+       true if resource added, false if failed.
      */
-    BOOL AddResource(
+    PBoolean AddResource(
       PHTTPResource * resource, ///< Resource to add to the name space.
       AddOptions overwrite = ErrorOnExist
         ///< Flag to overwrite an existing resource if it already exists.
@@ -294,9 +92,9 @@ class PHTTPSpace : public PContainer
        path to another resource then the function will fail.
 
        @return
-       TRUE if resource deleted, FALSE if failed.
+       true if resource deleted, false if failed.
      */
-    BOOL DelResource(
+    PBoolean DelResource(
       const PURL & url          ///< URL to search for in the name space.
     );
 
@@ -348,12 +146,10 @@ class PHTTPSpace : public PContainer
     } * root;
 
   private:
-    BOOL SetSize(PINDEX) { return FALSE; }
+    PBoolean SetSize(PINDEX) { return false; }
 };
 
-#endif // P_HTTPSVC
-
-#ifdef _WIN32_WCE
+#ifdef TRACE
 #undef TRACE
 #endif
 
@@ -407,7 +203,7 @@ class PHTTP : public PInternetProtocol
       Conflict,                    ///< 409 - resource conflict on action
       Gone,                        ///< 410 - resource gone away
       LengthRequired,              ///< 411 - no Content-Length
-      UnlessTrue,                  ///< 412 - no Range header for TRUE Unless
+      UnlessTrue,                  ///< 412 - no Range header for true Unless
       InternalServerError = 500,   ///< 500 - server has encountered an unexpected error
       NotImplemented,              ///< 501 - server does not implement request
       BadGateway,                  ///< 502 - error whilst acting as gateway
@@ -416,34 +212,34 @@ class PHTTP : public PInternetProtocol
     };
 
     // Common MIME header tags
-    static const char * const AllowTag;
-    static const char * const AuthorizationTag;
-    static const char * const ContentEncodingTag;
-    static const char * const ContentLengthTag;
-    static const char * const ContentTypeTag;
-    static const char * const DateTag;
-    static const char * const ExpiresTag;
-    static const char * const FromTag;
-    static const char * const IfModifiedSinceTag;
-    static const char * const LastModifiedTag;
-    static const char * const LocationTag;
-    static const char * const PragmaTag;
-    static const char * const PragmaNoCacheTag;
-    static const char * const RefererTag;
-    static const char * const ServerTag;
-    static const char * const UserAgentTag;
-    static const char * const WWWAuthenticateTag;
-    static const char * const MIMEVersionTag;
-    static const char * const ConnectionTag;
-    static const char * const KeepAliveTag;
-    static const char * const TransferEncodingTag;
-    static const char * const ChunkedTag;
-    static const char * const ProxyConnectionTag;
-    static const char * const ProxyAuthorizationTag;
-    static const char * const ProxyAuthenticateTag;
-    static const char * const ForwardedTag;
-    static const char * const SetCookieTag;
-    static const char * const CookieTag;
+    static const PCaselessString & AllowTag();
+    static const PCaselessString & AuthorizationTag();
+    static const PCaselessString & ContentEncodingTag();
+    static const PCaselessString & ContentLengthTag();
+    static const PCaselessString & ContentTypeTag() { return PMIMEInfo::ContentTypeTag(); }
+    static const PCaselessString & DateTag();
+    static const PCaselessString & ExpiresTag();
+    static const PCaselessString & FromTag();
+    static const PCaselessString & IfModifiedSinceTag();
+    static const PCaselessString & LastModifiedTag();
+    static const PCaselessString & LocationTag();
+    static const PCaselessString & PragmaTag();
+    static const PCaselessString & PragmaNoCacheTag();
+    static const PCaselessString & RefererTag();
+    static const PCaselessString & ServerTag();
+    static const PCaselessString & UserAgentTag();
+    static const PCaselessString & WWWAuthenticateTag();
+    static const PCaselessString & MIMEVersionTag();
+    static const PCaselessString & ConnectionTag();
+    static const PCaselessString & KeepAliveTag();
+    static const PCaselessString & TransferEncodingTag();
+    static const PCaselessString & ChunkedTag();
+    static const PCaselessString & ProxyConnectionTag();
+    static const PCaselessString & ProxyAuthorizationTag();
+    static const PCaselessString & ProxyAuthenticateTag();
+    static const PCaselessString & ForwardedTag();
+    static const PCaselessString & SetCookieTag();
+    static const PCaselessString & CookieTag();
 
   protected:
     /** Create a TCP/IP HTTP protocol channel.
@@ -455,7 +251,7 @@ class PHTTP : public PInternetProtocol
        <CODE>lastResponseCode</CODE> and <CODE>lastResponseInfo</CODE>.
 
        The default bahaviour looks for a space or a '-' and splits the code
-       and info either side of that character, then returns FALSE.
+       and info either side of that character, then returns false.
 
        @return
        Position of continuation character in response, 0 if no continuation
@@ -464,6 +260,153 @@ class PHTTP : public PInternetProtocol
     virtual PINDEX ParseResponse(
       const PString & line    ///< Input response line to be parsed
     );
+};
+
+
+
+class PHTTPClientAuthentication : public PObject
+{
+  PCLASSINFO(PHTTPClientAuthentication, PObject);
+  public:
+    class AuthObject {
+      public:
+        virtual ~AuthObject() { }
+        virtual PMIMEInfo & GetMIME() = 0;
+        virtual PString GetURI() = 0;
+        virtual PString GetEntityBody() = 0;
+        virtual PString GetMethod() = 0;
+    };
+
+    PHTTPClientAuthentication();
+
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
+
+    virtual PBoolean Parse(
+      const PString & auth,
+      PBoolean proxy
+    ) = 0;
+
+    virtual PBoolean Authorise(
+      AuthObject & pdu
+    ) const =  0;
+
+    virtual PBoolean IsProxy() const               { return isProxy; }
+
+    virtual PString GetUsername() const   { return username; }
+    virtual PString GetPassword() const   { return password; }
+    virtual PString GetAuthRealm() const  { return PString::Empty(); }
+
+    virtual void SetUsername(const PString & user) { username = user; }
+    virtual void SetPassword(const PString & pass) { password = pass; }
+    virtual void SetAuthRealm(const PString &)     { }
+
+    PString GetAuthParam(const PString & auth, const char * name) const;
+    PString AsHex(PMessageDigest5::Code & digest) const;
+    PString AsHex(const PBYTEArray & data) const;
+
+    static PHTTPClientAuthentication * ParseAuthenticationRequired(bool isProxy, const PMIMEInfo & line, PString & errorMsg);
+
+
+  protected:
+    PBoolean  isProxy;
+    PString   username;
+    PString   password;
+};
+
+typedef PFactory<PHTTPClientAuthentication> PHTTPClientAuthenticationFactory;
+
+class PHTTPClientAuthenticator : public PHTTPClientAuthentication::AuthObject
+{
+  public:
+    PHTTPClientAuthenticator(
+      const PString & cmdName, 
+      const PString & uri, 
+      PMIMEInfo & mime, 
+      const PString & body
+    );
+    virtual PMIMEInfo & GetMIME();
+    virtual PString GetURI();
+    virtual PString GetEntityBody();
+    virtual PString GetMethod();
+  protected:
+    PString m_method;
+    PString m_uri;
+    PMIMEInfo & m_mime;
+    PString m_body;
+};
+
+///////////////////////////////////////////////////////////////////////
+
+class PHTTPClientBasicAuthentication : public PHTTPClientAuthentication
+{
+  PCLASSINFO(PHTTPClientBasicAuthentication, PHTTPClientAuthentication);
+  public:
+    PHTTPClientBasicAuthentication();
+
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
+
+    virtual PBoolean Parse(
+      const PString & auth,
+      PBoolean proxy
+    );
+
+    virtual PBoolean Authorise(
+      AuthObject & pdu
+    ) const;
+};
+
+///////////////////////////////////////////////////////////////////////
+
+class PHTTPClientDigestAuthentication : public PHTTPClientAuthentication
+{
+  PCLASSINFO(PHTTPClientDigestAuthentication, PHTTPClientAuthentication);
+  public:
+    PHTTPClientDigestAuthentication();
+
+    PHTTPClientDigestAuthentication & operator =(
+      const PHTTPClientDigestAuthentication & auth
+    );
+
+    virtual Comparison Compare(
+      const PObject & other
+    ) const;
+
+    virtual PBoolean Parse(
+      const PString & auth,
+      PBoolean proxy
+    );
+
+    virtual PBoolean Authorise(
+      AuthObject & pdu
+    ) const;
+
+    virtual PString GetAuthRealm() const         { return authRealm; }
+    virtual void SetAuthRealm(const PString & r) { authRealm = r; }
+
+    enum Algorithm {
+      Algorithm_MD5,
+      NumAlgorithms
+    };
+    const PString & GetNonce() const       { return nonce; }
+    Algorithm GetAlgorithm() const         { return algorithm; }
+    const PString & GetOpaque() const      { return opaque; }
+    bool GetStale() const                  { return stale; }
+
+  protected:
+    PString   authRealm;
+    PString   nonce;
+    Algorithm algorithm;
+    PString   opaque;
+
+    bool    qopAuth;
+    bool    qopAuthInt;
+    bool    stale;
+    PString cnonce;
+    mutable PAtomicInteger nonceCount;
 };
 
 
@@ -488,7 +431,7 @@ class PHTTP : public PInternetProtocol
       }
       else
          PError << "HTTP conection failed." << endl;
-      </PRE></CODE>
+      </CODE></PRE>
  */
 class PHTTPClient : public PHTTP
 {
@@ -496,9 +439,8 @@ class PHTTPClient : public PHTTP
 
   public:
     /// Create a new HTTP client channel.
-    PHTTPClient();
     PHTTPClient(
-      const PString & userAgentName
+      const PString & userAgentName = PString::Empty()
     );
 
 
@@ -508,33 +450,31 @@ class PHTTPClient : public PHTTP
        200!
 
        @return
-       TRUE if all of header returned and ready to receive body.
+       true if all of header returned and ready to receive body.
      */
     int ExecuteCommand(
       Commands cmd,
       const PURL & url,
       PMIMEInfo & outMIME,
       const PString & dataBody,
-      PMIMEInfo & replyMime,
-      BOOL persist = TRUE
+      PMIMEInfo & replyMime
     );
     int ExecuteCommand(
       const PString & cmdName,
       const PURL & url,
       PMIMEInfo & outMIME,
       const PString & dataBody,
-      PMIMEInfo & replyMime,
-      BOOL persist = TRUE
+      PMIMEInfo & replyMime
     );
 
     /// Write a HTTP command to server
-    BOOL WriteCommand(
+    bool WriteCommand(
       Commands cmd,
       const PString & url,
       PMIMEInfo & outMIME,
       const PString & dataBody
     );
-    BOOL WriteCommand(
+    bool WriteCommand(
       const PString & cmdName,
       const PString & url,
       PMIMEInfo & outMIME,
@@ -542,112 +482,176 @@ class PHTTPClient : public PHTTP
     );
 
     /// Read a response from the server
-    BOOL ReadResponse(
+    bool ReadResponse(
       PMIMEInfo & replyMIME
     );
 
-    /// Read the body of the HTTP command
-    BOOL ReadContentBody(
-      PMIMEInfo & replyMIME,
-      PBYTEArray & body
-    );
-    BOOL ReadContentBody(
-      PMIMEInfo & replyMIME,
-      PString & body
+    /// Read the body of the HTTP command, throwing it away
+    bool ReadContentBody(
+      PMIMEInfo & replyMIME   ///< Reply MIME from server
     );
 
+    /// Read the body of the HTTP command as a string
+    bool ReadContentBody(
+      PMIMEInfo & replyMIME,        ///< Reply MIME from server
+      PString & body                ///< Received body as a string
+    );
 
-    /** Get the document specified by the URL.
+    /// Read the body of the HTTP command as a binary block
+    bool ReadContentBody(
+      PMIMEInfo & replyMIME,        ///< Reply MIME from server
+      PBYTEArray & body             ///< Received body as binary data
+    );
 
-       @return
-       TRUE if document is being transferred.
+
+    /** Start getting the document specified by the URL.
+        It is expected that ReadContentBody() is called after this returns to
+        get, or throw away, the data body received.
+
+       @return true if document is being transferred.
      */
-    BOOL GetTextDocument(
-      const PURL & url,         ///< Universal Resource Locator for document.
-      PString & document,       ///< Body read
-      BOOL persist = TRUE       ///< if TRUE, enable HTTP persistence
-    );
-
-    /** Get the document specified by the URL.
-
-       @return
-       TRUE if document is being transferred.
-     */
-    BOOL GetDocument(
+    bool GetDocument(
       const PURL & url,         ///< Universal Resource Locator for document.
       PMIMEInfo & outMIME,      ///< MIME info in request
-      PMIMEInfo & replyMIME,    ///< MIME info in response
-      BOOL persist = TRUE       ///< if TRUE, enable HTTP persistence
+      PMIMEInfo & replyMIME     ///< MIME info in response
+    );
+    bool GetDocument(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      PMIMEInfo & replyMIME     ///< MIME info in response
+    );
+
+    /** Get the document specified by the URL.
+
+        An empty string for the contentType parameter means that any content
+        type is acceptable.
+
+        @return true if document is being transferred.
+     */
+    bool GetTextDocument(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      PString & document,       ///< Body read
+      const PString & contentType = PString::Empty() ///< Content-Type header to expect
     );
 
     /** Get the header for the document specified by the URL.
 
        @return
-       TRUE if document header is being transferred.
+       true if document header is being transferred.
      */
-    BOOL GetHeader(
+    bool GetHeader(
       const PURL & url,         ///< Universal Resource Locator for document.
       PMIMEInfo & outMIME,      ///< MIME info in request
-      PMIMEInfo & replyMIME,    ///< MIME info in response
-      BOOL persist = TRUE       ///< if TRUE, enable HTTP persistence
+      PMIMEInfo & replyMIME     ///< MIME info in response
     );
 
 
-    /** Post the data specified to the URL.
+    /** Post the "application/x-www-form-urlencoded" data specified to the URL.
+        The data returned is thrown away.
 
-       @return
-       TRUE if document is being transferred.
+       @return true if document is being transferred.
      */
-    BOOL PostData(
+    bool PostData(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      const PStringToString & data  ///< Information posted to the HTTP server.
+    );
+
+    /** Post the data specified to the URL.
+        The data returned is thrown away.
+
+       @return true if document is being transferred.
+     */
+    bool PostData(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      PMIMEInfo & outMIME,      ///< MIME info in request
+      const PString & data    ///< Information posted to the HTTP server.
+    );
+
+    /** Start a post of the data specified to the URL.
+        It is expected that ReadContentBody() is called after this returns to
+        get, or throw away, the data body received.
+
+       @return true if document is being transferred.
+     */
+    bool PostData(
+      const PURL & url,       ///< Universal Resource Locator for document.
+      PMIMEInfo & outMIME,    ///< MIME info in request
+      const PString & data,   ///< Information posted to the HTTP server.
+      PMIMEInfo & replyMIME   ///< MIME info in response
+    );
+
+    /** Post the data specified to the URL.
+        The body of the reply is returned
+
+       @return true if document is has been transferred.
+     */
+    bool PostData(
       const PURL & url,       ///< Universal Resource Locator for document.
       PMIMEInfo & outMIME,    ///< MIME info in request
       const PString & data,   ///< Information posted to the HTTP server.
       PMIMEInfo & replyMIME,  ///< MIME info in response
-      BOOL persist = TRUE     ///< if TRUE, enable HTTP persistence
+      PString & replyBody     ///< Body of response
     );
 
-    /** Post the data specified to the URL.
+    /** Put the document specified by the URL.
 
        @return
-       TRUE if document is being transferred.
+       true if document is being transferred.
      */
-    BOOL PostData(
-      const PURL & url,       ///< Universal Resource Locator for document.
-      PMIMEInfo & outMIME,    ///< MIME info in request
-      const PString & data,   ///< Information posted to the HTTP server.
-      PMIMEInfo & replyMIME,  ///< MIME info in response
-      PString & replyBody,    ///< Body of response
-      BOOL persist = TRUE     ///< if TRUE, enable HTTP persistence
+    bool PutTextDocument(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      const PString & document,       ///< Body read
+      const PString & contentType = PMIMEInfo::TextPlain() ///< Content-Type header to use
     );
+
+    /** Put the document specified by the URL.
+
+       @return
+       true if document is being transferred.
+     */
+    bool PutDocument(
+      const PURL & url,         ///< Universal Resource Locator for document.
+      PMIMEInfo & outMIME,      ///< MIME info in request
+      PMIMEInfo & replyMIME     ///< MIME info in response
+    );
+
+    /** Delete the document specified by the URL.
+
+       @return
+       true if document is deleted.
+     */
+    bool DeleteDocument(
+      const PURL & url        ///< Universal Resource Locator for document.
+    );
+
+    /** Set authentication paramaters to be use for retreiving documents
+    */
+    void SetAuthenticationInfo(
+      const PString & userName,
+      const PString & password
+    );
+
+    /// Set persistent connection mode
+    void SetPersistent(
+      bool persist = true
+    ) { m_persist = persist; }
+
+    /// Get persistent connection mode
+    bool GetPersistent() const { return m_persist; }
 
   protected:
-    BOOL AssureConnect(const PURL & url, PMIMEInfo & outMIME);
-    BOOL InternalReadContentBody(
+    bool AssureConnect(const PURL & url, PMIMEInfo & outMIME);
+    bool InternalReadContentBody(
       PMIMEInfo & replyMIME,
-      PAbstractArray & body
+      PAbstractArray * body
     );
 
-    PString userAgentName;
+    PString m_userAgentName;
+    bool    m_persist;
+    PString m_userName;
+    PString m_password;
+    PHTTPClientAuthentication * m_authentication;
 };
 
-#ifdef P_HTTPSVC
-
-//////////////////////////////////////////////////////////////////////////////
-// PMultipartFormInfo
-
-/** This object describes the information associated with a multi-part
-    form entry
-  */
-
-class PMultipartFormInfo : public PObject
-{
-  PCLASSINFO(PMultipartFormInfo, PObject);
-  public:
-    PMIMEInfo mime;
-    PString body;
-};
-
-PARRAY(PMultipartFormInfoArray, PMultipartFormInfo);
 
 //////////////////////////////////////////////////////////////////////////////
 // PHTTPConnectionInfo
@@ -656,7 +660,7 @@ class PHTTPServer;
 
 /** This object describes the connectiono associated with a HyperText Transport
    Protocol request. This information is required by handler functions on
-   #PHTTPResource# descendant classes to manage the connection correctly.
+   <code>PHTTPResource</code> descendant classes to manage the connection correctly.
 */
 class PHTTPConnectionInfo : public PObject
 {
@@ -672,11 +676,11 @@ class PHTTPConnectionInfo : public PObject
     const PMIMEInfo & GetMIME() const { return mimeInfo; }
     void SetMIME(const PString & tag, const PString & value);
 
-    BOOL IsCompatible(int major, int minor) const;
+    PBoolean IsCompatible(int major, int minor) const;
 
-    BOOL IsPersistant() const         { return isPersistant; }
-    BOOL WasPersistant() const        { return wasPersistant; }
-    BOOL IsProxyConnection() const    { return isProxyConnection; }
+    bool IsPersistent() const         { return isPersistent; }
+    bool WasPersistent() const        { return wasPersistent; }
+    bool IsProxyConnection() const    { return isProxyConnection; }
     int  GetMajorVersion() const      { return majorVersion; }
     int  GetMinorVersion() const      { return minorVersion; }
 
@@ -700,32 +704,32 @@ class PHTTPConnectionInfo : public PObject
       */
     void SetPersistenceMaximumTransations(unsigned m) { persistenceMaximum = m; }
 
-    const PMultipartFormInfoArray & GetMultipartFormInfo() const
-      { return multipartFormInfoArray; }
+    const PMultiPartList & GetMultipartFormInfo() const
+      { return m_multipartFormInfo; }
 
     void ResetMultipartFormInfo()
-      { multipartFormInfoArray.RemoveAll(); }
+      { m_multipartFormInfo.RemoveAll(); }
 
     PString GetEntityBody() const   { return entityBody; }
 
   protected:
-    BOOL Initialise(PHTTPServer & server, PString & args);
-    void DecodeMultipartFormInfo(const PString & type, const PString & entityBody);
+    PBoolean Initialise(PHTTPServer & server, PString & args);
+    bool DecodeMultipartFormInfo() { return mimeInfo.DecodeMultiPartList(m_multipartFormInfo, entityBody); }
 
     PHTTP::Commands commandCode;
     PString         commandName;
     PURL            url;
     PMIMEInfo       mimeInfo;
-    BOOL            isPersistant;
-    BOOL            wasPersistant;
-    BOOL            isProxyConnection;
+    bool            isPersistent;
+    bool            wasPersistent;
+    bool            isProxyConnection;
     int             majorVersion;
     int             minorVersion;
     PString         entityBody;        // original entity body (POST only)
     long            entityBodyLength;
     PTimeInterval   persistenceTimeout;
     unsigned        persistenceMaximum;
-    PMultipartFormInfoArray multipartFormInfoArray;
+    PMultiPartList  m_multipartFormInfo;
 
   friend class PHTTPServer;
 };
@@ -736,15 +740,24 @@ class PHTTPConnectionInfo : public PObject
 
 /** A TCP/IP socket for the HyperText Transfer Protocol version 1.0.
 
-    When acting as a server, a descendant class would be created to override
-    at least the #HandleOpenMailbox()#, #HandleSendMessage()# and
-    #HandleDeleteMessage()# functions. Other functions may be overridden
-    for further enhancement to the sockets capabilities, but these will give a
-    basic POP3 server functionality.
-
     The server socket thread would continuously call the
-    #ProcessMessage()# function until it returns FALSE. This will then
-    call the appropriate virtual function on parsing the POP3 protocol.
+    ProcessCommand() function until it returns false. This will then
+    call the appropriate virtual function on parsing the HTTP protocol.
+    <PRE><CODE>
+    PTCPSocket socket(80);
+    if (!socket.Listen())
+      return;
+
+    PHTTPSpace httpNameSpace;
+    httpNameSpace.AddResource(new PHTTPDirectory("data", "data"))
+
+    PHTTServer httpServer(httpNameSpace);
+    if (!httpServer.Open(socket))
+      return;
+
+    while (httpServer.ProcessCommand())
+      ;
+    </CODE></PRE>
  */
 class PHTTPServer : public PHTTP
 {
@@ -789,25 +802,25 @@ class PHTTPServer : public PHTTP
        is used when the socket is acting as a server.
 
        @return
-       TRUE if the request specified persistant mode and the request version
-       allows it, FALSE if the socket closed, timed out, the protocol does not
-       allow persistant mode, or the client did not request it
+       true if the request specified persistent mode and the request version
+       allows it, false if the socket closed, timed out, the protocol does not
+       allow persistent mode, or the client did not request it
        timed out
      */
-    virtual BOOL ProcessCommand();
+    virtual PBoolean ProcessCommand();
 
     /** Handle a GET command from a client.
 
        The default implementation looks up the URL in the name space declared by
-       the #PHTTPSpace# class tree and despatches to the
-       #PHTTPResource# object contained therein.
+       the <code>PHTTPSpace</code> class tree and despatches to the
+       <code>PHTTPResource</code> object contained therein.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnGET(
+    virtual PBoolean OnGET(
       const PURL & url,                    ///< Universal Resource Locator for document.
       const PMIMEInfo & info,              ///< Extra MIME information in command.
       const PHTTPConnectionInfo & conInfo  ///< HTTP connection information
@@ -818,15 +831,15 @@ class PHTTPServer : public PHTTP
     /** Handle a HEAD command from a client.
 
        The default implemetation looks up the URL in the name space declared by
-       the #PHTTPSpace# class tree and despatches to the
-       #PHTTPResource# object contained therein.
+       the <code>PHTTPSpace</code> class tree and despatches to the
+       <code>PHTTPResource</code> object contained therein.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnHEAD(
+    virtual PBoolean OnHEAD(
       const PURL & url,                   ///< Universal Resource Locator for document.
       const PMIMEInfo & info,             ///< Extra MIME information in command.
       const PHTTPConnectionInfo & conInfo ///< HTTP connection information
@@ -835,15 +848,15 @@ class PHTTPServer : public PHTTP
     /** Handle a POST command from a client.
 
        The default implementation looks up the URL in the name space declared by
-       the #PHTTPSpace# class tree and despatches to the
-       #PHTTPResource# object contained therein.
+       the <code>PHTTPSpace</code> class tree and despatches to the
+       <code>PHTTPResource</code> object contained therein.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnPOST(
+    virtual PBoolean OnPOST(
       const PURL & url,                   ///< Universal Resource Locator for document.
       const PMIMEInfo & info,             ///< Extra MIME information in command.
       const PStringToString & data,       ///< Variables provided in the POST data.
@@ -853,22 +866,22 @@ class PHTTPServer : public PHTTP
     /** Handle a proxy command request from a client. This will only get called
        if the request was not for this particular server. If it was a proxy
        request for this server (host and port number) then the appropriate
-       #OnGET()#, #OnHEAD()# or #OnPOST()# command is called.
+       <code>OnGET()</code>, <code>OnHEAD()</code> or <code>OnPOST()</code> command is called.
 
        The default implementation returns OnError(BadGateway).
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnProxy(
+    virtual PBoolean OnProxy(
       const PHTTPConnectionInfo & conInfo   ///<  HTTP connection information
     );
 
 
     /** Read the entity body associated with a HTTP request, and close the
-       socket if not a persistant connection.
+       socket if not a persistent connection.
 
        @return
        The entity body of the command
@@ -878,9 +891,9 @@ class PHTTPServer : public PHTTP
     /** Handle an unknown command.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
      */
-    virtual BOOL OnUnknown(
+    virtual PBoolean OnUnknown(
       const PCaselessString & command,         ///< Complete command line received.
       const PHTTPConnectionInfo & connectInfo  ///< HTTP connection information
     );
@@ -901,9 +914,9 @@ class PHTTPServer : public PHTTP
        nothing.
 
        @return
-       TRUE if requires v1.1 chunked transfer encoding.
+       true if requires v1.1 chunked transfer encoding.
      */
-    BOOL StartResponse(
+    PBoolean StartResponse(
       StatusCode code,      ///< Status code for the response.
       PMIMEInfo & headers,  ///< MIME variables included in response.
       long bodySize         ///< Size of the rest of the response.
@@ -916,9 +929,9 @@ class PHTTPServer : public PHTTP
        viewer.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
      */
-    virtual BOOL OnError(
+    virtual PBoolean OnError(
       StatusCode code,                         ///< Status code for the error response.
       const PCaselessString & extra,           ///< Extra information included in the response.
       const PHTTPConnectionInfo & connectInfo  ///< HTTP connection information
@@ -928,7 +941,7 @@ class PHTTPServer : public PHTTP
      */
     void SetDefaultMIMEInfo(
       PMIMEInfo & info,      ///< Extra MIME information in command.
-      const PHTTPConnectionInfo & connectInfo
+      const PHTTPConnectionInfo & connectInfo   ///< Connection information
     );
 
     /**Get the connection info for this connection.
@@ -949,7 +962,7 @@ class PHTTPServer : public PHTTP
 // PHTTPRequest
 
 /** This object describes a HyperText Transport Protocol request. An individual
-   request is passed to handler functions on #PHTTPResource# descendant
+   request is passed to handler functions on <code>PHTTPResource</code> descendant
    classes.
  */
 class PHTTPRequest : public PObject
@@ -960,14 +973,15 @@ class PHTTPRequest : public PObject
     PHTTPRequest(
       const PURL & url,             ///< Universal Resource Locator for document.
       const PMIMEInfo & inMIME,     ///< Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo, ///< multipart form information (if any)
+      const PMultiPartList & multipartFormInfo, ///< multipart form information (if any)
+      PHTTPResource * resource,     ///< Resource associated with request
       PHTTPServer & server          ///< Server channel that request initiated on
     );
 
     PHTTPServer & server;           ///< Server channel that request initiated on
     const PURL & url;               ///< Universal Resource Locator for document.
     const PMIMEInfo & inMIME;       ///< Extra MIME information in command.
-    const PMultipartFormInfoArray & multipartFormInfo; ///< multipart form information, if any
+    const PMultiPartList & multipartFormInfo; ///< multipart form information, if any
     PHTTP::StatusCode code;         ///< Status code for OnError() reply.
     PMIMEInfo outMIME;              ///< MIME information used in reply.
     PString entityBody;             ///< original entity body (POST only)
@@ -975,6 +989,7 @@ class PHTTPRequest : public PObject
     PIPSocket::Address origin;      ///< IP address of origin host for request
     PIPSocket::Address localAddr;   ///< IP address of local interface for request
     WORD               localPort;   ///< Port number of local server for request
+    PHTTPResource    * m_resource;  ///< HTTP resource found for the request
 };
 
 
@@ -1004,9 +1019,9 @@ class PHTTPAuthority : public PObject
        the realm specified by the class instance.
 
        @return
-       TRUE if the user and password are authorised in the realm.
+       true if the user and password are authorised in the realm.
      */
-    virtual BOOL Validate(
+    virtual PBoolean Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const = 0;
@@ -1015,12 +1030,12 @@ class PHTTPAuthority : public PObject
        distinguish between net requiring authorisation and requiring autorisation
        but having no password.
 
-       The default behaviour is to return TRUE.
+       The default behaviour is to return true.
 
        @return
-       TRUE if the authorisation in the realm is to be applied.
+       true if the authorisation in the realm is to be applied.
      */
-    virtual BOOL IsActive() const;
+    virtual PBoolean IsActive() const;
 
   protected:
     static void DecodeBasicAuthority(
@@ -1052,7 +1067,7 @@ class PHTTPSimpleAuth : public PHTTPAuthority
 
   // Overrides from class PObject.
     /** Create a copy of the class on the heap. This is used by the
-       #PHTTPResource# classes for maintaining authorisation to
+       <code>PHTTPResource</code> classes for maintaining authorisation to
        resources.
 
        @return
@@ -1076,9 +1091,9 @@ class PHTTPSimpleAuth : public PHTTPAuthority
        the realm specified by the class instance.
 
        @return
-       TRUE if the user and password are authorised in the realm.
+       true if the user and password are authorised in the realm.
      */
-    virtual BOOL Validate(
+    virtual PBoolean Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const;
@@ -1087,12 +1102,12 @@ class PHTTPSimpleAuth : public PHTTPAuthority
        distinguish between net requiring authorisation and requiring autorisation
        but having no password.
 
-       The default behaviour is to return TRUE.
+       The default behaviour is to return true.
 
        @return
-       TRUE if the authorisation in the realm is to be applied.
+       true if the authorisation in the realm is to be applied.
      */
-    virtual BOOL IsActive() const;
+    virtual PBoolean IsActive() const;
 
     /** Get the user name allocated to this simple authorisation.
 
@@ -1139,7 +1154,7 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
 
   // Overrides from class PObject.
     /** Create a copy of the class on the heap. This is used by the
-       #PHTTPResource# classes for maintaining authorisation to
+       <code>PHTTPResource</code> classes for maintaining authorisation to
        resources.
 
        @return
@@ -1163,9 +1178,9 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
        the realm specified by the class instance.
 
        @return
-       TRUE if the user and password are authorised in the realm.
+       true if the user and password are authorised in the realm.
      */
-    virtual BOOL Validate(
+    virtual PBoolean Validate(
       const PHTTPRequest & request,  ///< Request information.
       const PString & authInfo       ///< Authority information string.
     ) const;
@@ -1174,12 +1189,12 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
        distinguish between net requiring authorisation and requiring autorisation
        but having no password.
 
-       The default behaviour is to return TRUE.
+       The default behaviour is to return true.
 
        @return
-       TRUE if the authorisation in the realm is to be applied.
+       true if the authorisation in the realm is to be applied.
      */
-    virtual BOOL IsActive() const;
+    virtual PBoolean IsActive() const;
 
     /** Get the user name allocated to this simple authorisation.
 
@@ -1202,7 +1217,7 @@ class PHTTPMultiSimpAuth : public PHTTPAuthority
 // PHTTPResource
 
 /** This object describes a HyperText Transport Protocol resource. A tree of
-   these resources are available to the #PHTTPSocket# class.
+   these resources are available to the <code>PHTTPServer</code> class.
  */
 class PHTTPResource : public PObject
 {
@@ -1281,15 +1296,15 @@ class PHTTPResource : public PObject
     /** Handle the GET command passed from the HTTP socket.
 
        The default action is to check the authorisation for the resource and
-       call the virtuals #LoadHeaders()# and #OnGETData()# to get
+       call the virtuals <code>LoadHeaders()</code> and <code>OnGETData()</code> to get
        a resource to be sent to the socket.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close.
+       true if the connection may persist, false if the connection must close.
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnGET(
+    virtual PBoolean OnGET(
       PHTTPServer & server,       ///< HTTP server that received the request
       const PURL & url,           ///< Universal Resource Locator for document.
       const PMIMEInfo & info,     ///< Extra MIME information in command.
@@ -1298,14 +1313,14 @@ class PHTTPResource : public PObject
 
     /**Send the data associated with a GET command.
 
-       The default action calls #SendData()#.
+       The default action calls <code>SendData()</code>.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close.
+       true if the connection may persist, false if the connection must close.
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
     */
-    virtual BOOL OnGETData(
+    virtual PBoolean OnGETData(
       PHTTPServer & server,                       ///< HTTP server that received the request
       const PURL & url,                           ///< Universal Resource Locator for document
       const PHTTPConnectionInfo & connectInfo,    ///< HTTP connection information
@@ -1315,15 +1330,15 @@ class PHTTPResource : public PObject
     /** Handle the HEAD command passed from the HTTP socket.
 
        The default action is to check the authorisation for the resource and
-       call the virtual #LoadHeaders()# to get the header information to
+       call the virtual <code>LoadHeaders()</code> to get the header information to
        be sent to the socket.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnHEAD(
+    virtual PBoolean OnHEAD(
       PHTTPServer & server,       ///< HTTP server that received the request
       const PURL & url,           ///< Universal Resource Locator for document.
       const PMIMEInfo & info,     ///< Extra MIME information in command.
@@ -1333,15 +1348,15 @@ class PHTTPResource : public PObject
     /** Handle the POST command passed from the HTTP socket.
 
        The default action is to check the authorisation for the resource and
-       call the virtual #Post()# function to handle the data being
+       call the virtual <code>Post()</code> function to handle the data being
        received.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
      */
-    virtual BOOL OnPOST(
+    virtual PBoolean OnPOST(
       PHTTPServer & server,         ///< HTTP server that received the request
       const PURL & url,             ///< Universal Resource Locator for document.
       const PMIMEInfo & info,       ///< Extra MIME information in command.
@@ -1351,14 +1366,14 @@ class PHTTPResource : public PObject
 
     /**Send the data associated with a POST command.
 
-       The default action calls #Post()#.
+       The default action calls <code>Post()</code>.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close.
+       true if the connection may persist, false if the connection must close.
        If there is no ContentLength field in the response, this value must
-       be FALSE for correct operation.
+       be false for correct operation.
     */
-    virtual BOOL OnPOSTData(
+    virtual PBoolean OnPOSTData(
       PHTTPRequest & request,        ///< request information
       const PStringToString & data   ///< Variables in the POST data.
     );
@@ -1367,9 +1382,9 @@ class PHTTPResource : public PObject
        specified.
 
        @return
-       TRUE if has been modified since.
+       true if has been modified since.
      */
-    virtual BOOL IsModifiedSince(
+    virtual PBoolean IsModifiedSince(
       const PTime & when    ///< Time to see if modified later than
     );
 
@@ -1378,7 +1393,7 @@ class PHTTPResource : public PObject
        @return
        Status of load operation.
      */
-    virtual BOOL GetExpirationDate(
+    virtual PBoolean GetExpirationDate(
       PTime & when          ///< Time that the resource expires
     );
 
@@ -1392,7 +1407,7 @@ class PHTTPResource : public PObject
     virtual PHTTPRequest * CreateRequest(
       const PURL & url,                   ///< Universal Resource Locator for document.
       const PMIMEInfo & inMIME,           ///< Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo,  ///< additional information for multi-part posts
+      const PMultiPartList & multipartFormInfo,  ///< additional information for multi-part posts
       PHTTPServer & socket                                ///< socket used for request
     );
 
@@ -1401,15 +1416,15 @@ class PHTTPResource : public PObject
        required by the resource and return the status for the load.
 
        @return
-       TRUE if all OK, FALSE if an error occurred.
+       true if all OK, false if an error occurred.
      */
-    virtual BOOL LoadHeaders(
+    virtual PBoolean LoadHeaders(
       PHTTPRequest & request    ///<  Information on this request.
     ) = 0;
 
     /**Send the data associated with a command.
 
-       The default action is to call the virtual #LoadData()# to get a
+       The default action is to call the virtual <code>LoadData()</code> to get a
        resource to be sent to the socket.
     */
     virtual void SendData(
@@ -1418,21 +1433,21 @@ class PHTTPResource : public PObject
 
     /** Get a block of data that the resource contains.
 
-       The default behaviour is to call the #LoadText()# function and
-       if successful, call the #OnLoadedText()# function.
+       The default behaviour is to call the <code>LoadText()</code> function and
+       if successful, call the <code>OnLoadedText()</code> function.
 
        @return
-       TRUE if there is still more to load.
+       true if there is still more to load.
      */
-    virtual BOOL LoadData(
+    virtual PBoolean LoadData(
       PHTTPRequest & request,    ///<  Information on this request.
       PCharArray & data          ///<  Data used in reply.
     );
 
     /** Get a block of text data (eg HTML) that the resource contains.
 
-       The default behaviour is to assert, one of #LoadText()# or
-       #LoadData()# functions must be overridden for correct operation.
+       The default behaviour is to assert, one of <code>LoadText()</code> or
+       <code>LoadData()</code> functions must be overridden for correct operation.
 
        @return
        String for loaded text.
@@ -1458,9 +1473,9 @@ class PHTTPResource : public PObject
        success.
 
        @return
-       TRUE if the connection may persist, FALSE if the connection must close
+       true if the connection may persist, false if the connection must close
      */
-    virtual BOOL Post(
+    virtual PBoolean Post(
       PHTTPRequest & request,       ///<  Information on this request.
       const PStringToString & data, ///<  Variables in the POST data.
       PHTML & replyMessage          ///<  Reply message for post.
@@ -1470,12 +1485,12 @@ class PHTTPResource : public PObject
   protected:
     /** See if the resource is authorised given the mime info
      */
-    virtual BOOL CheckAuthority(
+    virtual PBoolean CheckAuthority(
       PHTTPServer & server,               ///<  Server to send response to.
       const PHTTPRequest & request,       ///<  Information on this request.
       const PHTTPConnectionInfo & conInfo ///<  Information on the connection
     );
-    static BOOL CheckAuthority(
+    static PBoolean CheckAuthority(
                    PHTTPAuthority & authority,
                       PHTTPServer & server,
                const PHTTPRequest & request,
@@ -1484,22 +1499,19 @@ class PHTTPResource : public PObject
 
 
     /** common code for GET and HEAD commands */
-    virtual BOOL OnGETOrHEAD(
+    virtual PBoolean OnGETOrHEAD(
       PHTTPServer & server,       ///<  HTTP server that received the request
       const PURL & url,           ///<  Universal Resource Locator for document.
       const PMIMEInfo & info,     ///<  Extra MIME information in command.
-      const PHTTPConnectionInfo & conInfo,
-      BOOL  IsGet
+      const PHTTPConnectionInfo & conInfo,  ///< Connection information
+      PBoolean isGet              ///< Flag indicating is GET or HEAD
     );
 
-    /// Base URL for the resource, may accept URLS with a longer hierarchy
-    PURL             baseURL;
-    /// MIME content type for the resource
-    PString          contentType;
-    /// Authorisation method for the resource
-    PHTTPAuthority * authority;
-    /// COunt of number of times resource was accessed.
-    volatile DWORD   hitCount;
+
+    PURL             baseURL;     ///< Base URL for the resource, may accept URLS with a longer hierarchy
+    PString          contentType; ///< MIME content type for the resource
+    PHTTPAuthority * authority;   ///< Authorisation method for the resource
+    volatile DWORD   hitCount;    ///< COunt of number of times resource was accessed.
 };
 
 
@@ -1553,16 +1565,16 @@ class PHTTPString : public PHTTPResource
        required by the resource and return the status for the load.
 
        @return
-       TRUE if all OK, FALSE if an error occurred.
+       true if all OK, false if an error occurred.
      */
-    virtual BOOL LoadHeaders(
+    virtual PBoolean LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
     /** Get a block of text data (eg HTML) that the resource contains.
 
-       The default behaviour is to assert, one of #LoadText()# or
-       #LoadData()# functions must be overridden for correct operation.
+       The default behaviour is to assert, one of <code>LoadText()</code> or
+       <code>LoadData()</code> functions must be overridden for correct operation.
 
        @return
        String for loaded text.
@@ -1597,7 +1609,7 @@ class PHTTPString : public PHTTPResource
 /** This object describes a HyperText Transport Protocol resource which is a
    single file. The file can be anywhere in the file system and is mapped to
    the specified URL location in the HTTP name space defined by the
-   #PHTTPSpace# class.
+   <code>PHTTPSpace</code> class.
  */
 class PHTTPFile : public PHTTPResource
 {
@@ -1648,7 +1660,7 @@ class PHTTPFile : public PHTTPResource
     virtual PHTTPRequest * CreateRequest(
       const PURL & url,                  // Universal Resource Locator for document.
       const PMIMEInfo & inMIME,          // Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo,
+      const PMultiPartList & multipartFormInfo,
       PHTTPServer & socket
     );
 
@@ -1657,26 +1669,26 @@ class PHTTPFile : public PHTTPResource
        required by the resource and return the status for the load.
 
        @return
-       TRUE if all OK, FALSE if an error occurred.
+       true if all OK, false if an error occurred.
      */
-    virtual BOOL LoadHeaders(
+    virtual PBoolean LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
     /** Get a block of data that the resource contains.
 
        @return
-       TRUE if more to load.
+       true if more to load.
      */
-    virtual BOOL LoadData(
+    virtual PBoolean LoadData(
       PHTTPRequest & request,    // Information on this request.
       PCharArray & data          // Data used in reply.
     );
 
     /** Get a block of text data (eg HTML) that the resource contains.
 
-       The default behaviour is to assert, one of #LoadText()# or
-       #LoadData()# functions must be overridden for correct operation.
+       The default behaviour is to assert, one of <code>LoadText()</code> or
+       <code>LoadData()</code> functions must be overridden for correct operation.
 
        @return
        String for loaded text.
@@ -1705,7 +1717,8 @@ class PHTTPFileRequest : public PHTTPRequest
     PHTTPFileRequest(
       const PURL & url,             // Universal Resource Locator for document.
       const PMIMEInfo & inMIME,     // Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo,
+      const PMultiPartList & multipartFormInfo,
+      PHTTPResource * resource,
       PHTTPServer & server
     );
 
@@ -1719,7 +1732,7 @@ class PHTTPFileRequest : public PHTTPRequest
 /** This object describes a HyperText Transport Protocol resource which is a
    single file. The file can be anywhere in the file system and is mapped to
    the specified URL location in the HTTP name space defined by the
-   #PHTTPSpace# class.
+   <code>PHTTPSpace</code> class.
 
    The difference between this and PHTTPFile is that it continually outputs
    the contents of the file, as per the unix "tail -f" command.
@@ -1770,18 +1783,18 @@ class PHTTPTailFile : public PHTTPFile
        required by the resource and return the status for the load.
 
        @return
-       TRUE if all OK, FALSE if an error occurred.
+       true if all OK, false if an error occurred.
      */
-    virtual BOOL LoadHeaders(
+    virtual PBoolean LoadHeaders(
       PHTTPRequest & request    // Information on this request.
     );
 
     /** Get a block of data that the resource contains.
 
        @return
-       TRUE if more to load.
+       true if more to load.
      */
-    virtual BOOL LoadData(
+    virtual PBoolean LoadData(
       PHTTPRequest & request,    // Information on this request.
       PCharArray & data          // Data used in reply.
     );
@@ -1794,13 +1807,13 @@ class PHTTPTailFile : public PHTTPFile
 /** This object describes a HyperText Transport Protocol resource which is a
    set of files in a directory. The directory can be anywhere in the file
    system and is mapped to the specified URL location in the HTTP name space
-   defined by the #PHTTPSpace# class.
+   defined by the <code>PHTTPSpace</code> class.
 
    All subdirectories and files are available as URL names in the HTTP name
    space. This effectively grafts a file system directory tree onto the URL
    name space tree.
 
-   See the #PMIMEInfo# class for more information on the mappings between
+   See the <code>PMIMEInfo</code> class for more information on the mappings between
    file types and MIME types.
  */
 class PHTTPDirectory : public PHTTPFile
@@ -1809,13 +1822,13 @@ class PHTTPDirectory : public PHTTPFile
 
   public:
     PHTTPDirectory(
-      const PURL & url,            /// Name of the resource in URL space.
-      const PDirectory & dir       /// Location of file in file system.
+      const PURL & url,            ///< Name of the resource in URL space.
+      const PDirectory & dir       ///< Location of file in file system.
     );
     PHTTPDirectory(
-      const PURL & url,            /// Name of the resource in URL space.
-      const PDirectory & dir,      /// Location of file in file system.
-      const PHTTPAuthority & auth  /// Authorisation for the resource.
+      const PURL & url,            ///< Name of the resource in URL space.
+      const PDirectory & dir,      ///< Location of file in file system.
+      const PHTTPAuthority & auth  ///< Authorisation for the resource.
     );
     // Construct a new directory resource for HTTP.
 
@@ -1829,7 +1842,7 @@ class PHTTPDirectory : public PHTTPFile
     virtual PHTTPRequest * CreateRequest(
       const PURL & url,                  // Universal Resource Locator for document.
       const PMIMEInfo & inMIME,          // Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo,
+      const PMultiPartList & multipartFormInfo,
       PHTTPServer & socket
     );
 
@@ -1838,22 +1851,22 @@ class PHTTPDirectory : public PHTTPFile
        required by the resource and return the status for the load.
 
        @return
-       TRUE if all OK, FALSE if an error occurred.
+       true if all OK, false if an error occurred.
      */
-    virtual BOOL LoadHeaders(
-      PHTTPRequest & request    /// Information on this request.
+    virtual PBoolean LoadHeaders(
+      PHTTPRequest & request    ///< Information on this request.
     );
 
     /** Get a block of text data (eg HTML) that the resource contains.
 
-       The default behaviour is to assert, one of #LoadText()# or
-       #LoadData()# functions must be overridden for correct operation.
+       The default behaviour is to assert, one of <code>LoadText()</code> or
+       <code>LoadData()</code> functions must be overridden for correct operation.
 
        @return
        String for loaded text.
      */
     virtual PString LoadText(
-      PHTTPRequest & request    /// Information on this request.
+      PHTTPRequest & request    ///< Information on this request.
     );
 
     /** Enable or disable access control using .access files. A directory tree containing
@@ -1868,20 +1881,20 @@ class PHTTPDirectory : public PHTTPFile
 
     /** Enable or disable directory listings when a default directory file does not exist
      */
-    void AllowDirectories(BOOL enable = TRUE);
+    void AllowDirectories(PBoolean enable = true);
 
   protected:
-    BOOL CheckAuthority(
+    PBoolean CheckAuthority(
       PHTTPServer & server,               // Server to send response to.
       const PHTTPRequest & request,       // Information on this request.
       const PHTTPConnectionInfo & conInfo // Information on the connection
     );
 
-    BOOL FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations);
+    PBoolean FindAuthorisations(const PDirectory & dir, PString & realm, PStringToString & authorisations);
 
     PDirectory basePath;
     PString authorisationRealm;
-    BOOL allowDirectoryListing;
+    PBoolean allowDirectoryListing;
 };
 
 
@@ -1892,7 +1905,8 @@ class PHTTPDirRequest : public PHTTPFileRequest
     PHTTPDirRequest(
       const PURL & url,             // Universal Resource Locator for document.
       const PMIMEInfo & inMIME,     // Extra MIME information in command.
-      const PMultipartFormInfoArray & multipartFormInfo, 
+      const PMultiPartList & multipartFormInfo, 
+      PHTTPResource * resource,
       PHTTPServer & server
     );
 
@@ -1900,9 +1914,13 @@ class PHTTPDirRequest : public PHTTPFileRequest
     PFilePath realPath;
 };
 
-#endif // P_HTTPSVC
 
-#endif
+PFACTORY_LOAD(PURL_HttpLoader);
+
+
+#endif // P_HTTP
+
+#endif // PTLIB_HTTP_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

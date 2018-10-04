@@ -23,200 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: inetprot.cxx,v $
- * Revision 1.60  2005/04/15 10:49:38  dsandras
- * Allow reading on the transport until there is an EOF or it becomes bad. Fixes interoperability problem with QSC.DE which is sending keep-alive messages, leading to a timeout (transport.good() fails, but the stream is still usable).
- *
- * Revision 1.59  2005/04/06 19:34:14  dsandras
- * Fixed typo in previous commit.
- *
- * Revision 1.58  2005/04/06 07:56:58  dsandras
- * Added continuation line support in MimeInfo to fix problem reported by Jan Schiefer thanks to Craig Southeren.
- *
- * Revision 1.57  2004/04/03 08:22:20  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.56  2004/03/23 05:59:17  csoutheren
- * Moved the Base64 routines into cypher.cxx, which is a more sensible
- * place and reduces the inclusion of unrelated code
- *
- * Revision 1.55  2002/12/19 03:35:01  craigs
- * Fixed problem with PInternetProtocol::Write returning wrong values
- *
- * Revision 1.54  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.53  2002/01/06 05:40:47  robertj
- * Fixed wrong number of columns in base 64 encoder, thanks Lars Güsmar
- *
- * Revision 1.52  2001/10/03 00:25:25  robertj
- * Split out function for adding a single line of MIME info, reduces
- *    duplicated code and is useful in some other areas such as HTTP/1.1
- *
- * Revision 1.51  2001/09/28 00:44:15  robertj
- * Added SetInteger() function to set numeric MIME fields.
- *
- * Revision 1.50  2001/09/11 03:27:46  robertj
- * Improved error processing on high level protocol failures, usually
- *   caused by unexpected shut down of a socket.
- *
- * Revision 1.49  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.48  2000/11/27 00:58:06  robertj
- * Fixed crash if used PBase64::ProcessEncoding() with zero length.
- *
- * Revision 1.47  2000/11/16 07:16:58  robertj
- * Fixed maximum line length of base64 output to be 76 columns not 304.
- *
- * Revision 1.46  2000/11/14 08:28:44  robertj
- * Fixed bug in base64 encoder, overwriting memory buffer.
- *
- * Revision 1.45  2000/05/05 10:08:29  robertj
- * Fixed some GNU compiler warnings
- *
- * Revision 1.44  2000/05/02 08:29:07  craigs
- * Removed "memory leaks" caused by brain-dead GNU linker
- *
- * Revision 1.43  1999/05/04 15:26:01  robertj
- * Improved HTTP/1.1 compatibility (pass through user commands).
- * Fixed problems with quicktime installer.
- *
- * Revision 1.42  1998/12/04 10:08:01  robertj
- * Fixed bug in PMIMInfo read functions, should clear entries before loading.
- *
- * Revision 1.41  1998/11/30 04:52:02  robertj
- * New directory structure
- *
- * Revision 1.40  1998/11/03 01:03:09  robertj
- * Fixed problem with multiline response that is non-numeric.
- *
- * Revision 1.39  1998/10/16 02:05:55  robertj
- * Tried to make ReadLine more forgiving of CR CR LF combination.
- *
- * Revision 1.38  1998/09/23 06:22:20  robertj
- * Added open source copyright license.
- *
- * Revision 1.37  1998/07/24 06:55:00  robertj
- * Improved robustness of base64 decoding.
- *
- * Revision 1.36  1998/02/03 06:20:25  robertj
- * Fixed bug in Accept() function passing on to IP Accept().
- *
- * Revision 1.35  1998/01/26 02:49:20  robertj
- * GNU support.
- *
- * Revision 1.34  1998/01/26 00:46:48  robertj
- * Fixed Connect functions on PInternetProtocol so propagates read timeout variable so can adjust the connect timeout..
- *
- * Revision 1.33  1997/11/06 10:26:48  robertj
- * Fixed bug in debug dump of MIME dictionary, did not have linefeeds between entries.
- *
- * Revision 1.32  1997/06/09 04:30:03  robertj
- * Fixed multiple MIME field bug.
- *
- * Revision 1.31  1997/06/06 08:53:51  robertj
- * Fixed bug with multiple cookies (MIME fields) are sent to IE.
- *
- * Revision 1.30  1997/03/28 13:04:37  robertj
- * Fixed bug for multiple fields in MIME headers, especially cookies.
- *
- * Revision 1.29  1997/03/18 21:26:46  robertj
- * Fixed stream write of MIME putting double CR's in text files..
- *
- * Revision 1.28  1997/02/05 11:53:13  robertj
- * Changed construction of MIME dictionary to be delayed untill it is used.
- *
- * Revision 1.27  1996/12/05 11:41:12  craigs
- * Fix problem with STAT command response containing lines not starting
- * with response number
- *
- * Revision 1.26  1996/10/08 13:07:39  robertj
- * Changed default for assert to be ignore, not abort.
- *
- * Revision 1.25  1996/09/16 12:57:07  robertj
- * Fixed missing propagationof errors on open of subchannel.
- *
- * Revision 1.24  1996/09/14 13:09:36  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.23  1996/08/25 09:35:47  robertj
- * Added bug in appsock that last response is set on an I/O error.
- *
- * Revision 1.22  1996/07/15 10:33:14  robertj
- * Changed memory block base64 conversion functions to be void *.
- *
- * Revision 1.21  1996/06/03 11:58:43  robertj
- * Fixed bug in reading successive UnRead() calls getting save in wrong order.
- *
- * Revision 1.20  1996/05/26 03:46:22  robertj
- * Compatibility to GNU 2.7.x
- *
- * Revision 1.19  1996/05/15 10:15:15  robertj
- * Added access function to set intercharacter line read timeout.
- *
- * Revision 1.18  1996/05/09 12:14:04  robertj
- * Rewrote the "unread" buffer usage and then used it to improve ReadLine() performance.
- *
- * Revision 1.17  1996/03/31 08:57:34  robertj
- * Changed MIME type for no extension from binary to text.
- * Added flush of data before sending a command.
- * Added version of WriteCommand() and ExecteCommand() without argument string.
- *
- * Revision 1.15  1996/03/18 13:33:13  robertj
- * Fixed incompatibilities to GNU compiler where PINDEX != int.
- *
- * Revision 1.14  1996/03/16 04:53:07  robertj
- * Changed all the get host name and get host address functions to be more consistent.
- * Added ParseReponse() for splitting reponse line into code and info.
- * Changed lastResponseCode to an integer.
- * Fixed bug in MIME write function, should be const.
- * Added PString parameter version of UnRead().
- *
- * Revision 1.13  1996/03/04 12:20:41  robertj
- * Split file into mailsock.cxx
- *
- * Revision 1.12  1996/02/25 11:16:07  robertj
- * Fixed bug in ReadResponse() for multi-line responses under FTP..
- *
- * Revision 1.11  1996/02/25 03:05:12  robertj
- * Added decoding of Base64 to a block of memory instead of PBYTEArray.
- *
- * Revision 1.10  1996/02/19 13:31:26  robertj
- * Changed stuff to use new & operator..
- *
- * Revision 1.9  1996/02/15 14:42:41  robertj
- * Fixed warning for long to int conversion.
- *
- * Revision 1.8  1996/02/13 12:57:49  robertj
- * Added access to the last response in an application socket.
- *
- * Revision 1.7  1996/02/03 11:33:17  robertj
- * Changed RadCmd() so can distinguish between I/O error and unknown command.
- *
- * Revision 1.6  1996/01/28 14:11:11  robertj
- * Fixed bug in MIME content types for non caseless strings.
- * Added default value in string for service name.
- *
- * Revision 1.5  1996/01/28 02:48:27  robertj
- * Removal of MemoryPointer classes as usage didn't work for GNU.
- *
- * Revision 1.4  1996/01/26 02:24:29  robertj
- * Further implemetation.
- *
- * Revision 1.3  1996/01/23 13:18:43  robertj
- * Major rewrite for HTTP support.
- *
- * Revision 1.2  1995/11/09 12:19:29  robertj
- * Fixed missing state assertion in state machine.
- *
- * Revision 1.1  1995/06/17 00:50:37  robertj
- * Initial revision
- *
+ * $Revision: 26959 $
+ * $Author: rjongbloed $
+ * $Date: 2012-02-08 17:56:28 -0600 (Wed, 08 Feb 2012) $
  */
 
 #ifdef __GNUC__
@@ -233,6 +42,9 @@
 static const char * CRLF = "\r\n";
 
 
+#define new PNEW
+
+
 //////////////////////////////////////////////////////////////////////////////
 // PInternetProtocol
 
@@ -240,12 +52,12 @@ PInternetProtocol::PInternetProtocol(const char * svcName,
                                      PINDEX cmdCount,
                                      char const * const * cmdNames)
   : defaultServiceName(svcName),
-    commandNames(cmdCount, cmdNames, TRUE),
+    commandNames(cmdCount, cmdNames, true),
     readLineTimeout(0, 10)   // 10 seconds
 {
   SetReadTimeout(PTimeInterval(0, 0, 10));  // 10 minutes
   stuffingState = DontStuff;
-  newLineToCRLF = TRUE;
+  newLineToCRLF = true;
   unReadCount = 0;
 }
 
@@ -256,7 +68,7 @@ void PInternetProtocol::SetReadLineTimeout(const PTimeInterval & t)
 }
 
 
-BOOL PInternetProtocol::Read(void * buf, PINDEX len)
+PBoolean PInternetProtocol::Read(void * buf, PINDEX len)
 {
   lastReadCount = PMIN(unReadCount, len);
   const char * unReadPtr = ((const char *)unReadBuffer)+unReadCount;
@@ -280,7 +92,7 @@ BOOL PInternetProtocol::Read(void * buf, PINDEX len)
 }
 
 
-BOOL PInternetProtocol::Write(const void * buf, PINDEX len)
+PBoolean PInternetProtocol::Write(const void * buf, PINDEX len)
 {
   if (len == 0 || stuffingState == DontStuff)
     return PIndirectChannel::Write(buf, len);
@@ -300,11 +112,11 @@ BOOL PInternetProtocol::Write(const void * buf, PINDEX len)
             if (newLineToCRLF) {
               if (current > base) {
                 if (!PIndirectChannel::Write(base, current - base))
-                  return FALSE;
+                  return false;
                 totalWritten += lastWriteCount;
               }
               if (!PIndirectChannel::Write("\r", 1))
-                return FALSE;
+                return false;
               totalWritten += lastWriteCount;
               base = current;
             }
@@ -319,11 +131,11 @@ BOOL PInternetProtocol::Write(const void * buf, PINDEX len)
         if (*current == '.') {
           if (current > base) {
             if (!PIndirectChannel::Write(base, current - base))
-              return FALSE;
+              return false;
             totalWritten += lastWriteCount;
           }
           if (!PIndirectChannel::Write(".", 1))
-            return FALSE;
+            return false;
           totalWritten += lastWriteCount;
           base = current;
         }
@@ -338,7 +150,7 @@ BOOL PInternetProtocol::Write(const void * buf, PINDEX len)
 
   if (current > base) {  
     if (!PIndirectChannel::Write(base, current - base))  
-      return FALSE;  
+      return false;  
     totalWritten += lastWriteCount;  
   }  
   
@@ -347,11 +159,11 @@ BOOL PInternetProtocol::Write(const void * buf, PINDEX len)
 }
 
 
-BOOL PInternetProtocol::AttachSocket(PIPSocket * socket)
+PBoolean PInternetProtocol::AttachSocket(PIPSocket * socket)
 {
   if (socket->IsOpen()) {
     if (Open(socket))
-      return TRUE;
+      return true;
     Close();
     SetErrorValues(Miscellaneous, 0x41000000);
   }
@@ -360,11 +172,11 @@ BOOL PInternetProtocol::AttachSocket(PIPSocket * socket)
     delete socket;
   }
 
-  return FALSE;
+  return false;
 }
 
 
-BOOL PInternetProtocol::Connect(const PString & address, WORD port)
+PBoolean PInternetProtocol::Connect(const PString & address, WORD port)
 {
   if (port == 0)
     return Connect(address, defaultServiceName);
@@ -379,7 +191,7 @@ BOOL PInternetProtocol::Connect(const PString & address, WORD port)
 }
 
 
-BOOL PInternetProtocol::Connect(const PString & address, const PString & service)
+PBoolean PInternetProtocol::Connect(const PString & address, const PString & service)
 {
   if (readTimeout == PMaxTimeInterval)
     return AttachSocket(new PTCPSocket(address, service));
@@ -392,7 +204,7 @@ BOOL PInternetProtocol::Connect(const PString & address, const PString & service
 }
 
 
-BOOL PInternetProtocol::Accept(PSocket & listener)
+PBoolean PInternetProtocol::Accept(PSocket & listener)
 {
   if (readTimeout == PMaxTimeInterval)
     return AttachSocket(new PTCPSocket(listener));
@@ -419,7 +231,7 @@ PIPSocket * PInternetProtocol::GetSocket() const
 }
 
 
-BOOL PInternetProtocol::WriteLine(const PString & line)
+PBoolean PInternetProtocol::WriteLine(const PString & line)
 {
   if (line.FindOneOf(CRLF) == P_MAX_INDEX)
     return WriteString(line + CRLF);
@@ -427,23 +239,23 @@ BOOL PInternetProtocol::WriteLine(const PString & line)
   PStringArray lines = line.Lines();
   for (PINDEX i = 0; i < lines.GetSize(); i++)
     if (!WriteString(lines[i] + CRLF))
-      return FALSE;
+      return false;
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PInternetProtocol::ReadLine(PString & str, BOOL allowContinuation)
+PBoolean PInternetProtocol::ReadLine(PString & str, PBoolean allowContinuation)
 {
   str = PString();
 
   PCharArray line(100);
   PINDEX count = 0;
-  BOOL gotEndOfLine = FALSE;
+  PBoolean gotEndOfLine = false;
 
   int c = ReadChar();
   if (c < 0)
-    return FALSE;
+    return false;
 
   PTimeInterval oldTimeout = GetReadTimeout();
   SetReadTimeout(readLineTimeout);
@@ -486,10 +298,10 @@ BOOL PInternetProtocol::ReadLine(PString & str, BOOL allowContinuation)
 
       case '\n' :
         if (count == 0 || !allowContinuation || (c = ReadChar()) < 0)
-          gotEndOfLine = TRUE;
+          gotEndOfLine = true;
         else if (c != ' ' && c != '\t') {
           UnRead(c);
-          gotEndOfLine = TRUE;
+          gotEndOfLine = true;
         }
         break;
 
@@ -533,18 +345,18 @@ void PInternetProtocol::UnRead(const void * buffer, PINDEX len)
 }
 
 
-BOOL PInternetProtocol::WriteCommand(PINDEX cmdNumber)
+PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber)
 {
   if (cmdNumber >= commandNames.GetSize())
-    return FALSE;
+    return false;
   return WriteLine(commandNames[cmdNumber]);
 }
 
 
-BOOL PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param)
+PBoolean PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param)
 {
   if (cmdNumber >= commandNames.GetSize())
-    return FALSE;
+    return false;
   if (param.IsEmpty())
     return WriteLine(commandNames[cmdNumber]);
   else
@@ -552,11 +364,11 @@ BOOL PInternetProtocol::WriteCommand(PINDEX cmdNumber, const PString & param)
 }
 
 
-BOOL PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
+PBoolean PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
 {
   do {
     if (!ReadLine(args))
-      return FALSE;
+      return false;
   } while (args.IsEmpty());
 
   PINDEX endCommand = args.Find(' ');
@@ -568,33 +380,33 @@ BOOL PInternetProtocol::ReadCommand(PINDEX & num, PString & args)
   if (num != P_MAX_INDEX)
     args = args.Mid(endCommand+1);
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PInternetProtocol::WriteResponse(unsigned code, const PString & info)
+PBoolean PInternetProtocol::WriteResponse(unsigned code, const PString & info)
 {
   return WriteResponse(psprintf("%03u", code), info);
 }
 
 
-BOOL PInternetProtocol::WriteResponse(const PString & code,
+PBoolean PInternetProtocol::WriteResponse(const PString & code,
                                        const PString & info)
 {
   if (info.FindOneOf(CRLF) == P_MAX_INDEX)
-    return WriteString(code & info + CRLF);
+    return WriteString((code & info) + CRLF);
 
   PStringArray lines = info.Lines();
   PINDEX i;
   for (i = 0; i < lines.GetSize()-1; i++)
     if (!WriteString(code + '-' + lines[i] + CRLF))
-      return FALSE;
+      return false;
 
-  return WriteString(code & lines[i] + CRLF);
+  return WriteString((code & lines[i]) + CRLF);
 }
 
 
-BOOL PInternetProtocol::ReadResponse()
+PBoolean PInternetProtocol::ReadResponse()
 {
   PString line;
   if (!ReadLine(line)) {
@@ -605,12 +417,12 @@ BOOL PInternetProtocol::ReadResponse()
       lastResponseInfo = "Remote shutdown";
       SetErrorValues(ProtocolFailure, 0, LastReadError);
     }
-    return FALSE;
+    return false;
   }
 
   PINDEX continuePos = ParseResponse(line);
   if (continuePos == 0)
-    return TRUE;
+    return true;
 
   PString prefix = line.Left(continuePos);
   char continueChar = line[continuePos];
@@ -622,7 +434,7 @@ BOOL PInternetProtocol::ReadResponse()
         lastResponseInfo += GetErrorText(LastReadError);
       else
         SetErrorValues(ProtocolFailure, 0, LastReadError);
-      return FALSE;
+      return false;
     }
     if (line.Left(continuePos) == prefix)
       lastResponseInfo += line.Mid(continuePos+1);
@@ -630,13 +442,13 @@ BOOL PInternetProtocol::ReadResponse()
       lastResponseInfo += line;
   }
 
-  return TRUE;
+  return true;
 }
 
 
-BOOL PInternetProtocol::ReadResponse(int & code, PString & info)
+PBoolean PInternetProtocol::ReadResponse(int & code, PString & info)
 {
-  BOOL retval = ReadResponse();
+  PBoolean retval = ReadResponse();
 
   code = lastResponseCode;
   info = lastResponseInfo;
@@ -705,9 +517,39 @@ PMIMEInfo::PMIMEInfo(PInternetProtocol & socket)
 }
 
 
+PMIMEInfo::PMIMEInfo(const PStringToString & dict)
+  : PStringOptions(dict)
+{
+}
+
+
+PMIMEInfo::PMIMEInfo(const PString & str)
+{
+  PStringStream strm(str);
+  ReadFrom(strm);
+}
+
+
+PString PMIMEInfo::AsString() const
+{
+  PStringStream strm;
+  PrintOn(strm);
+  return strm;
+}
+
+
 void PMIMEInfo::PrintOn(ostream &strm) const
 {
-  BOOL output_cr = strm.fill() == '\r';
+  bool crlf = strm.fill() == '\r';
+  PrintContents(strm);
+  if (crlf)
+    strm << '\r';
+  strm << '\n';
+}
+
+ostream & PMIMEInfo::PrintContents(ostream &strm) const
+{
+  PBoolean output_cr = strm.fill() == '\r';
   strm.fill(' ');
   for (PINDEX i = 0; i < GetSize(); i++) {
     PString name = GetKeyAt(i) + ": ";
@@ -728,9 +570,7 @@ void PMIMEInfo::PrintOn(ostream &strm) const
       strm << '\n';
     }
   }
-  if (output_cr)
-    strm << '\r';
-  strm << endl;
+  return strm;
 }
 
 
@@ -740,11 +580,11 @@ void PMIMEInfo::ReadFrom(istream &strm)
 
   PString line;
   PString lastLine;
-  while (!strm.bad() && !strm.eof()) {
+  while (strm.good()) {
     strm >> line;
     if (line.IsEmpty())
       break;
-    if (line[0] == ' ') 
+    if (line[0] == ' ' || line[0] == '\t') // RFC 2822 section 2.2.2 & 2.2.3
       lastLine += line;
     else {
       AddMIME(lastLine);
@@ -758,40 +598,58 @@ void PMIMEInfo::ReadFrom(istream &strm)
 }
 
 
-BOOL PMIMEInfo::Read(PInternetProtocol & socket)
+PBoolean PMIMEInfo::Read(PInternetProtocol & socket)
 {
   RemoveAll();
 
   PString line;
-  while (socket.ReadLine(line, TRUE)) {
+  while (socket.ReadLine(line, true)) {
     if (line.IsEmpty())
-      return TRUE;
+      return true;
     AddMIME(line);
   }
 
-  return FALSE;
+  return false;
 }
 
 
-BOOL PMIMEInfo::AddMIME(const PString & line)
+bool PMIMEInfo::AddMIME(const PString & line)
 {
   PINDEX colonPos = line.Find(':');
   if (colonPos == P_MAX_INDEX)
-    return FALSE;
+    return false;
 
   PCaselessString fieldName  = line.Left(colonPos).Trim();
   PString fieldValue = line(colonPos+1, P_MAX_INDEX).Trim();
 
-  if (Contains(fieldName))
-    fieldValue = (*this)[fieldName] + '\n' + fieldValue;
-
-  SetAt(fieldName, fieldValue);
-
-  return TRUE;
+  return AddMIME(fieldName, fieldValue);
 }
 
 
-BOOL PMIMEInfo::Write(PInternetProtocol & socket) const
+bool PMIMEInfo::InternalAddMIME(const PString & fieldName, const PString & fieldValue)
+{
+  PString * str = GetAt(fieldName);
+  if (str == NULL)
+    return SetAt(fieldName, fieldValue);
+
+  *str += '\n';
+  *str += fieldValue;
+  return true;
+}
+
+
+bool PMIMEInfo::AddMIME(const PMIMEInfo & mime)
+{
+  for (PINDEX i = 0; i < mime.GetSize(); ++i) {
+    if (!AddMIME(mime.GetKeyAt(i), mime.GetDataAt(i)))
+      return false;
+  }
+
+  return true;
+}
+
+
+PBoolean PMIMEInfo::Write(PInternetProtocol & socket) const
 {
   for (PINDEX i = 0; i < GetSize(); i++) {
     PString name = GetKeyAt(i) + ": ";
@@ -800,12 +658,12 @@ BOOL PMIMEInfo::Write(PInternetProtocol & socket) const
       PStringArray vals = value.Lines();
       for (PINDEX j = 0; j < vals.GetSize(); j++) {
         if (!socket.WriteLine(name + vals[j]))
-          return FALSE;
+          return false;
       }
     }
     else {
       if (!socket.WriteLine(name + value))
-        return FALSE;
+        return false;
     }
   }
 
@@ -813,25 +671,94 @@ BOOL PMIMEInfo::Write(PInternetProtocol & socket) const
 }
 
 
-PString PMIMEInfo::GetString(const PString & key, const PString & dflt) const
+bool PMIMEInfo::ParseComplex(const PString & fieldValue, PStringToString & info)
 {
-  if (GetAt(PCaselessString(key)) == NULL)
-    return dflt;
-  return operator[](key);
+  info.RemoveAll();
+
+  PStringArray fields = fieldValue.Lines();
+  for (PINDEX f = 0; f < fields.GetSize(); ++f) {
+    PString field = fields[f];
+
+    PINDEX tagSep = 0;
+    while (tagSep != P_MAX_INDEX) {
+      if (field[tagSep] == ',') {
+        while (isspace(field[tagSep]) || field[tagSep] == ',')
+          tagSep++;
+        if (field[tagSep] == '\0')
+          break;
+      }
+
+      if (field[tagSep] == ';')
+        continue;
+
+      PString keyPrefix;
+
+      if (!info.IsEmpty()) {
+        unsigned count = 0;
+        do {
+          keyPrefix = psprintf("%u:", ++count);
+        } while (info.Contains(keyPrefix));
+      }
+
+      if (field[tagSep] != '<') {
+        PINDEX nextSep = field.FindOneOf(";,", tagSep);
+        info.SetAt(keyPrefix, field(tagSep, nextSep-1).Trim());
+        tagSep = nextSep;
+      }
+      else {
+        PINDEX endtoken = field.Find('>', tagSep);
+        info.SetAt(keyPrefix, field(tagSep+1, endtoken-1));
+        tagSep = field.FindOneOf(";,", endtoken);
+      }
+
+      while (tagSep != P_MAX_INDEX && field[tagSep] != ',') {
+        ++tagSep; // Skip past ';'
+        PINDEX pos = field.FindOneOf("=;,", tagSep);
+        PCaselessString tag = field(tagSep, pos-1).Trim();
+
+        if (pos == P_MAX_INDEX || field[pos] == ',') {
+          info.SetAt(keyPrefix+tag, PString::Empty());
+          break;
+        }
+
+        if (field[pos] == ';') {
+          info.SetAt(keyPrefix+tag, PString::Empty());
+          tagSep = pos;
+          continue;
+        }
+
+        do {
+          ++pos;
+        } while (isspace(field[pos]));
+
+        if (field[pos] != '"') {
+          tagSep = field.FindOneOf(";,", pos);
+          info.SetAt(keyPrefix+tag, PCaselessString(field(pos, tagSep-1).RightTrim()));
+          continue;
+        }
+
+        ++pos;
+        PINDEX quote = pos;
+        while ((quote = field.Find('"', quote)) != P_MAX_INDEX && field[quote-1] == '\\')
+          ++quote;
+
+        PString value = field(pos, quote-1);
+        value.Replace("\\", "", true);
+        info.SetAt(keyPrefix+tag, value);
+
+        tagSep = field.FindOneOf(";,", quote);
+      }
+    }
+  }
+
+  return !info.IsEmpty();
 }
 
 
-long PMIMEInfo::GetInteger(const PString & key, long dflt) const
+bool PMIMEInfo::DecodeMultiPartList(PMultiPartList & parts, const PString & body, const PCaselessString & key) const
 {
-  if (GetAt(PCaselessString(key)) == NULL)
-    return dflt;
-  return operator[](key).AsInteger();
-}
-
-
-void PMIMEInfo::SetInteger(const PCaselessString & key, long value)
-{
-  SetAt(key, PString(PString::Unsigned, value));
+  PStringToString info;
+  return GetComplex(key, info) && parts.Decode(body, info);
 }
 
 
@@ -863,12 +790,12 @@ PStringToString & PMIMEInfo::GetContentTypes()
 {
   static PStringToString contentTypes(PARRAYSIZE(DefaultContentTypes),
                                       DefaultContentTypes,
-                                      TRUE);
+                                      true);
   return contentTypes;
 }
 
 
-void PMIMEInfo::SetAssociation(const PStringToString & allTypes, BOOL merge)
+void PMIMEInfo::SetAssociation(const PStringToString & allTypes, PBoolean merge)
 {
   PStringToString & types = GetContentTypes();
   if (!merge)
@@ -881,7 +808,7 @@ void PMIMEInfo::SetAssociation(const PStringToString & allTypes, BOOL merge)
 PString PMIMEInfo::GetContentType(const PString & fType)
 {
   if (fType.IsEmpty())
-    return "text/plain";
+    return PMIMEInfo::TextPlain();
 
   PStringToString & types = GetContentTypes();
   if (types.Contains(fType))
@@ -889,5 +816,140 @@ PString PMIMEInfo::GetContentType(const PString & fType)
 
   return "application/octet-stream";
 }
+
+
+const PCaselessString & PMIMEInfo::ContentTypeTag()             { static const PConstCaselessString s("Content-Type");              return s; }
+const PCaselessString & PMIMEInfo::ContentDispositionTag()      { static const PConstCaselessString s("Content-Disposition");       return s; }
+const PCaselessString & PMIMEInfo::ContentTransferEncodingTag() { static const PConstCaselessString s("Content-Transfer-Encoding"); return s; }
+const PCaselessString & PMIMEInfo::ContentDescriptionTag()      { static const PConstCaselessString s("Content-Description");       return s; }
+const PCaselessString & PMIMEInfo::ContentIdTag()               { static const PConstCaselessString s("Content-ID");                return s; }
+
+const PCaselessString & PMIMEInfo::TextPlain()                  { static const PConstCaselessString s("text/plain");                return s; }
+
+
+//////////////////////////////////////////////////////////////////////////////
+
+static PINDEX FindBoundary(const PString & boundary, const char * & bodyPtr, PINDEX & bodyLen)
+{
+  PINDEX boundaryLen = boundary.GetLength();
+  const char * base = bodyPtr;
+  const char * found;
+  while (bodyLen >= boundaryLen && (found = (const char *)memchr(bodyPtr, boundary[0], bodyLen)) != NULL) {
+    PINDEX skip = found - bodyPtr + 1;
+    bodyPtr += skip;
+    bodyLen -= skip;
+
+    if (bodyLen >= boundaryLen && memcmp(found, (const char *)boundary, boundaryLen) == 0) {
+      bodyPtr += boundaryLen;
+      bodyLen -= boundaryLen;
+      if (bodyLen < 2)
+        return P_MAX_INDEX;
+
+      if (bodyPtr[0] == '\r') {
+        ++bodyPtr;
+        --bodyLen;
+      }
+      if (bodyPtr[0] == '\n') {
+        ++bodyPtr;
+        --bodyLen;
+      }
+
+      PINDEX len = found - base;
+      if (len > 0 && *(found-1) == '\n') {
+        --len;
+        if (len > 0 && *(found-2) == '\r')
+          --len;
+      }
+      return len;
+    }
+  }
+
+  return P_MAX_INDEX;
+}
+
+bool PMultiPartList::Decode(const PString & entityBody, const PStringToString & contentInfo)
+{
+  RemoveAll();
+
+  if (entityBody.IsEmpty())
+    return false;
+
+  PCaselessString multipartContentType = contentInfo(PString::Empty());
+  if (multipartContentType.NumCompare("multipart/") != EqualTo)
+    return false;
+
+  if (!contentInfo.Contains("boundary")) {
+    PTRACE(2, "MIME\tNo boundary in multipart Content-Type");
+    return false;
+  }
+
+  PCaselessString startContentId, startContentType;
+  if (multipartContentType == "multipart/related") {
+    startContentId = contentInfo("start");
+    startContentType = contentInfo("type");
+  }
+
+  PString boundary = "--" + contentInfo["boundary"];
+
+  // split body into parts, assuming binary data
+  const char * bodyPtr = (const char *)entityBody;
+  PINDEX bodyLen = entityBody.GetSize()-1;
+
+  // Find first boundary
+  if (FindBoundary(boundary, bodyPtr, bodyLen) == P_MAX_INDEX) {
+    PTRACE(2, "MIME\tNo boundary found in multipart body");
+    return false;
+  }
+
+  for (;;) {
+    const char * partPtr = bodyPtr;
+    PINDEX partLen = FindBoundary(boundary, bodyPtr, bodyLen);
+    if (partLen == P_MAX_INDEX)
+      break;
+
+    // create the new part info
+    PMultiPartInfo * info = new PMultiPartInfo;
+
+    // read MIME information
+    PStringStream strm(PString(partPtr, partLen));
+    info->m_mime.ReadFrom(strm);
+
+    // Skip over MIME
+    partPtr += (int)strm.tellp();
+    partLen -= (int)strm.tellp();
+
+    // Check transfer encoding
+    PStringToString typeInfo;
+    info->m_mime.GetComplex(PMIMEInfo::ContentTypeTag, typeInfo);
+    PCaselessString encoding = info->m_mime.GetString(PMIMEInfo::ContentTransferEncodingTag);
+
+    // save the entity body, being careful of binary files
+    if (encoding == "base64")
+      PBase64::Decode(PString(partPtr, partLen), info->m_binaryBody);
+    else if (typeInfo("charset") *= "UCS-2")
+      info->m_textBody = PString((const wchar_t *)partPtr, partLen/2);
+    else if (encoding == "7bit" || encoding == "8bit" || (typeInfo("charset") *= "UTF-8") || memchr(partPtr, 0, partLen) == NULL)
+      info->m_textBody = PString(partPtr, partLen);
+    else
+      info->m_binaryBody = PBYTEArray((const BYTE *)partPtr, partLen);
+
+    // add the data to the array
+    if (startContentId.IsEmpty() || startContentId != info->m_mime.GetString(PMIMEInfo::ContentIdTag))
+      Append(info);
+    else {
+      // Make sure start Content Type is set
+      if (!info->m_mime.Contains(PMIMEInfo::ContentTypeTag))
+        info->m_mime.SetAt(PMIMEInfo::ContentTypeTag, startContentType);
+
+      // Make sure "start" mime entry is at the beginning of list
+      InsertAt(0, info);
+      startContentId.MakeEmpty();
+    }
+
+  }
+
+  return !IsEmpty();
+}
+
 
 // End Of File ///////////////////////////////////////////////////////////////

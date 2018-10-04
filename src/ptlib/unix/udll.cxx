@@ -26,74 +26,16 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: udll.cxx,v $
- * Revision 1.19  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.18  2005/08/04 20:10:24  csoutheren
- * Apply patch #1217596
- * Fixed problems with MacOSX Tiger
- * Thanks to Hannes Friederich
- *
- * Revision 1.17  2004/05/11 01:15:53  csoutheren
- * Included name into Unix PDynaLink implementation
- *
- * Revision 1.16  2003/09/11 00:52:13  dereksmithies
- * Full dependancy check on dynamically loading a library.
- * Thanks to Snark on #gnomemeeting for pointing this out...
- *
- * Revision 1.15  2003/07/09 11:37:13  rjongbloed
- * Fixed corrct closing of DLL (setting handle to NULL) thanks Fabrizio Ammollo
- *
- * Revision 1.14  2003/05/14 10:50:30  dereksmithies
- * Quick hack to add the function: PDynaLink::GetName().  Fix me.
- *
- * Revision 1.13  2003/05/06 06:59:12  robertj
- * Dynamic library support for MacOSX, thanks Hugo Santos
- *
- * Revision 1.12  2003/04/16 07:17:35  craigs
- * CHanged to use new #define
- *
- * Revision 1.11  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.10  2001/03/07 06:57:52  yurik
- * Changed email to current one
- *
- * Revision 1.9  2000/03/10 08:21:17  rogerh
- * Add correct OpenBSD support
- *
- * Revision 1.8  2000/03/09 18:41:53  rogerh
- * Workaround for OpenBSD. This breaks the functionality on OpenBSD but
- * gains us a clean compilation. We can return to this problem later.
- *
- * Revision 1.7  1999/02/22 13:26:54  robertj
- * BeOS port changes.
- *
- * Revision 1.6  1999/02/06 05:49:44  robertj
- * BeOS port effort by Yuri Kiryanov <openh323@kiryanov.com>
- *
- * Revision 1.5  1998/11/30 21:52:03  robertj
- * New directory structure.
- *
- * Revision 1.4  1998/09/24 04:12:26  robertj
- * Added open software license.
- *
- * Revision 1.3  1998/01/04 08:11:41  craigs
- * Remove Solarisism and made platform independent
- *
- * Revision 1.2  1997/10/30 12:41:22  craigs
- * Added GetExtension command
- *
- * Revision 1.1  1997/04/22 10:58:17  craigs
- * Initial revision
- *
- *
+ * $Revision: 27830 $
+ * $Author: rjongbloed $
+ * $Date: 2012-06-14 18:53:46 -0500 (Thu, 14 Jun 2012) $
  */
 
 #pragma implementation "dynalink.h"
 
 #include <ptlib.h>
+
+#if P_DYNALINK
 
 #ifdef P_MACOSX
 #if P_MACOSX < 700
@@ -150,8 +92,6 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 static void *dlsymIntern(void *handle, const char *symbol);
 
 static const char *error(int setget, const char *str, ...);
-
-
 
 /* Set and get the error string for use by dlerror */
 static const char *error(int setget, const char *str, ...)
@@ -344,21 +284,26 @@ static void *dlsym(void *handle, const char *symbol)
 
 #endif // P_MACOSX
 
-#ifndef  P_DYNALINK
 
-#warning "No implementation for dynamic library functions"
 
+#ifdef P_PTHREADS
+static pthread_mutex_t g_DLLMutex = PTHREAD_MUTEX_INITIALIZER;
+#define LOCK_DLFCN() pthread_mutex_lock(&g_DLLMutex)
+#define UNLOCK_DLFCN() pthread_mutex_unlock(&g_DLLMutex)
 #else
+#define LOCK_DLFCN()
+#define UNLOCK_DLFCN()
+#endif
+
 
 PDynaLink::PDynaLink()
+  : dllHandle(NULL)
 {
-  dllHandle = NULL;
 }
 
 PDynaLink::PDynaLink(const PString & _name)
-  : name(_name)
+  : dllHandle(NULL)
 {
-  dllHandle = NULL;
   Open(_name);
 }
 
@@ -369,79 +314,114 @@ PDynaLink::~PDynaLink()
 
 PString PDynaLink::GetExtension()
 {
+#ifdef P_MACOSX
+  return PString(".dylib");
+#else
   return PString(".so");
+#endif
 }
 
-BOOL PDynaLink::Open(const PString & _name)
+PBoolean PDynaLink::Open(const PString & _name)
 {
+  m_lastError.MakeEmpty();
+
   Close();
+
+  if (_name.IsEmpty())
+    return false;
+
+  PTRACE(4, "UDLL\topening " << _name);
 
   name = _name;
 
+  LOCK_DLFCN();
+
 #if defined(P_OPENBSD)
-  dllHandle = dlopen((char *)(const char *)name, RTLD_NOW);
+    dllHandle = dlopen((char *)(const char *)name, RTLD_NOW);
 #else
-  dllHandle = dlopen((const char *)name, RTLD_NOW);
+    dllHandle = dlopen((const char *)name, RTLD_NOW);
 #endif
+
+  if (dllHandle == NULL) {
+    m_lastError = dlerror();
+    PTRACE(1, "DLL\tError loading DLL: " << m_lastError);
+  }
+
+  UNLOCK_DLFCN();
 
   return IsLoaded();
 }
 
 void PDynaLink::Close()
 {
-  if (dllHandle != NULL) {
-    dlclose(dllHandle);
-    dllHandle = NULL;
-  }
+// without the hack to force late destruction of the DLL mutex this may crash for static PDynaLink instances
+  if (dllHandle == NULL)
+    return;
+
+  PTRACE(4, "UDLL\tClosing " << name);
   name.MakeEmpty();
+
+  LOCK_DLFCN();
+  dlclose(dllHandle);
+  dllHandle = NULL;
+  UNLOCK_DLFCN();
 }
 
-BOOL PDynaLink::IsLoaded() const
+PBoolean PDynaLink::IsLoaded() const
 {
   return dllHandle != NULL;
 }
 
-PString PDynaLink::GetName(BOOL full) const
+PString PDynaLink::GetName(PBoolean full) const
 {
   if (!IsLoaded())
     return "";
 
+  if (full)
+    return name;
+
   PString str = name;
-  PINDEX pos = str.FindLast('/');
-  if (pos != P_MAX_INDEX)
-    str = str.Mid(pos+1);
-  pos = str.FindLast(".so");
-  if (pos != P_MAX_INDEX)
-    str = str.Left(pos);
+  if (!full) {
+    PINDEX pos = str.FindLast('/');
+    if (pos != P_MAX_INDEX)
+      str = str.Mid(pos+1);
+    pos = str.FindLast(".so");
+    if (pos != P_MAX_INDEX)
+      str = str.Left(pos);
+  }
 
   return str;
 }
 
 
-BOOL PDynaLink::GetFunction(PINDEX, Function &)
+PBoolean PDynaLink::GetFunction(PINDEX, Function &)
 {
-  return FALSE;
+  return false;
 }
 
-BOOL PDynaLink::GetFunction(const PString & fn, Function & func)
+PBoolean PDynaLink::GetFunction(const PString & fn, Function & func)
 {
+  m_lastError.MakeEmpty();
+
   if (dllHandle == NULL)
-    return FALSE;
+    return false;
 
+  LOCK_DLFCN();
 #if defined(P_OPENBSD)
-  void * p = dlsym(dllHandle, (char *)(const char *)fn);
+  func = (Function)dlsym(dllHandle, (char *)(const char *)fn);
 #else
-  void * p = dlsym(dllHandle, (const char *)fn);
+  func = (Function)dlsym(dllHandle, (const char *)fn);
 #endif
+  m_lastError = dlerror();
+  UNLOCK_DLFCN();
 
-  if (p == NULL)
-    return FALSE;
-
-  func = (Function &)p;
-  return TRUE;
+  return func != NULL;
 }
 
-#endif
+#else // P_DYNALINK
+
+#warning "No implementation for dynamic library functions"
+
+#endif // P_DYNALINK
 
 // End of file
-

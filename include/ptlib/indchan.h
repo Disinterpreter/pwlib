@@ -26,49 +26,20 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: indchan.h,v $
- * Revision 1.10  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.9  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.8  2001/09/10 02:51:22  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.7  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.6  2000/11/14 08:25:25  robertj
- * Added function to propagate the error text through to indirect channel.
- *
- * Revision 1.5  1999/06/17 13:38:11  robertj
- * Fixed race condition on indirect channel close, mutex needed in PIndirectChannel.
- *
- * Revision 1.4  1999/03/09 02:59:49  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.3  1999/02/16 08:12:00  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.2  1998/09/23 06:20:41  robertj
- * Added open source copyright license.
- *
- * Revision 1.1  1996/09/14 13:00:56  robertj
- * Initial revision
- *
+ * $Revision: 26933 $
+ * $Author: rjongbloed $
+ * $Date: 2012-02-02 21:17:20 -0600 (Thu, 02 Feb 2012) $
  */
 
-#ifndef _PINDIRECTCHANNEL
-#define _PINDIRECTCHANNEL
+#ifndef PTLIB_INDIRECTCHANNEL_H
+#define PTLIB_INDIRECTCHANNEL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#include <ptlib/channel.h>
+#include <ptlib/syncthrd.h>
 
 /**This is a channel that operates indirectly through another channel(s). This
    allows for a protocol to operate through a "channel" mechanism and for its
@@ -122,35 +93,35 @@ class PIndirectChannel : public PChannel
        channels and delete both of them if they are auto delete.
 
        @return
-       TRUE if the channel is closed.
+       true if the channel is closed.
      */
-    virtual BOOL Close();
+    virtual PBoolean Close();
 
     /**Determine if the channel is currently open and read and write operations
-       can be executed on it. For example, in the #PFile# class it returns
+       can be executed on it. For example, in the <code>PFile</code> class it returns
        if the file is currently open.
 
        @return
-       TRUE if the channel is open.
+       true if the channel is open.
      */
-    virtual BOOL IsOpen() const;
+    virtual PBoolean IsOpen() const;
 
     /**Low level read from the channel. This function may block until the
        requested number of characters were read or the read timeout was
        reached. The GetLastReadCount() function returns the actual number
        of bytes read.
 
-       This will use the #readChannel# pointer to actually do the
-       read. If #readChannel# is null the this asserts.
+       This will use the <code>readChannel</code> pointer to actually do the
+       read. If <code>readChannel</code> is null the this asserts.
 
        The GetErrorCode() function should be consulted after Read() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE indicates that at least one character was read from the channel.
-       FALSE means no bytes were read due to timeout or some other I/O error.
+       true indicates that at least one character was read from the channel.
+       false means no bytes were read due to timeout or some other I/O error.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -160,16 +131,16 @@ class PIndirectChannel : public PChannel
        reached. The GetLastWriteCount() function returns the actual number
        of bytes written.
 
-       This will use the #writeChannel# pointer to actually do the
-       write. If #writeChannel# is null the this asserts.
+       This will use the <code>writeChannel</code> pointer to actually do the
+       write. If <code>writeChannel</code> is null the this asserts.
 
        The GetErrorCode() function should be consulted after Write() returns
-       FALSE to determine what caused the failure.
+       false to determine what caused the failure.
 
        @return
-       TRUE if at least len bytes were written to the channel.
+       true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -180,15 +151,26 @@ class PIndirectChannel : public PChannel
        channels.
 
        @return
-       TRUE if the shutdown was successfully performed.
+       true if the shutdown was successfully performed.
      */
-    virtual BOOL Shutdown(
+    virtual PBoolean Shutdown(
       ShutdownValue option   ///< Flag for shut down of read, write or both.
+    );
+
+    /**Set local echo mode.
+       For some classes of channel, e.g. PConsoleChannel, data read by this
+       channel is automatically echoed. This disables the function so things
+       like password entry can work.
+
+       Default behaviour does nothing and return true if the channel is open.
+      */
+    virtual bool SetLocalEcho(
+      bool localEcho
     );
 
 
     /**This function returns the eventual base channel for reading of a series
-       of indirect channels provided by descendents of #PIndirectChannel#.
+       of indirect channels provided by descendents of <code>PIndirectChannel</code>.
 
        The behaviour for this function is to return "this".
        
@@ -198,7 +180,7 @@ class PIndirectChannel : public PChannel
     virtual PChannel * GetBaseReadChannel() const;
 
     /**This function returns the eventual base channel for writing of a series
-       of indirect channels provided by descendents of #PIndirectChannel#.
+       of indirect channels provided by descendents of <code>PIndirectChannel</code>.
 
        The behaviour for this function is to return "this".
        
@@ -221,46 +203,46 @@ class PIndirectChannel : public PChannel
   //@{
     /**Set the channel for both read and write operations. This then checks
        that they are open and then calls the OnOpen() virtual function. If
-       it in turn returns TRUE then the Open() function returns success.
+       it in turn returns true then the Open() function returns success.
 
        @return
-       TRUE if both channels are set, open and OnOpen() returns TRUE.
+       true if both channels are set, open and OnOpen() returns true.
      */
-    BOOL Open(
+    PBoolean Open(
       PChannel & channel   ///< Channel to be used for both read and write operations.
     );
 
     /**Set the channel for both read and write operations. This then checks
        that they are open and then calls the OnOpen() virtual function. If
-       it in turn returns TRUE then the Open() function returns success.
+       it in turn returns true then the Open() function returns success.
 
-       The channel pointed to by #channel# may be automatically deleted
+       The channel pointed to by <code>channel</code> may be automatically deleted
        when the PIndirectChannel is destroyed or a new subchannel opened.
 
        @return
-       TRUE if both channels are set, open and OnOpen() returns TRUE.
+       true if both channels are set, open and OnOpen() returns true.
      */
-    BOOL Open(
+    PBoolean Open(
       PChannel * channel,      ///< Channel to be used for both read and write operations.
-      BOOL autoDelete = TRUE   ///< Automatically delete the channel
+      PBoolean autoDelete = true   ///< Automatically delete the channel
     );
 
     /**Set the channel for both read and write operations. This then checks
        that they are open and then calls the OnOpen() virtual function. If
-       it in turn returns TRUE then the Open() function returns success.
+       it in turn returns true then the Open() function returns success.
 
-       The channels pointed to by #readChannel# and #writeChannel# may be
+       The channels pointed to by <code>readChannel</code> and <code>writeChannel</code> may be
        automatically deleted when the PIndirectChannel is destroyed or a
        new subchannel opened.
 
        @return
-       TRUE if both channels are set, open and OnOpen() returns TRUE.
+       true if both channels are set, open and OnOpen() returns true.
      */
-    BOOL Open(
+    PBoolean Open(
       PChannel * readChannel,      ///< Channel to be used for both read operations.
       PChannel * writeChannel,     ///< Channel to be used for both write operations.
-      BOOL autoDeleteRead = TRUE,  ///< Automatically delete the read channel
-      BOOL autoDeleteWrite = TRUE  ///< Automatically delete the write channel
+      PBoolean autoDeleteRead = true,  ///< Automatically delete the read channel
+      PBoolean autoDeleteWrite = true  ///< Automatically delete the write channel
     );
 
     /**Get the channel used for read operations.
@@ -273,11 +255,12 @@ class PIndirectChannel : public PChannel
     /**Set the channel for read operations.
 
        @return
-       Returns TRUE if both channels are set and are both open.
+       Returns true if both channels are set and are both open.
      */
-    BOOL SetReadChannel(
-      PChannel * channel,      ///< Channel to be used for both read operations.
-      BOOL autoDelete = TRUE   ///< Automatically delete the channel
+    bool SetReadChannel(
+      PChannel * channel,         ///< Channel to be used for both read operations.
+      bool autoDelete = true,     ///< Automatically delete the channel
+      bool closeExisting = false  ///< Close (and auto-delete) the existing read channel
     );
 
     /**Get the channel used for write operations.
@@ -290,11 +273,12 @@ class PIndirectChannel : public PChannel
     /**Set the channel for read operations.
 
        @return
-       Returns TRUE if both channels are set and are both open.
+       Returns true if both channels are set and are both open.
     */
-    BOOL SetWriteChannel(
-      PChannel * channel,      ///< Channel to be used for both write operations.
-      BOOL autoDelete = TRUE   ///< Automatically delete the channel
+    PBoolean SetWriteChannel(
+      PChannel * channel,         ///< Channel to be used for both read operations.
+      bool autoDelete = true,     ///< Automatically delete the channel
+      bool closeExisting = false  ///< Close (and auto-delete) the existing read channel
     );
   //@}
 
@@ -304,12 +288,12 @@ class PIndirectChannel : public PChannel
        open channels. It may be used by descendent channels to do any
        handshaking required by the protocol that channel embodies.
 
-       The default behaviour is to simply return TRUE.
+       The default behaviour is to simply return true.
 
        @return
-       Returns TRUE if the protocol handshaking is successful.
+       Returns true if the protocol handshaking is successful.
      */
-    virtual BOOL OnOpen();
+    virtual PBoolean OnOpen();
 
 
   // Member variables
@@ -317,20 +301,20 @@ class PIndirectChannel : public PChannel
     PChannel * readChannel;
 
     /// Automatically delete read channel on destruction.
-    BOOL readAutoDelete;
+    PBoolean readAutoDelete;
 
     /// Channel for write operations.
     PChannel * writeChannel;
 
     /// Automatically delete write channel on destruction.
-    BOOL writeAutoDelete;
+    PBoolean writeAutoDelete;
 
     /// Race condition prevention on closing channel
     PReadWriteMutex channelPointerMutex;
 };
 
 
-#endif // _PINDIRECTCHANNEL
+#endif // PTLIB_INDIRECTCHANNEL_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -26,147 +26,14 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pdirect.h,v $
- * Revision 1.43  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.42  2004/09/17 03:51:15  csoutheren
- * More fixes for PDirectory problem
- *
- * Revision 1.42  2004/09/15 05:11:39  csoutheren
- * Fixed problem with PDirectory destructor not calling Close()
- * Thanks to Paul Long
- *
- * Revision 1.41  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.40  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.39  2003/06/06 15:04:17  dsandras
- *
- * Fixed compilation warning with gcc 3.3 by removing the PINLINE
- *
- * Revision 1.38  2002/11/20 00:13:43  robertj
- * Fixed some documentation
- *
- * Revision 1.37  2002/11/19 12:07:02  robertj
- * Added function to get root directory.
- *
- * Revision 1.36  2002/11/19 10:34:59  robertj
- * Added function to extract a path as an array of directories components.
- *
- * Revision 1.35  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.34  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.33  2001/02/13 06:55:21  robertj
- * Fixed problem with operator= in PDirectory class, part of larger change previously made.
- *
- * Revision 1.32  2000/06/26 11:17:19  robertj
- * Nucleus++ port (incomplete).
- *
- * Revision 1.31  2000/04/03 18:41:27  robertj
- * Fixed BeOS compatibility problem with openlog() function.
- *
- * Revision 1.30  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.29  1999/02/16 08:11:09  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.28  1998/09/23 06:21:06  robertj
- * Added open source copyright license.
- *
- * Revision 1.27  1998/03/05 12:44:34  robertj
- * Added cluster size.
- *
- * Revision 1.26  1997/03/31 11:34:00  robertj
- * Fixed default permissions for directories , different from that for files.
- *
- * Revision 1.25  1997/01/12 04:22:21  robertj
- * Added function to get disk size and free space.
- *
- * Revision 1.24  1995/12/23 03:45:31  robertj
- * Added constructor for C string literals.
- *
- * Revision 1.23  1995/11/09 12:17:23  robertj
- * Added platform independent base type access classes.
- *
- * Revision 1.22  1995/10/14 15:02:22  robertj
- * Added function to get parent directory.
- *
- * Revision 1.21  1995/06/17 11:12:52  robertj
- * Documentation update.
- *
- * Revision 1.20  1995/03/14 12:42:00  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.19  1995/03/12  04:42:48  robertj
- * Updated documentation.
- * Changed return type of functions to the correct case string.
- *
- * Revision 1.18  1995/02/22  10:50:33  robertj
- * Changes required for compiling release (optimised) version.
- *
- * Revision 1.17  1995/01/06  10:42:25  robertj
- * Moved identifiers into different scope.
- * Changed file size to 64 bit integer.
- * Documentation
- *
- * Revision 1.16  1994/10/24  00:07:03  robertj
- * Changed PFilePath and PDirectory so descends from either PString or
- *     PCaselessString depending on the platform.
- *
- * Revision 1.15  1994/10/23  04:49:25  robertj
- * Chnaged PDirectory to descend of PString.
- * Added PDirectory Exists() function.
- *
- * Revision 1.14  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.13  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.12  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.11  1994/04/20  12:17:44  robertj
- * Split name into PFilePath
- *
- * Revision 1.10  1994/04/11  14:16:27  robertj
- * Added function for determining if character is a valid directory separator.
- *
- * Revision 1.9  1994/04/01  14:14:57  robertj
- * Put platform independent file permissions and type codes back.
- *
- * Revision 1.7  1994/01/13  03:17:55  robertj
- * Added functions to get the name of the volume the directory is contained in
- *    and a function to determine if the directory is a root directory of the
- *    volume (ie is does not have a parent directory).
- *
- * Revision 1.6  1994/01/03  04:42:23  robertj
- * Mass changes to common container classes and interactors etc etc etc.
- *
- * Revision 1.5  1993/12/31  06:45:38  robertj
- * Made inlines optional for debugging purposes.
- *
- * Revision 1.4  1993/08/21  01:50:33  robertj
- * Made Clone() function optional, default will assert if called.
- *
- * Revision 1.3  1993/07/14  12:49:16  robertj
- * Fixed RCS keywords.
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
 
-#ifndef _PDIRECTORY
-#define _PDIRECTORY
+#ifndef PTLIB_DIRECTORY_H
+#define PTLIB_DIRECTORY_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -200,7 +67,7 @@ class PFileInfo : public PObject
   public:
     /**All types that a particular file path may be. Not all platforms support
        all of the file types. For example under DOS no file may be of the
-       type #SymbolicLink#.
+       type <code>SymbolicLink</code>.
      */
     enum FileTypes {
       /// Ordinary disk file.
@@ -274,7 +141,7 @@ class PFileInfo : public PObject
     };
 
     /**A bit mask of all the file acces permissions. See the
-       #Permissions enum# for the possible bit values.
+       <code>Permissions</code> enum# for the possible bit values.
        
        Not all platforms support all permissions.
      */
@@ -284,7 +151,7 @@ class PFileInfo : public PObject
        dependent, for example under unix it is a file beginning with a '.'
        character while under MS-DOS there is a file system attribute for it.
      */
-    BOOL hidden;
+    PBoolean hidden;
 };
 
 
@@ -301,16 +168,16 @@ class PFileInfo : public PObject
    The path always has a trailing separator.
 
    Some platforms allow more than one character to act as a directory separator
-   so when doing any processing the #IsSeparator()# function should be
+   so when doing any processing the <code>IsSeparator()</code> function should be
    used to determine if a character is a possible separator.
 
    The directory may be opened to gain access to the list of files that it
-   contains. Note that the directory does {\bf not} contain the "." and ".."
+   contains. Note that the directory does {\b not} contain the "." and ".."
    entries that some platforms support.
 
    The ancestor class is dependent on the platform. For file systems that are
-   case sensitive, eg Unix, the ancestor is #PString#. For other
-   platforms, the ancestor class is #PCaselessString#.
+   case sensitive, eg Unix, the ancestor is <code>PString</code>. For other
+   platforms, the ancestor class is <code>PCaselessString</code>.
  */
 class PDirectory : public PFilePathString
 {
@@ -323,16 +190,16 @@ class PDirectory : public PFilePathString
     PDirectory();
       
     /**Create a directory object of the specified directory. The
-       #pathname# parameter may be a relative directory which is
-       made absolute by the creation of the #PDirectory# object.
+       <code>cpathname</code> parameter may be a relative directory which is
+       made absolute by the creation of the <code>PDirectory</code> object.
      */
     PDirectory(
       const char * cpathname      ///< Directory path name for new object.
     );
 
     /**Create a directory object of the specified directory. The
-       #pathname# parameter may be a relative directory which is
-       made absolute by the creation of the #PDirectory# object.
+       <code>pathname</code> parameter may be a relative directory which is
+       made absolute by the creation of the <code>PDirectory</code> object.
      */
     PDirectory(
       const PString & pathname    ///< Directory path name for new object.
@@ -377,9 +244,9 @@ class PDirectory : public PFilePathString
     /**Determine if the directory is the root directory of a volume.
     
        @return
-       TRUE if the object is a root directory.
+       true if the object is a root directory.
      */
-    BOOL IsRoot() const;
+    PBoolean IsRoot() const;
 
     /**Get the root directory of a volume.
     
@@ -394,13 +261,13 @@ class PDirectory : public PFilePathString
       */
     PStringArray GetPath() const;
 
-    /**Determine if the character #ch# is a directory path
+    /**Determine if the character <code>ch</code> is a directory path
        separator.
 
        @return
-       TRUE if may be used to separate directories in a path.
+       true if may be used to separate directories in a path.
      */
-    PINLINE static BOOL IsSeparator(
+    PINLINE static PBoolean IsSeparator(
       char ch    ///< Character to check as being a separator.
     );
 
@@ -412,9 +279,9 @@ class PDirectory : public PFilePathString
        to use all of these bytes.
 
        @return
-       TRUE if the information could be determined.
+       true if the information could be determined.
      */
-    BOOL GetVolumeSpace(
+    PBoolean GetVolumeSpace(
       PInt64 & total,     ///< Total number of bytes available on volume
       PInt64 & free,      ///< Number of bytes unused on the volume
       DWORD & clusterSize ///< "Quantisation factor" in bytes for files on volume
@@ -426,49 +293,49 @@ class PDirectory : public PFilePathString
     /**Test for if the directory exists.
 
        @return
-       TRUE if directory exists.
+       true if directory exists.
      */
-    BOOL Exists() const;
+    PBoolean Exists() const;
 
     /**Test for if the specified directory exists.
 
        @return
-       TRUE if directory exists.
+       true if directory exists.
      */
-    static BOOL Exists(
+    static PBoolean Exists(
       const PString & path   ///< Directory file path.
     );
       
     /**Change the current working directory to the objects location.
 
        @return
-       TRUE if current working directory was changed.
+       true if current working directory was changed.
      */
-    BOOL Change() const;
+    PBoolean Change() const;
 
     /**Change the current working directory to that specified..
 
        @return
-       TRUE if current working directory was changed.
+       true if current working directory was changed.
      */
-    static BOOL Change(
+    static PBoolean Change(
       const PString & path   ///< Directory file path.
     );
       
     /**Create a new directory with the specified permissions.
 
        @return
-       TRUE if directory created.
+       true if directory created.
      */
-    BOOL Create(
+    PBoolean Create(
       int perm = PFileInfo::DefaultDirPerms    // Permission on new directory.
     ) const;
     /**Create a new directory as specified with the specified permissions.
 
        @return
-       TRUE if directory created.
+       true if directory created.
      */
-    static BOOL Create(
+    static PBoolean Create(
       const PString & p,   ///< Directory file path.
       int perm = PFileInfo::DefaultDirPerms    ///< Permission on new directory.
     );
@@ -476,16 +343,16 @@ class PDirectory : public PFilePathString
     /**Delete the directory.
 
        @return
-       TRUE if directory was deleted.
+       true if directory was deleted.
      */
-    BOOL Remove();
+    PBoolean Remove();
 
     /**Delete the specified directory.
 
        @return
-       TRUE if directory was deleted.
+       true if directory was deleted.
      */
-    static BOOL Remove(
+    static PBoolean Remove(
       const PString & path   ///< Directory file path.
     );
   //@}
@@ -493,54 +360,54 @@ class PDirectory : public PFilePathString
   /**@name Directory listing functions */
   //@{
     /**Open the directory for scanning its list of files. Once opened the
-       #GetEntryName()# function may be used to get the current directory
-       entry and the #Next()# function used to move to the next directory
+       <code>GetEntryName()</code> function may be used to get the current directory
+       entry and the <code>Next()</code> function used to move to the next directory
        entry.
        
        Only files that are of a type that is specified in the mask will be
        returned.
        
-       Note that the directory scan will {\bf not} return the "." and ".."
+       Note that the directory scan will {\b not} return the "." and ".."
        entries that some platforms support.
 
        @return
-       TRUE if directory was successfully opened, and there was at least one
+       true if directory was successfully opened, and there was at least one
        file in it of the specified types.
      */
-    virtual BOOL Open(
+    virtual PBoolean Open(
       int scanMask = PFileInfo::AllFiles    ///< Mask of files to provide.
     );
       
     /**Restart file list scan from the beginning of directory. This is similar
-       to the #Open()# command but does not require that the directory be
-       closed (using #Close()#) first.
+       to the <code>Open()</code> command but does not require that the directory be
+       closed (using <code>Close()</code>) first.
 
        Only files that are of a type that is specified in the mask will be
        returned.
 
-       Note that the directory scan will {\bf not} return the "." and ".."
+       Note that the directory scan will {\b not} return the "." and ".."
        entries that some platforms support.
 
        @return
-       TRUE if directory was successfully opened, and there was at least one
+       true if directory was successfully opened, and there was at least one
        file in it of the specified types.
      */
-    virtual BOOL Restart(
+    virtual PBoolean Restart(
       int scanMask = PFileInfo::AllFiles    ///< Mask of files to provide.
     );
       
     /**Move to the next file in the directory scan.
     
        Only files that are of a type that is specified in the mask passed to
-       the #Open()# or #Restart()# functions will be returned.
+       the <code>Open()</code> or <code>Restart()</code> functions will be returned.
 
-       Note that the directory scan will {\bf not} return the "." and ".."
+       Note that the directory scan will {\b not} return the "." and ".."
        entries that some platforms support.
 
        @return
-       TRUE if there is another valid file in the directory.
+       true if there is another valid file in the directory.
      */
-    BOOL Next();
+    PBoolean Next();
       
     /// Close the directory during or after a file list scan.
     virtual void Close();
@@ -553,7 +420,7 @@ class PDirectory : public PFilePathString
        To get a full path name concatenate the PDirectory object itself with
        the entry name.
        
-       Note that the directory scan will {\bf not} return the "." and ".."
+       Note that the directory scan will {\b not} return the "." and ".."
        entries that some platforms support.
 
        @return
@@ -564,20 +431,20 @@ class PDirectory : public PFilePathString
     /**Determine if the directory entry currently being scanned is itself
        another directory entry.
        
-       Note that the directory scan will {\bf not} return the "." and ".."
+       Note that the directory scan will {\b not} return the "." and ".."
        entries that some platforms support.
 
        @return
-       TRUE if entry is a subdirectory.
+       true if entry is a subdirectory.
      */
-    virtual BOOL IsSubDir() const;
+    virtual PBoolean IsSubDir() const;
 
     /**Get file information on the current directory entry.
     
        @return
-       TRUE if file information was successfully retrieved.
+       true if file information was successfully retrieved.
      */
-    virtual BOOL GetInfo(
+    virtual PBoolean GetInfo(
       PFileInfo & info    ///< Object to receive the file information.
     ) const;
   //@}
@@ -602,6 +469,8 @@ class PDirectory : public PFilePathString
 
 };
 
-#endif
+
+#endif // PTLIB_DIRECTORY_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

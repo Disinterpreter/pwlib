@@ -26,19 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: tlibmpthrd.cxx,v $
- * Revision 1.4  2002/06/27 06:38:58  robertj
- * Changes to remove memory leak display for things that aren't memory leaks.
- *
- * Revision 1.3  2002/02/19 07:40:59  rogerh
- * Remove PMutex destructor for Carbon.
- *
- * Revision 1.2  2002/02/19 07:28:02  rogerh
- * PXAbortIO -> PXAbortBlock. Submitted by Peter Johnson <paj@mac.com>
- *
- * Revision 1.1  2001/08/11 15:38:43  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
+ * $Revision: 27623 $
+ * $Author: rjongbloed $
+ * $Date: 2012-05-14 19:03:37 -0500 (Mon, 14 May 2012) $
  */
 
 #include <sys/resource.h>
@@ -52,14 +42,14 @@ extern int debug_mpthreads;
 PDECLARE_CLASS(PHouseKeepingThread, PThread)
   public:
     PHouseKeepingThread()
-      : PThread(1000, NoAutoDeleteThread, NormalPriority, "Housekeeper")
-      { closing = FALSE; Resume(); }
+      : PThread(1000, NoAutoDeleteThread, HighestPriority, "Housekeeper")
+      { closing = PFalse; Resume(); }
 
     void Main();
-    void SetClosing() { closing = TRUE; }
+    void SetClosing() { closing = PTrue; }
 
   protected:
-    BOOL closing;
+    PBoolean closing;
 };
 
 
@@ -160,7 +150,7 @@ static MPQueueID terminationNotificationQueue = 0;
 // kills the housekeeper before it can clean up all the other threads.
 // So the process thread has to poll the termination queue, but it does so
 // from PThread context, so it can't know there's no housekeeper.  yuck.
-static BOOL noHousekeeper = 0;
+static PBoolean noHousekeeper = 0;
 
 static void SetUpTermQueue() 
 {
@@ -202,7 +192,7 @@ static void SetUpTermQueue()
     }
 }
 
-static BOOL PollNotificationQueue(Duration timeout)
+static PBoolean PollNotificationQueue(Duration timeout)
 {
     OSStatus err = noErr;
     void *parm1, *parm2, *parm3;
@@ -299,15 +289,9 @@ PProcess::~PProcess()
 
 PThread::PThread()
 {
-  // see InitialiseProcessThread()
-}
-
-
-void PThread::InitialiseProcessThread()
-{
   OSStatus err        = 0;
   PX_origStackSize    = 0;
-  autoDelete          = FALSE;
+  autoDelete          = PFalse;
   PX_threadId         = MPCurrentTaskID();
   PX_suspendCount     = 0;
 
@@ -323,8 +307,18 @@ void PThread::InitialiseProcessThread()
       throw std::bad_alloc();
   }
 
-  ((PProcess *)this)->activeThreads.DisallowDeleteObjects();
-  ((PProcess *)this)->activeThreads.SetAt((unsigned)PX_threadId, this);
+  if (!PProcess::IsInitialised())
+    return;
+
+  autoDelete = true;
+
+  PProcess & process = PProcess::Current();
+
+  process.activeThreadMutex.Wait();
+  process.activeThreads.SetAt(PX_threadId, this);
+  process.activeThreadMutex.Signal();
+
+  process.SignalTimerChange();
 }
 
 
@@ -353,7 +347,7 @@ PThread::PThread(PINDEX stackSize,
   ::pipe(unblockPipe);
 
   // throw the new thread
-  PX_NewThread(TRUE);
+  PX_NewThread(PTrue);
 }
 
 
@@ -374,7 +368,7 @@ PThread::~PThread()
   PX_signature = kMPDeadSig;
 }
 
-void PThread::PX_NewThread(BOOL startSuspended)
+void PThread::PX_NewThread(PBoolean startSuspended)
 {
   OSErr err;
   // initialise suspend counter and create mutex
@@ -418,9 +412,9 @@ long PThread::PX_ThreadStart(void * arg)
   PProcess & process = PProcess::Current();
 
   // add thread to thread list
-  process.threadMutex.Wait();
+  process.activeThreadMutex.Wait();
   process.activeThreads.SetAt((unsigned)threadId, thread);
-  process.threadMutex.Signal();
+  process.activeThreadMutex.Signal();
 
   // if we are not supposed to start suspended, then don't wait
   // if we are supposed to start suspended, then wait for a resume
@@ -429,9 +423,13 @@ long PThread::PX_ThreadStart(void * arg)
     thread->suspend_semaphore->Wait();	// Wait for the Resume
   }
 
+  process.OnThreadStart(*thread);
+
   // now call the the thread main routine
   //PTRACE(1, "tlibthrd\tAbout to call Main");
   thread->Main();
+
+  process.OnThreadEnded(*thread);
 
 #ifdef DEBUG_THREADS
   if (debug_mpthreads)
@@ -443,9 +441,12 @@ long PThread::PX_ThreadStart(void * arg)
 
 void PProcess::SignalTimerChange()
 {
+  if (!PAssert(IsInitialised(), PLogicError) || m_shuttingDown) 
+    return false;
+
   if (housekeepingThread == NULL) {
 #if PMEMORY_CHECK
-    BOOL oldIgnoreAllocations = PMemoryHeap::SetIgnoreAllocations(TRUE);
+    PBoolean oldIgnoreAllocations = PMemoryHeap::SetIgnoreAllocations(PTrue);
 #endif
     housekeepingThread = new PHouseKeepingThread;
 #if PMEMORY_CHECK
@@ -467,9 +468,9 @@ void PThread::PX_ThreadEnd(void * arg)
   if (id != 0) {
 
     // remove this thread from the active thread list
-    process.threadMutex.Wait();
+    process.activeThreadMutex.Wait();
     process.activeThreads.SetAt((unsigned)id, NULL);
-    process.threadMutex.Signal();
+    process.activeThreadMutex.Signal();
   }
 
   // delete the thread if required, note this is done this way to avoid
@@ -494,7 +495,7 @@ void PThread::Restart()
   if (IsTerminated())
     return;
 
-  PX_NewThread(FALSE);
+  PX_NewThread(PFalse);
 }
 
 
@@ -533,11 +534,11 @@ void PThread::PXSetWaitingSemaphore(PSemaphore * sem)
 }
 
 
-BOOL PThread::IsTerminated() const
+PBoolean PThread::IsTerminated() const
 {
   if (PX_threadId == 0) {
     //PTRACE(1, "tlibthrd\tIsTerminated(" << (void *)this << ") = 0");
-    return TRUE;
+    return PTrue;
   }
 
 #ifdef _not_def_ // Sigh.  no MPGetNextTaskID on MOSX
@@ -550,14 +551,14 @@ BOOL PThread::IsTerminated() const
       if (sometask == 0) break;
       if (sometask == PX_threadId) {
           //PTRACE(1, "tlibthrd\tIsTerminated(" << (void *)this << ") not dead yet");
-          return FALSE;
+          return PFalse;
       }
   }
   // didn't find it, it's dead
   //PTRACE(1, "tlibthrd\tIsTerminated(" << (void *)this << ") = 0");
-  return TRUE;
+  return PTrue;
 #else
-  return FALSE; // ENOCLUE
+  return PFalse; // ENOCLUE
 #endif
 }
 
@@ -566,11 +567,11 @@ BOOL PThread::IsTerminated() const
 // partial implementation using a Semaphore.
 // As a result, we can create a thread in a suspended state and then 'resume'
 // it, but once it is going, we can no longer suspend it.
-// So, for Mac OS X, we will accept Resume() calls (or Suspend(FALSE))
-// but reject Suspend(TRUE) calls with an Assertion. This will indicate
+// So, for Mac OS X, we will accept Resume() calls (or Suspend(PFalse))
+// but reject Suspend(PTrue) calls with an Assertion. This will indicate
 // to a user that we cannot Suspend threads on Mac OS X
 
-void PThread::Suspend(BOOL susp)
+void PThread::Suspend(PBoolean susp)
 {
   OSStatus err;
   err = MPWaitOnSemaphore(PX_suspendMutex,kDurationForever);
@@ -595,20 +596,20 @@ void PThread::Suspend(BOOL susp)
 
 void PThread::Resume()
 {
-  Suspend(FALSE);
+  Suspend(PFalse);
 }
 
 
-BOOL PThread::IsSuspended() const
+PBoolean PThread::IsSuspended() const
 {
   OSStatus err;
 
   if (IsTerminated())
-    return FALSE;
+    return PFalse;
 
   err = MPWaitOnSemaphore(PX_suspendMutex, kDurationForever);
   PAssert(err == 0, "MPWaitOnSemaphore failed");
-  BOOL suspended = PX_suspendCount > 0;
+  PBoolean suspended = PX_suspendCount > 0;
   err = MPSignalSemaphore(PX_suspendMutex);
   PAssert(err == 0, "MPSignalSemaphore failed");
   return suspended;
@@ -636,16 +637,6 @@ PThread::Priority PThread::GetPriority() const
 void PThread::Yield()
 {
   ::sleep(0);
-}
-
-
-PThread * PThread::Current()
-{
-  PProcess & process = PProcess::Current();
-  process.threadMutex.Wait();
-  PThread * thread = process.activeThreads.GetAt((unsigned)MPCurrentTaskID());
-  process.threadMutex.Signal();
-  return PAssertNULL(thread);
 }
 
 
@@ -681,7 +672,7 @@ void PThread::WaitForTermination() const
 }
 
 
-BOOL PThread::WaitForTermination(const PTimeInterval & maxWait) const
+PBoolean PThread::WaitForTermination(const PTimeInterval & maxWait) const
 {
   PAssert(Current() != this, "Waiting for self termination!");
   
@@ -691,10 +682,10 @@ BOOL PThread::WaitForTermination(const PTimeInterval & maxWait) const
   PTimer timeout = maxWait;
   while (!IsTerminated()) {
     if (timeout == 0)
-      return FALSE;
+      return PFalse;
     Current()->Sleep(10);
   }
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -728,22 +719,22 @@ void PSemaphore::Wait()
 }
 
 
-BOOL PSemaphore::Wait(const PTimeInterval & waitTime)
+PBoolean PSemaphore::Wait(const PTimeInterval & waitTime)
 {
   OSErr err = 0;
     
   if (waitTime == PMaxTimeInterval) {
     Wait();
-    return TRUE;
+    return PTrue;
   }
 
   Duration timeout = waitTime.GetMilliSeconds();
   if ((err = MPWaitOnSemaphore(semId, timeout)) == noErr)
-      return TRUE;
+      return PTrue;
   if (err == kMPTimeoutErr)
-      return FALSE;
+      return PFalse;
   PAssert(err == 0, psprintf("timed wait error = %i", err));
-  return FALSE;
+  return PFalse;
 }
 
 void PSemaphore::Signal()
@@ -755,14 +746,14 @@ void PSemaphore::Signal()
 }
 
 
-BOOL PSemaphore::WillBlock() const
+PBoolean PSemaphore::WillBlock() const
 {
     OSStatus err = MPWaitOnSemaphore(semId, kDurationImmediate);
     if (err == kMPTimeoutErr)
-        return TRUE;
+        return PTrue;
     PAssert(err == 0, psprintf("timed wait error = %i", err));
     (void)MPSignalSemaphore(semId);
-    return FALSE;
+    return PFalse;
 }
 
 // Ideally, a PMutex would contain an MPCriticalSection instead of a
@@ -780,7 +771,7 @@ void PMutex::Wait()
 	PSemaphore::Wait();
 }
 
-BOOL PMutex::Wait(const PTimeInterval & timeout)
+PBoolean PMutex::Wait(const PTimeInterval & timeout)
 {
 	return PSemaphore::Wait(timeout);
 }
@@ -790,7 +781,7 @@ void PMutex::Signal()
 	PSemaphore::Signal();
 }
 
-BOOL PMutex::WillBlock() const 
+PBoolean PMutex::WillBlock() const 
 {
 	return PSemaphore::WillBlock();
 }

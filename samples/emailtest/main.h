@@ -21,17 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2004/08/11 07:39:05  csoutheren
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _Emailtest_MAIN_H
 #define _Emailtest_MAIN_H
 
-
-
+#include <ptlib/pprocess.h>
 
 class Emailtest : public PProcess
 {

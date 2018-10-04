@@ -30,89 +30,9 @@
  * Contributor(s): Guilhem Tardy (gtardy@salyens.com)
  *  Nicola Orru' <nigu@itadinanta.it>
  *
- * $Log: vidinput_v4l2.cxx,v $
- * Revision 1.18  2006/05/06 15:29:38  dsandras
- * Applied patch from Martin Rubli <martin rubli logitech com> to fix framerate
- * and computation issues. Thanks a lot!
- *
- * Revision 1.17  2006/03/12 11:16:19  dsandras
- * Added multi-buffering support to V4L2 thanks to Luc Saillard. Thanks!
- *
- * Revision 1.16  2006/03/12 11:09:51  dsandras
- * Applied patch from Luc Saillard to fix problems with MJPEG. Thanks!
- *
- * Revision 1.15  2006/03/06 19:09:31  dsandras
- * Applied patch from Luc Saillard <luc saillard org> to fix YUV422, which
- * is in fact YUYV.
- *
- * Revision 1.14  2006/02/06 22:23:08  dsandras
- * Added UYVY palette thanks to Luc Saillard <luc saillard org>. Thanks!
- *
- * Revision 1.13  2006/01/29 22:46:41  csoutheren
- * Added support for cameras that return MJPEG streams
- * Thanks to Luc Saillard and Damien Sandras
- *
- * Revision 1.12  2006/01/21 13:59:50  dsandras
- * Added BGR colour format thanks to Luc Saillard <luc saillard org>. Thanks!
- *
- * Revision 1.11  2006/01/17 22:28:26  dsandras
- * Another patch from Luc Saillard <luc saillard org> to fix V4L2 support when
- * opening/closing the device several times in a row. Thanks a lot!!!!!
- *
- * Revision 1.10  2006/01/09 18:22:42  dsandras
- * Use memset before some ioctl() to make valgrind happy.
- * Create a common function to set and get control information.
- * Fix range values return by the driver.
- * Fix setting value to be in the range (>>16 is unsigned).
- * Add support for YUY2.
- * Patch from Luc Saillard <luc _AT___ saillard.org>. Many thanks!
- *
- * Revision 1.9  2006/01/07 16:10:21  dsandras
- * More changes from Luc Saillard. Thanks!
- *
- * Revision 1.8  2006/01/05 19:21:37  dsandras
- * Applied patch from Luc Saillard <luc _____AT_ saillard.org>. Many thanks!
- *
- * Revision 1.7  2005/12/21 21:31:39  dsandras
- * Fixed build with gcc 4.1.
- *
- * Revision 1.6  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.5  2005/08/09 09:08:10  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.4.4.2  2005/07/24 09:01:48  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.4.4.1  2005/07/17 11:30:42  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.4  2004/11/07 22:48:47  dominance
- * fixed copyright of v4l2 plugin. Last commit's credits go to Nicola Orru' <nigu@itadinanta.it> ...
- *
- * Revision 1.3  2004/11/07 21:34:21  dominance
- * v4l2 patch to add verbose device names detection.
- *
- * Revision 1.2  2004/10/27 09:22:59  dsandras
- * Added patch from Nicola Orru' to make things work better.
- *
- * Revision 1.1  2004/09/21 12:54:23  dsandras
- * Added initial port to the new pwlib API/V4L2 API for the video4linux 2 code of Guilhem Tardy. Thanks!
- *
- * Revision 1.0  2003/03/03 12:27:00  guilhem
- * First build.
- *
+ * $Revision: 29220 $
+ * $Author: ededu $
+ * $Date: 2013-03-07 12:22:08 -0600 (Thu, 07 Mar 2013) $
  */
 
 #pragma implementation "vidinput_v4l2.h"
@@ -121,8 +41,21 @@
 #include <sys/utsname.h>
 
 PCREATE_VIDINPUT_PLUGIN(V4L2);
+#define CLEAR(x) memset (&(x), 0, sizeof (x))
 
 #include "vidinput_names.h" 
+
+#ifdef HAS_LIBV4L
+#include <libv4l2.h>
+#else
+#define v4l2_fd_open(fd, flags) (fd)
+#define v4l2_open open
+#define v4l2_close close
+#define v4l2_ioctl ioctl
+#define v4l2_read read
+#define v4l2_mmap mmap
+#define v4l2_munmap munmap
+#endif  
 
 class V4L2Names : public V4LXNames
 {
@@ -148,9 +81,11 @@ protected:
 };
 
 
+PMutex creationMutex;
 static 
 V4L2Names & GetNames()
 {
+  PWaitAndSignal m(creationMutex);
   static V4L2Names names;
   names.Update();
   return names;
@@ -162,12 +97,21 @@ V4L2Names & GetNames()
 PVideoInputDevice_V4L2::PVideoInputDevice_V4L2()
 {
   videoFd = -1;
-  canRead = FALSE;
-  canStream = FALSE;
-  canSelect = FALSE;
-  canSetFrameRate = FALSE;
-  isMapped = FALSE;
-  started = FALSE;
+  canRead = PFalse;
+  canStream = PFalse;
+  canSelect = PFalse;
+  canSetFrameRate = PFalse;
+  isOpen = PFalse;
+  isMapped = PFalse;
+  isStreaming = PFalse;
+  started = PFalse;
+  areBuffersQueued = PFalse;
+  videoBufferCount = 0;
+  currentvideoBuffer = 0;
+  frameBytes = 0;
+  CLEAR(videoCapability);
+  CLEAR(videoStreamParm);
+  CLEAR(videoBuffer);
 }
 
 PVideoInputDevice_V4L2::~PVideoInputDevice_V4L2()
@@ -183,7 +127,11 @@ PVideoInputDevice_V4L2::~PVideoInputDevice_V4L2()
 
 static struct {
   const char * colourFormat;
+#ifdef SOLARIS
+  uint32_t code;
+#else
   __u32 code;
+#endif
 } colourFormatTab[] = {
     { "Grey", V4L2_PIX_FMT_GREY },   //Entries in this table correspond
     { "RGB32", V4L2_PIX_FMT_RGB32 }, //(line by line) to those in the 
@@ -207,39 +155,49 @@ static struct {
 };
 
 
-BOOL PVideoInputDevice_V4L2::Open(const PString & devName, BOOL startImmediate)
+PBoolean PVideoInputDevice_V4L2::Open(const PString & devName, PBoolean /* startImmediate */)
 {
-  struct utsname buf;
-  PString version;
-  
-  uname (&buf);
-
-  if (buf.release)
-    version = PString (buf.release);
-
-  PTRACE(1,"PVidInDev\tOpen()\tvideoFd:" << videoFd);
-  Close();
+  if (isOpen) {
+    PTRACE(1,"PVidInDev\tClosing " << deviceName << " already open on this instance, fd:" << videoFd);
+    Close();
+  }
 
   PString name = GetNames().GetDeviceName(devName);
-  PTRACE(1,"PVidInDev\tOpen()\tdevName:" << name << "  videoFd:" << videoFd);
+  deviceName=name;
   
-  videoFd = ::open((const char *)name, O_RDWR);
+  PTRACE(5,"PVidInDev\tOpen()\tdevName:" << name << "  videoFd:" << videoFd);
+  videoFd = ::v4l2_open((const char *)name, O_RDWR);
   if (videoFd < 0) {
     PTRACE(1,"PVidInDev\topen failed : " << ::strerror(errno));
-    return FALSE;
+    return isOpen;
   }
-  
-  PTRACE(6,"PVidInDev\topen, fd=" << videoFd);
-  deviceName=name;
+
+  isOpen = PTrue;
+
+  PTRACE(5,"PVidInDev\tNew handle for " << deviceName << ": fd=" << videoFd);
+
+  // Don't share the camera device with subprocesses - they could cause
+  // EBUSY errors on VIDIOC_STREAMON if the parent tries to close and reopen
+  // the camera while the child is still running.
+  ::fcntl(videoFd, F_SETFD, FD_CLOEXEC);
+
+  /* Note the v4l2_xxx functions are designed so that if they get passed an
+     unknown fd, the will behave exactly as their regular xxx counterparts, so
+     if v4l2_fd_open fails, we continue as normal (missing the libv4l2 custom
+     cam format to normal formats conversion). Chances are big we will still
+     fail then though, as normally v4l2_fd_open only fails if the device is not
+     a v4l2 device. */
+  int libv4l2_fd = v4l2_fd_open(videoFd, 0);
+  if (libv4l2_fd != -1)
+    videoFd = libv4l2_fd;
 
   // get the device capabilities
-  if (::ioctl(videoFd, VIDIOC_QUERYCAP, &videoCapability) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_QUERYCAP, &videoCapability) < 0) {
     PTRACE(1,"PVidInDev\tQUERYCAP failed : " << ::strerror(errno));
-    ::close (videoFd);
-    videoFd = -1;
-    return FALSE;
+    Close();
+    return isOpen;
   }
-    
+
   canRead = videoCapability.capabilities & V4L2_CAP_READWRITE;
   canStream = videoCapability.capabilities & V4L2_CAP_STREAMING;
   canSelect = videoCapability.capabilities & V4L2_CAP_ASYNCIO;
@@ -251,191 +209,206 @@ BOOL PVideoInputDevice_V4L2::Open(const PString & devName, BOOL startImmediate)
 
   // get the capture parameters
   videoStreamParm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (::ioctl(videoFd, VIDIOC_G_PARM, &videoStreamParm) < 0)  {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_PARM, &videoStreamParm) < 0)  {
 
-    PTRACE(1,"PVidInDev\tG_PARM failed : " << ::strerror(errno));
-    canSetFrameRate = FALSE;
+    PTRACE(3,"PVidInDev\tG_PARM failed : " << ::strerror(errno));
+    canSetFrameRate = PFalse;
 
   } else {
 
     canSetFrameRate = videoStreamParm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME;
-    if (canSetFrameRate)
-      PVideoDevice::SetFrameRate (videoStreamParm.parm.capture.timeperframe.denominator / videoStreamParm.parm.capture.timeperframe.numerator);
+    if (canSetFrameRate) {
+      if (videoStreamParm.parm.capture.timeperframe.numerator == 0) {
+        PTRACE(1,"PVidInDev\tDriver/webcam bug: numerator is zero and denominator is " << videoStreamParm.parm.capture.timeperframe.denominator << ", I assume it cannot set frame rate");
+        canSetFrameRate = PFalse;
+      } else
+        PVideoDevice::SetFrameRate (videoStreamParm.parm.capture.timeperframe.denominator / videoStreamParm.parm.capture.timeperframe.numerator);
+    }
   }
-  
-  return TRUE;
+
+  SetVideoFormat(videoFormat);
+  SetColourFormat(colourFormat);
+
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::IsOpen() 
+PBoolean PVideoInputDevice_V4L2::IsOpen()
 {
-  return videoFd >= 0;
+  return isOpen;
 }
 
 
-BOOL PVideoInputDevice_V4L2::Close()
+PBoolean PVideoInputDevice_V4L2::Close()
 {
   PTRACE(1,"PVidInDev\tClose()\tvideoFd:" << videoFd << "  started:" << started);
   if (!IsOpen())
-    return FALSE;
+    return PTrue;
 
-  Stop();
-  ClearMapping();
-  ::close(videoFd);
+  if (started)
+    Stop();
 
-  PTRACE(6,"PVidInDev\tclose, fd=" << videoFd);
+  if (v4l2_close(videoFd) < 0) {
+    PTRACE(2, "PVidInDev\tERROR errno = " << ::strerror(errno) << "(" << errno << ")");
+  }
 
+  isOpen = PFalse;
+  started = PFalse;
+  areBuffersQueued = PFalse;
+  isStreaming = PFalse;
   videoFd = -1;
-  canRead = FALSE;
-  canStream = FALSE;
-  canSelect = FALSE;
-  canSetFrameRate = FALSE;
-  isMapped = FALSE;
+  canRead = PFalse;
+  canStream = PFalse;
+  canSelect = PFalse;
+  canSetFrameRate = PFalse;
+  isMapped = PFalse;
+  videoBufferCount = 0;
+  currentvideoBuffer = 0;
+  frameBytes = 0;
+
+  CLEAR(videoBuffer);
+  CLEAR(videoCapability);
+  CLEAR(videoStreamParm);
 
   PTRACE(1,"PVidInDev\tClose()\tvideoFd:" << videoFd << "  started:" << started);
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::Start()
+PBoolean PVideoInputDevice_V4L2::Start()
 {
+  PTRACE(8, "PVidInDev\tStarting " << deviceName);
+
+  if (started == PTrue) {
+    PTRACE(2, "PVidInDev\tVideo Input Device already started");
+    return started;
+  }
+
   // automatically set mapping
-  if (!isMapped && !SetMapping()) {
+  if (!SetMapping()) {
     ClearMapping();
-    canStream = FALSE; // don't try again
-    return FALSE;
+    canStream = PFalse; // don't try again
+    return started;
   }
 
-  if (!started) {
-    PTRACE(6,"PVidInDev\tstart queuing all buffers, fd=" << videoFd);
-
-    /* Queue all buffers */
-    currentvideoBuffer = 0;
-    for (unsigned int i=0; i<videoBufferCount; i++) {
-
-       struct v4l2_buffer buf;
-       buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-       buf.memory = V4L2_MEMORY_MMAP;
-       buf.index = i;
-
-       if (::ioctl(videoFd, VIDIOC_QBUF, &buf) < 0) {
-	  PTRACE(3,"PVidInDev\tVIDIOC_QBUF failed for buffer " << i << ": " << ::strerror(errno));
-	  return FALSE;
-       }
-    }
-
-    /* Start streaming */
-    PTRACE(6,"PVidInDev\tstart streaming, fd=" << videoFd);
-    enum v4l2_buf_type type;
-    type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-
-    if (::ioctl(videoFd, VIDIOC_STREAMON, &type) < 0) {
-       PTRACE(3,"PVidInDev\tSTREAMON failed : " << ::strerror(errno));
-       return FALSE;
-    }
-
-    started = TRUE;
-
+  /* Queue all buffers */
+  if (!QueueBuffers()) {
+    PTRACE(2, "PVidInDev\tCould not QueueBuffers for Video Input Device!");
+    return started;
   }
-  return TRUE;
+
+  /* Start streaming */
+  if (!StartStreaming()) {
+    PTRACE(2, "PVidInDev\tCould not StartStreaming for Video Input Device!");
+    return started;
+  }
+
+  started = PTrue;
+
+  return started;
 }
 
 
-BOOL PVideoInputDevice_V4L2::Stop()
+PBoolean PVideoInputDevice_V4L2::Stop()
 {
   if (started) {
     PTRACE(6,"PVidInDev\tstop streaming, fd=" << videoFd);
 
-    int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-    started = FALSE;
+    StopStreaming();
+    ClearMapping();
 
-    if (::ioctl(videoFd, VIDIOC_STREAMOFF, &type) < 0) {
-      PTRACE(3,"PVidInDev\tSTREAMOFF failed : " << ::strerror(errno));
-      return FALSE;
-    }
+    started = PFalse;
 
     // no need to dequeue filled buffers, as this is handled by V4L2 at the next VIDIOC_STREAMON
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::IsCapturing()
+PBoolean PVideoInputDevice_V4L2::IsCapturing()
 {
   return started;
 }
 
 PStringList PVideoInputDevice_V4L2::GetInputDeviceNames()
 {
-  return GetNames().GetInputDeviceNames();  
+  return GetNames().GetInputDeviceNames();
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetVideoFormat(VideoFormat newFormat)
+PBoolean PVideoInputDevice_V4L2::SetVideoFormat(VideoFormat newFormat)
 {
-  if (newFormat == Auto) {
-    if (SetVideoFormat(PAL) ||
-      SetVideoFormat(NTSC) ||
-      SetVideoFormat(SECAM))
-      return TRUE;
-    else
-      return FALSE;
-  }
+  PTRACE(8,"PVidInDev\tSet video format " << newFormat);
 
-  if (!PVideoDevice::SetVideoFormat(newFormat)) {
-    PTRACE(1,"PVideoDevice::SetVideoFormat failed for format " << newFormat);
-    return FALSE;
+  if (newFormat == Auto) {
+    PBoolean videoStandardSetCorrectly = PFalse;
+    if (PTrue == (videoStandardSetCorrectly = SetVideoFormat(PAL))) {
+      return videoStandardSetCorrectly;
+    }
+    if (PTrue == (videoStandardSetCorrectly = SetVideoFormat(NTSC))) {
+      return videoStandardSetCorrectly;
+    }
+    if (PTrue == (videoStandardSetCorrectly = SetVideoFormat(SECAM))) {
+      return videoStandardSetCorrectly;
+    }
+    return videoStandardSetCorrectly;
   }
 
   struct {
+#ifdef SOLARIS
+    uint32_t code;
+#else
     __u32 code;
+#endif
     const char * name;
   } static const fmt[3] = { {V4L2_STD_PAL, "PAL"},
       {V4L2_STD_NTSC, "NTSC"},
       {V4L2_STD_SECAM, "SECAM"} };
 
-  struct v4l2_standard videoEnumStd;
-  memset(&videoEnumStd, 0, sizeof(struct v4l2_standard));
-  videoEnumStd.index = 0;
-  while (1) {
-    if (::ioctl(videoFd, VIDIOC_ENUMSTD, &videoEnumStd) < 0) {
-      PTRACE(1,"VideoInputDevice\tEnumStd failed : " << ::strerror(errno));    
-      videoEnumStd.id = V4L2_STD_PAL;
-      break; 
-    }
-    if (videoEnumStd.id == fmt[newFormat].code) {
-      break;
-    }
-    videoEnumStd.index++;
+#ifdef SOLARIS
+    uint32_t carg;
+#else
+    __u32 carg;
+#endif
+  carg = V4L2_STD_UNKNOWN;
+
+  if (ioctl(videoFd, VIDIOC_G_STD, &carg) < 0) {
+    PTRACE(3, "PVidInDev\tG_STD failed for fd=" << videoFd << " with error: " << ::strerror(errno));
+    // Assume that if G_STD is not available, that the device still works correctly.
+    return PTrue;
+  } else {
+    PTRACE(5, "PVidInDev\tG_STD succeeded for " << newFormat << ", carg = " << carg);
   }
 
-  // set the video standard
-  if (::ioctl(videoFd, VIDIOC_S_STD, &videoEnumStd.id) < 0) {
-    PTRACE(1,"VideoInputDevice\tS_STD failed : " << ::strerror(errno));
+  carg = fmt[newFormat].code;
+
+  if (v4l2_ioctl(videoFd, VIDIOC_S_STD, &carg) < 0) {
+    PTRACE(2, "PVidInDev\tS_STD failed for " << newFormat << " with error: " << ::strerror(errno));
+    return PFalse;
+  } else {
+    PTRACE(5, "PVidInDev\tS_STD succeeded for " << newFormat << ", carg = " << carg);
   }
 
-  PTRACE(6,"PVidInDev\tset video format \"" << fmt[newFormat].name << "\", fd=" << videoFd);
+  if (!PVideoDevice::SetVideoFormat(newFormat)) {
+    PTRACE(1,"PVideoDevice::SetVideoFormat failed for format " << newFormat);
+    return PFalse;
+  }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-int PVideoInputDevice_V4L2::GetNumChannels() 
+int PVideoInputDevice_V4L2::GetNumChannels()
 {
+  PTRACE(8,"PVidInDev\tGet number of channels");
   // if opened, return the capability value, else 1 as in videoio.cxx
   if (IsOpen ()) {
 
     struct v4l2_input videoEnumInput;
     videoEnumInput.index = 0;
-    while (1) {
-      if (::ioctl(videoFd, VIDIOC_ENUMINPUT, &videoEnumInput) < 0) {
-        PTRACE(1,"VideoInputDevice\tEnumInput failed : " << ::strerror(errno));    
-        break;
-      }
-      else
-        videoEnumInput.index++;
-    }
+    while (v4l2_ioctl(videoFd, VIDIOC_ENUMINPUT, &videoEnumInput) >= 0)
+      videoEnumInput.index++;
 
     return videoEnumInput.index;
   }
@@ -444,121 +417,160 @@ int PVideoInputDevice_V4L2::GetNumChannels()
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetChannel(int newChannel)
+PBoolean PVideoInputDevice_V4L2::SetChannel(int newChannel)
 {
+  PTRACE(8,"PVidInDev\tSet channel #" << newChannel);
+
   if (!PVideoDevice::SetChannel(newChannel)) {
     PTRACE(1,"PVideoDevice::SetChannel failed for channel " << newChannel);
-    return FALSE;
+    return PFalse;
   }
 
   // set the channel
-  if (::ioctl(videoFd, VIDIOC_S_INPUT, &channelNumber) < 0) {
-    PTRACE(1,"VideoInputDevice\tS_INPUT failed : " << ::strerror(errno));    
-    return FALSE;
+  if (v4l2_ioctl(videoFd, VIDIOC_S_INPUT, &channelNumber) < 0) {
+    PTRACE(1,"VideoInputDevice\tS_INPUT failed : " << ::strerror(errno));
+    return PFalse;
   }
 
   PTRACE(6,"PVidInDev\tset channel " << newChannel << ", fd=" << videoFd);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetVideoChannelFormat (int newChannel, VideoFormat videoFormat) 
+PBoolean PVideoInputDevice_V4L2::SetVideoChannelFormat (int newChannel, VideoFormat videoFormat) 
 {
+  PTRACE(8,"PVidInDev\tSet channel #" << newChannel << " format \"" << videoFormat << "\"");
+
   if (!SetChannel(newChannel) ||
       !SetVideoFormat(videoFormat))
-    return FALSE;
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
+PBoolean PVideoInputDevice_V4L2::SetColourFormat(const PString & newFormat)
 {
-  PINDEX colourFormatIndex = 0;
+  PTRACE(8,"PVidInDev\tSet colour format \"" << newFormat << "\"");
+
+  PBoolean colorFormatSet = PFalse;
+  PINDEX currentColourFormatIndex, colourFormatIndex = 0;
   while (newFormat != colourFormatTab[colourFormatIndex].colourFormat) {
     colourFormatIndex++;
+    PTRACE(9,"PVidInDev\tColourformat did not match" << colourFormatTab[colourFormatIndex].colourFormat);
     if (colourFormatIndex >= PARRAYSIZE(colourFormatTab))
-      return FALSE;
+      return colorFormatSet;
   }
 
   if (!PVideoDevice::SetColourFormat(newFormat)) {
     PTRACE(3,"PVidInDev\tSetColourFormat failed for colour format " << newFormat);
-    return FALSE;
+    return colorFormatSet;
   }
 
-  BOOL resume = started;
-  Stop();
-  ClearMapping();
+  PBoolean resume = started;
+  if (started == PTrue) {
+    Stop();
+  }
+  if (isMapped == PTrue) {
+    ClearMapping();
+  }
 
   struct v4l2_format videoFormat;
-  memset(&videoFormat, 0, sizeof(struct v4l2_format));
+  CLEAR(videoFormat);
   videoFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
   // get the frame rate so we can preserve it throughout the S_FMT call
   struct v4l2_streamparm streamParm;
+  CLEAR(streamParm);
   unsigned int fi_n = 0, fi_d = 0;
   streamParm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  if (::ioctl(videoFd, VIDIOC_G_PARM, &streamParm) == 0 &&
-        streamParm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME) {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_PARM, &streamParm) == 0 &&
+        (streamParm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME)) {
     fi_n = streamParm.parm.capture.timeperframe.numerator;
     fi_d = streamParm.parm.capture.timeperframe.denominator;
+    PTRACE(8,"PVidInDev\tG_PARM succeeded (preserving frame rate at " << fi_n << "/" << fi_d << ")");
   } else {
     PTRACE(1,"PVidInDev\tG_PARM failed (preserving frame rate may not work) : " << ::strerror(errno));
   }
 
   // get the colour format
-  if (::ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tG_FMT failed : " << ::strerror(errno));
-    return FALSE;
+    return colorFormatSet;
+  } else {
+    PTRACE(8,"PVidInDev\tG_FMT succeeded");
+  }
+
+  // update colourFormat to current value so in case of VIDIOC_S_FMT failure will have corect one
+  for (currentColourFormatIndex = 0; currentColourFormatIndex < PARRAYSIZE(colourFormatTab); currentColourFormatIndex++) {
+    if (videoFormat.fmt.pix.pixelformat == colourFormatTab[currentColourFormatIndex].code)
+    {
+      colourFormat = colourFormatTab[currentColourFormatIndex].colourFormat;
+      break;
+    }
   }
 
   videoFormat.fmt.pix.pixelformat = colourFormatTab[colourFormatIndex].code;
 
   // set the colour format
-  if (::ioctl(videoFd, VIDIOC_S_FMT, &videoFormat) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_S_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tS_FMT failed : " << ::strerror(errno));
-    PTRACE(1,"\tused code of " << videoFormat.fmt.pix.pixelformat << " for palette: " << colourFormatTab[colourFormatIndex].colourFormat);
-    return FALSE;
+    PTRACE(1,"PVidInDev\tused code of " << videoFormat.fmt.pix.pixelformat << " for palette: " << colourFormatTab[colourFormatIndex].colourFormat);
+    return colorFormatSet;
+  } else {
+    PTRACE(8,"PVidInDev\tS_FMT succeeded for palette: " << colourFormatTab[colourFormatIndex].colourFormat);
   }
 
   // get the colour format again to be careful about broken drivers
-  if (::ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tG_FMT failed : " << ::strerror(errno));
-    return FALSE;
+    return colorFormatSet;
+  } else {
+    PTRACE(8,"PVidInDev\tG_FMT succeeded");
   }
 
   if (videoFormat.fmt.pix.pixelformat != colourFormatTab[colourFormatIndex].code) {
     PTRACE(3,"PVidInDev\tcolour format mismatch.");
-    return FALSE;
+    return colorFormatSet;
+  } else {
+    colourFormat = newFormat;
+    PTRACE(8,"PVidInDev\tcolour format matches.");
   }
 
   // reset the frame rate because it may have been overridden by the call to S_FMT
-  if (fi_n == 0 || fi_d == 0 || ::ioctl(videoFd, VIDIOC_S_PARM, &streamParm) < 0) {
+  if (fi_n == 0 || fi_d == 0 || v4l2_ioctl(videoFd, VIDIOC_S_PARM, &streamParm) < 0) {
     PTRACE(3,"PVidInDev\tunable to reset frame rate.");
   } else if (streamParm.parm.capture.timeperframe.numerator != fi_n ||
              streamParm.parm.capture.timeperframe.denominator  != fi_d) {
     PTRACE(3, "PVidInDev\tnew frame interval (" << streamParm.parm.capture.timeperframe.numerator
               << "/" << streamParm.parm.capture.timeperframe.denominator
               << ") differs from what was requested (" << fi_n << "/" << fi_d << ").");
+  } else {
+    PTRACE(8,"PVidInDev\tS_PARM succeeded (preserving frame rate at " << fi_n << "/" << fi_d << ")");
   }
 
   frameBytes = videoFormat.fmt.pix.sizeimage;
 
-  PTRACE(6,"PVidInDev\tset colour format \"" << newFormat << "\", fd=" << videoFd);
+  PTRACE(6,"PVidInDev\tset colour format \"" << newFormat << "\" set for " << deviceName << ", fd=" << videoFd);
 
-  if (resume)
-    return Start();
+  colorFormatSet = PTrue;
+  if (resume) {
+    colorFormatSet = SetMapping();
+    if (colorFormatSet) {
+      colorFormatSet = Start();
+    }
+  }
 
-  return TRUE;
+  return colorFormatSet;
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
+PBoolean PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
 {
   if (!PVideoDevice::SetFrameRate(rate)) {
     PTRACE(3,"PVidInDev\tSetFrameRate failed for rate " << rate);
-    return TRUE; // Ignore
+    return PTrue; // Ignore
   }
 
   if (canSetFrameRate) {
@@ -566,55 +578,127 @@ BOOL PVideoInputDevice_V4L2::SetFrameRate(unsigned rate)
     videoStreamParm.parm.capture.timeperframe.denominator = (rate ? rate : 1);
 
     // set the stream parameters
-    if (::ioctl(videoFd, VIDIOC_S_PARM, &videoStreamParm) < 0)  {
+    if (v4l2_ioctl(videoFd, VIDIOC_S_PARM, &videoStreamParm) < 0)  {
       PTRACE(1,"PVidInDev\tS_PARM failed : "<< ::strerror(errno));
-      return TRUE;
+      return PTrue;
     }
 
     PTRACE(6,"PVidInDev\tset frame rate " << rate << "fps, fd=" << videoFd);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PVideoInputDevice_V4L2::GetFrameSizeLimits(unsigned & minWidth,
+PBoolean PVideoInputDevice_V4L2::GetFrameSizeLimits(unsigned & minWidth,
                                                 unsigned & minHeight,
                                                 unsigned & maxWidth,
                                                 unsigned & maxHeight) 
 {
-  /* Not used in V4L2 */
   minWidth=0;
   maxWidth=65535;
   minHeight=0;
   maxHeight=65535;
 
-  return FALSE;
+  // Before 2.6.19 there is no official way to enumerate frame sizes
+  // in V4L2, but we can use VIDIOC_TRY_FMT to find the largest supported
+  // size. This is roughly what the kernel V4L1 compatibility layer does.
+
+  struct v4l2_format fmt;
+  fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (v4l2_ioctl(videoFd, VIDIOC_G_FMT, &fmt) < 0) {
+    return PFalse;
+  }
+
+  fmt.fmt.pix.width = fmt.fmt.pix.height = 10000;
+  if (v4l2_ioctl(videoFd, VIDIOC_TRY_FMT, &fmt) < 0) {
+    return PFalse;
+  }
+  maxWidth = fmt.fmt.pix.width;
+  maxHeight = fmt.fmt.pix.height;
+
+  PTRACE(8,"PVidInDev\tFrame size limits: [" << minWidth << "," << maxWidth << "]" << "x"
+                                      << "[" << minWidth << "," << maxWidth << "]");
+
+  return PTrue;
 }
 
+PBoolean PVideoInputDevice_V4L2::SetFrameSize(unsigned width, unsigned height) {
+  PBoolean resume = started;
 
-BOOL PVideoInputDevice_V4L2::SetFrameSize(unsigned width, unsigned height)
-{
-  if (!PVideoDevice::SetFrameSize(width, height)) {
-    PTRACE(3,"PVidInDev\tSetFrameSize failed for size " << width << "x" << height);
-    return FALSE;
+  if (started == PTrue) {
+    Stop();
   }
 
-  BOOL resume = started;
-  Stop();
-  ClearMapping();
+  unsigned requestedWidth = width;
+  unsigned requestedHeight = height;
 
-  if (!VerifyHardwareFrameSize(width, height)) {
-    PTRACE(3,"PVidInDev\tVerifyHardwareFrameSize failed for size " << width << "x" << height);
-    return FALSE;
+  if (!VerifyHardwareFrameSize(requestedWidth, requestedHeight)) {
+    PTRACE(5, "PVidInDev\tVerifyHardwareFrameSize failed for size " << width << "x" << height);
+    PTRACE(4, "PVidInDev\tCurrent resolution (" << GetFrameWidth() << "x" << GetFrameHeight() << ")");
+    return PFalse;
   }
 
-  PTRACE(6,"PVidInDev\tset frame size " << width << "x" << height << ", fd=" << videoFd);
+  if ((requestedWidth != width) || (requestedHeight != height)){
+    PTRACE(4, "PVidInDev\t" << width << "x" << height << " requested but "
+                            << requestedWidth << "x" << requestedHeight << " returned");
+    return PFalse;
+  } else {
+    PTRACE(5, "PVidInDev\tVerifyHardwareFrameSize succeeded for size " << width << "x" << height);
+    PTRACE(4, "PVidInDev\tCurrent resolution (" << GetFrameWidth() << "x" << GetFrameHeight() << ")");
+  }
 
-  if (resume)
-    return Start();
+  if(!PVideoDevice::SetFrameSize(requestedWidth, requestedHeight)){
+    return PFalse;
+  }
 
-  return TRUE;
+  if (resume) {
+    if (PFalse == SetMapping()) {
+      return PFalse;
+    }
+    if (PFalse == Start()) {
+      return PFalse;
+    }
+  }
+
+  return PTrue;
+}
+
+PBoolean PVideoInputDevice_V4L2::SetNearestFrameSize(unsigned width, unsigned height) {
+  PBoolean resume = started;
+
+  if (started == PTrue) {
+    Stop();
+  }
+
+  unsigned requestedWidth = width;
+  unsigned requestedHeight = height;
+
+  if (!VerifyHardwareFrameSize(requestedWidth, requestedHeight)) {
+    PTRACE(5, "PVidInDev\tVerifyHardwareFrameSize failed for size " << width << "x" << height);
+    PTRACE(4, "PVidInDev\tCurrent resolution (" << GetFrameWidth() << "x" << GetFrameHeight() << ")");
+    return PFalse;
+  }
+
+  if ((requestedWidth != width) || (requestedHeight != height)){
+    PTRACE(4, "PVidInDev\t" << width << "x" << height << " requested but "
+                            << requestedWidth << "x" << requestedHeight << " returned");
+  }
+
+  if(!PVideoDevice::SetFrameSize(requestedWidth, requestedHeight)){
+    return PFalse;
+  }
+
+  if (resume) {
+    if (PFalse == SetMapping()) {
+      return PFalse;
+    }
+    if (PFalse == Start()) {
+      return PFalse;
+    }
+  }
+
+  return PTrue;
 }
 
 
@@ -624,58 +708,69 @@ PINDEX PVideoInputDevice_V4L2::GetMaxFrameBytes()
 }
 
 
-BOOL PVideoInputDevice_V4L2::SetMapping()
+PBoolean PVideoInputDevice_V4L2::SetMapping()
 {
+  if (isMapped) {
+    PTRACE(2, "PVidInDev\tVideo buffers already mapped! Do ClearMapping() first!");
+    ClearMapping();
+    if(isMapped)
+      return PFalse;
+  }
+
   if (!canStream)
-    return FALSE;
+    return isMapped;
 
   struct v4l2_requestbuffers reqbuf;
+  CLEAR(reqbuf);
   reqbuf.count = NUM_VIDBUF;
   reqbuf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   reqbuf.memory = V4L2_MEMORY_MMAP;
 
-  if (::ioctl(videoFd, VIDIOC_REQBUFS, &reqbuf) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_REQBUFS, &reqbuf) < 0) {
     PTRACE(3,"PVidInDev\tREQBUFS failed : " << ::strerror(errno));
-    return FALSE;
+    return isMapped;
   }
   if (reqbuf.count < 1) {
     PTRACE(3,"PVidInDev\tNot enough video buffer available. (got " << reqbuf.count << ")");
-    return FALSE;
+    return isMapped;
   }
   if (reqbuf.count > NUM_VIDBUF) {
     PTRACE(3,"PVidInDev\tToo much video buffer allocated. (got " << reqbuf.count << ")");
-    return FALSE;
+    return isMapped;
   }
 
   struct v4l2_buffer buf;
-  memset(&buf, 0, sizeof(buf));
-  buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-  buf.memory = V4L2_MEMORY_MMAP;
-  
   videoBufferCount = reqbuf.count;
-  for (buf.index = 0; buf.index < videoBufferCount; buf.index++) {
-    if (::ioctl(videoFd, VIDIOC_QUERYBUF, &buf) < 0) {
+
+  for (uint i = 0; i < videoBufferCount; i++) {
+    CLEAR(buf);
+
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index = i;
+    if (v4l2_ioctl(videoFd, VIDIOC_QUERYBUF, &buf) < 0) {
       PTRACE(3,"PVidInDev\tQUERYBUF failed : " << ::strerror(errno));
-      return FALSE;
+      return isMapped;
     }
 
-    if ((videoBuffer[buf.index] = (BYTE *)::mmap(0, buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, videoFd, buf.m.offset)) == MAP_FAILED) {
-      PTRACE(3,"PVidInDev\tmmap failed : " << ::strerror(errno));
-      return FALSE;
+    if ((videoBuffer[buf.index] = (BYTE *)v4l2_mmap(0, buf.length, PROT_READ|PROT_WRITE, MAP_SHARED, videoFd, buf.m.offset)) == MAP_FAILED) {
+      PTRACE(3,"PVidInDev\tmmap failed for buffer " << buf.index << " with error " << ::strerror(errno) << "(" << errno << ")");
+      return isMapped;
     }
   }
 
-  isMapped = TRUE;
+  isMapped = PTrue;
 
   PTRACE(7,"PVidInDev\tset mapping for " << videoBufferCount << " buffers, fd=" << videoFd);
 
 
-  return TRUE;
+  return isMapped;
 }
 
 
 void PVideoInputDevice_V4L2::ClearMapping()
 {
+  PWaitAndSignal m(mmapMutex);
   if (!canStream) // 'isMapped' wouldn't handle partial mappings
     return;
 
@@ -684,64 +779,60 @@ void PVideoInputDevice_V4L2::ClearMapping()
   buf.memory = V4L2_MEMORY_MMAP;
 
   for (buf.index = 0; ; buf.index++) {
-    if (::ioctl(videoFd, VIDIOC_QUERYBUF, &buf) < 0)
+    if (v4l2_ioctl(videoFd, VIDIOC_QUERYBUF, &buf) < 0)
       break;
 
-    ::munmap(videoBuffer[buf.index], buf.length);
+#ifdef SOLARIS
+    ::v4l2_munmap((char*)videoBuffer[buf.index], buf.length);
+#else
+    ::v4l2_munmap(videoBuffer[buf.index], buf.length);
+#endif
   }
 
-  isMapped = FALSE;
+  isMapped = PFalse;
 
   PTRACE(7,"PVidInDev\tclear mapping, fd=" << videoFd);
 }
 
 
-BOOL PVideoInputDevice_V4L2::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_V4L2::GetFrameData(BYTE * buffer, PINDEX * bytesReturned)
 {
-  PTRACE(1,"PVidInDev\tGetFrameData()");
+  PTRACE(8,"PVidInDev\tGetFrameData()");
 
-  if (frameRate>0) {
-    PTimeInterval delay;
-
-    do {
-      if (!GetFrameDataNoDelay(buffer, bytesReturned))
-        return FALSE;
-
-      delay = PTime() - previousFrameTime;
-    } while (delay.GetMilliSeconds() < msBetweenFrames);
-
-    previousFrameTime = PTime();
-
-    return TRUE;
-  }
-
+  m_pacing.Delay(1000/GetFrameRate());
   return GetFrameDataNoDelay(buffer, bytesReturned);
 }
 
 
-BOOL PVideoInputDevice_V4L2::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_V4L2::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesReturned)
 {
-  PTRACE(1,"PVidInDev\tGetFrameDataNoDelay()\tstarted:" << started << "  canSelect:" << canSelect);
+  PTRACE(8,"PVidInDev\tGetFrameDataNoDelay()\tstarted:" << started << "  canSelect:" << canSelect);
 
+  PWaitAndSignal m(mmapMutex);
   if (!started)
     return NormalReadProcess(buffer, bytesReturned);
 
   struct v4l2_buffer buf;
-  memset(&buf, 0, sizeof(struct v4l2_buffer));
+  CLEAR(buf);
   buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   buf.memory = V4L2_MEMORY_MMAP;
   buf.index = currentvideoBuffer;
 
-  if (::ioctl(videoFd, VIDIOC_DQBUF, &buf) < 0) {
-    PTRACE(1,"PVidInDev\tDQBUF failed : " << ::strerror(errno));
-    return FALSE;
+  if (v4l2_ioctl(videoFd, VIDIOC_DQBUF, &buf) < 0) {
+    // strace resistance
+    if (errno == EINTR) {
+        if (v4l2_ioctl(videoFd, VIDIOC_DQBUF, &buf) < 0) {
+          PTRACE(1,"PVidInDev\tDQBUF failed : " << ::strerror(errno));
+          return PFalse;
+        }
+    }
   }
 
   currentvideoBuffer = (currentvideoBuffer+1) % NUM_VIDBUF;
 
   // If converting on the fly do it from frame store to output buffer,
   // otherwise do straight copy.
-  if (converter != NULL)
+  if (converter != NULL && buf.bytesused)
     converter->Convert(videoBuffer[buf.index], buffer, buf.bytesused, bytesReturned);
   else {
     memcpy(buffer, videoBuffer[buf.index], buf.bytesused);
@@ -752,26 +843,26 @@ BOOL PVideoInputDevice_V4L2::GetFrameDataNoDelay(BYTE * buffer, PINDEX * bytesRe
   PTRACE(8,"PVidInDev\tget frame data of " << buf.bytesused << "bytes, fd=" << videoFd);
 
   // requeue the buffer
-  if (::ioctl(videoFd, VIDIOC_QBUF, &buf) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_QBUF, &buf) < 0) {
     PTRACE(1,"PVidInDev\tQBUF failed : " << ::strerror(errno));
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
 // This video device does not support memory mapping - so use
 // normal read process to extract a frame of video data.
-BOOL PVideoInputDevice_V4L2::NormalReadProcess(BYTE * buffer, PINDEX * bytesReturned)
+PBoolean PVideoInputDevice_V4L2::NormalReadProcess(BYTE * buffer, PINDEX * bytesReturned)
 { 
   if (!canRead)
-    return FALSE;
+    return PFalse;
 
   ssize_t bytesRead;
 
   do
-    bytesRead = ::read(videoFd, buffer, frameBytes);
-  while (bytesRead < 0 && errno == EINTR);
+    bytesRead = v4l2_read(videoFd, buffer, frameBytes);
+  while (bytesRead < 0 && errno == EINTR && IsOpen());
 
   if (bytesRead < 0) {
     
@@ -790,27 +881,29 @@ BOOL PVideoInputDevice_V4L2::NormalReadProcess(BYTE * buffer, PINDEX * bytesRetu
   if (bytesReturned != NULL)
     *bytesReturned = (PINDEX)bytesRead;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned width, unsigned height)
+PBoolean PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned & width, unsigned & height)
 {
   struct v4l2_format videoFormat;
+  CLEAR(videoFormat);
   videoFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
   struct v4l2_streamparm streamParm;
+  CLEAR(streamParm);
   unsigned int fi_n = 0, fi_d = 0;
   streamParm.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
 
   // get the frame size
-  if (::ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tG_FMT failed : " << ::strerror(errno));
-    return FALSE;
+    return PFalse;
   }
 
   // get the frame rate so we can preserve it throughout the S_FMT call
   // Sidenote: V4L2 gives us the frame interval, i.e. 1/fps.
-  if (::ioctl(videoFd, VIDIOC_G_PARM, &streamParm) == 0 &&
-        streamParm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME) {
+  if (v4l2_ioctl(videoFd, VIDIOC_G_PARM, &streamParm) == 0 &&
+        (streamParm.parm.capture.capability & V4L2_CAP_TIMEPERFRAME)) {
     fi_n = streamParm.parm.capture.timeperframe.numerator;
     fi_d = streamParm.parm.capture.timeperframe.denominator;
   } else {
@@ -820,28 +913,59 @@ BOOL PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned width, unsigned he
   videoFormat.fmt.pix.width = width;
   videoFormat.fmt.pix.height = height;
 
-  // set the frame size
-  if (::ioctl(videoFd, VIDIOC_S_FMT, &videoFormat) < 0) {
+  PBoolean resChangedSuccessfully;
+
+  PTRACE(4, "PVidInDev\tTry setting resolution: " << videoFormat.fmt.pix.width << "x" << videoFormat.fmt.pix.height);
+  if (v4l2_ioctl(videoFd, VIDIOC_S_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tS_FMT failed : " << ::strerror(errno));
-    PTRACE(1,"\tused frame size of " << videoFormat.fmt.pix.width << "x" << videoFormat.fmt.pix.height);
-    return FALSE;
+    resChangedSuccessfully = PFalse;
+  } else {
+    PTRACE(8, "PVidInDev\tS_FMT set resolution to: "<< videoFormat.fmt.pix.width << "x" <<
+            videoFormat.fmt.pix.height);
+    resChangedSuccessfully = PTrue;
   }
 
-  // get the frame size again to be careful about broken drivers
-  if (::ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
+  //
+  //	If the previous call was unsuccessful because of a busy device, we can close down the device and reopen it.
+  //	Note that at this point, the device stopped streaming and the memory is unmapped.
+  //
+  if ((resChangedSuccessfully == PFalse) && (errno == EBUSY)) {
+    Close();
+    Open(GetNames().GetUserFriendly(deviceName), PTrue);
+
+    //
+    // Retry to set the new frame size
+    //
+    videoFormat.fmt.pix.width = width;
+    videoFormat.fmt.pix.height = height;
+
+    if (v4l2_ioctl(videoFd, VIDIOC_S_FMT, &videoFormat) < 0) {
+      PTRACE(1,"PVidInDev\tS_FMT failed: " << ::strerror(errno));
+      return PFalse;
+    } else {
+      PTRACE(5, "PVidInDev\tVIDIOC_S_FMT succeeded after Close() and Open()!");
+    }
+  }
+
+  //
+  //	Double checking that the resolution change was successful (in case of a broken driver)
+  //
+  CLEAR(videoFormat);
+  videoFormat.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+  if (v4l2_ioctl(videoFd, VIDIOC_G_FMT, &videoFormat) < 0) {
     PTRACE(1,"PVidInDev\tG_FMT failed : " << ::strerror(errno));
-    return FALSE;
-  }
-
-  if ((videoFormat.fmt.pix.width != width) || (videoFormat.fmt.pix.height != height)) {
-    PTRACE(3,"PVidInDev\tframe size mismatch.");
-    // allow the device to return actual frame size
-    PVideoDevice::SetFrameSize(videoFormat.fmt.pix.width, videoFormat.fmt.pix.height);
-    return FALSE;
+    return PFalse;
+  } else {
+    frameBytes = videoFormat.fmt.pix.sizeimage;
+    PTRACE(8, "PVidInDev\tG_FMT returned resolution: "<< videoFormat.fmt.pix.width << "x" <<
+            videoFormat.fmt.pix.height);
+    width = videoFormat.fmt.pix.width;
+    height = videoFormat.fmt.pix.height;
   }
 
   // reset the frame rate because it may have been overridden by the call to S_FMT
-  if (fi_n == 0 || fi_d == 0 || ::ioctl(videoFd, VIDIOC_S_PARM, &streamParm) < 0) {
+  if (fi_n == 0 || fi_d == 0 || v4l2_ioctl(videoFd, VIDIOC_S_PARM, &streamParm) < 0) {
     PTRACE(3,"PVidInDev\tunable to reset frame rate.");
   } else if (streamParm.parm.capture.timeperframe.numerator != fi_n ||
              streamParm.parm.capture.timeperframe.denominator  != fi_d) {
@@ -850,8 +974,7 @@ BOOL PVideoInputDevice_V4L2::VerifyHardwareFrameSize(unsigned width, unsigned he
               << ") differs from what was requested (" << fi_n << "/" << fi_d << ").");
   }
 
-  frameBytes = videoFormat.fmt.pix.sizeimage;
-  return TRUE;
+  return PTrue;
 }
 
 /**
@@ -866,18 +989,19 @@ int PVideoInputDevice_V4L2::GetControlCommon(unsigned int control, int *value)
     return -1;
 
   struct v4l2_queryctrl q;
-  memset(&q, 0, sizeof(struct v4l2_queryctrl));
+  CLEAR(q);
   q.id = control;
-  if (::ioctl(videoFd, VIDIOC_QUERYCTRL, &q) < 0)
+  if (v4l2_ioctl(videoFd, VIDIOC_QUERYCTRL, &q) < 0)
     return -1;
 
   struct v4l2_control c;
-  memset(&c, 0, sizeof(struct v4l2_control));
+  CLEAR(c);
   c.id = control;
-  if (::ioctl(videoFd, VIDIOC_G_CTRL, &c) < 0)
+  if (v4l2_ioctl(videoFd, VIDIOC_G_CTRL, &c) < 0)
     return -1;
 
-  *value = ((c.value - q.minimum) * 65536) / ((q.maximum-q.minimum));
+  *value = (int)((float)(c.value - q.minimum) / (q.maximum-q.minimum) * (1<<16));
+
   return *value;
 }
 
@@ -912,79 +1036,83 @@ int PVideoInputDevice_V4L2::GetHue()
  * @param control: V4L2_CID_BRIGHTNESS, V4L2_CID_WHITENESS, ...
  * @param newValue: 0-65535 Set this control to this range
  *                  -1 Set the default value
- * @return FALSE, if an error occur or the control is not supported
+ * @return PFalse, if an error occur or the control is not supported
  */
-BOOL PVideoInputDevice_V4L2::SetControlCommon(unsigned int control, int newValue)
+PBoolean PVideoInputDevice_V4L2::SetControlCommon(unsigned int control, int newValue)
 {
+#ifdef __sun
+ PTRACE(1,"PVidInDev\t" << __FILE__ << ":" << __LINE__  << "() videoFd=" << videoFd);
+#else
   PTRACE(1,"PVidInDev\t" << __FUNCTION__  << "() videoFd=" << videoFd);
+#endif
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   struct v4l2_queryctrl q;
-  memset(&q, 0, sizeof(struct v4l2_queryctrl));
+  CLEAR(q);
   q.id = control;
-  if (::ioctl(videoFd, VIDIOC_QUERYCTRL, &q) < 0)
-    return FALSE;
+  if (v4l2_ioctl(videoFd, VIDIOC_QUERYCTRL, &q) < 0)
+    return PFalse;
 
   struct v4l2_control c;
-  memset(&c, 0, sizeof(struct v4l2_control));
+  CLEAR(c);
   c.id = control;
   if (newValue < 0)
     c.value = q.default_value;
   else
-    c.value = q.minimum + ((q.maximum-q.minimum) * newValue)/65535;
+    c.value = (float)(q.minimum + ((q.maximum-q.minimum) * ((float)newValue) / (1<<16)));
 
-  if (::ioctl(videoFd, VIDIOC_S_CTRL, &c) < 0)
-    return FALSE;
+  if (v4l2_ioctl(videoFd, VIDIOC_S_CTRL, &c) < 0)
+    return PFalse;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::SetBrightness(unsigned newBrightness) 
+PBoolean PVideoInputDevice_V4L2::SetBrightness(unsigned newBrightness) 
 { 
   if (!SetControlCommon(V4L2_CID_BRIGHTNESS, newBrightness))
-    return FALSE;
+    return PFalse;
   frameBrightness = newBrightness;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::SetWhiteness(unsigned newWhiteness) 
+PBoolean PVideoInputDevice_V4L2::SetWhiteness(unsigned newWhiteness) 
 { 
   if (!SetControlCommon(V4L2_CID_WHITENESS, newWhiteness))
-    return FALSE;
+    return PFalse;
 
   frameWhiteness = newWhiteness;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::SetColour(unsigned newColour) 
+PBoolean PVideoInputDevice_V4L2::SetColour(unsigned newColour) 
 { 
   if (!SetControlCommon(V4L2_CID_SATURATION, newColour))
-    return FALSE;
+    return PFalse;
   frameColour = newColour;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::SetContrast(unsigned newContrast) 
+PBoolean PVideoInputDevice_V4L2::SetContrast(unsigned newContrast) 
 { 
   if (!SetControlCommon(V4L2_CID_CONTRAST, newContrast))
-    return FALSE;
+    return PFalse;
   frameContrast = newContrast;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::SetHue(unsigned newHue) 
+PBoolean PVideoInputDevice_V4L2::SetHue(unsigned newHue) 
 {
   if (!SetControlCommon(V4L2_CID_HUE, newHue))
-    return FALSE;
+    return PFalse;
   frameHue=newHue;
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::GetParameters (int *whiteness, int *brightness, int *colour, int *contrast, int *hue)
+PBoolean PVideoInputDevice_V4L2::GetParameters (int *whiteness, int *brightness, int *colour, int *contrast, int *hue)
 {
   if (!IsOpen())
-    return FALSE;
+    return PFalse;
 
   frameWhiteness = -1;
   frameBrightness = -1;
@@ -1003,12 +1131,12 @@ BOOL PVideoInputDevice_V4L2::GetParameters (int *whiteness, int *brightness, int
   *contrast   = frameContrast;
   *hue        = frameHue;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PVideoInputDevice_V4L2::TestAllFormats()
+PBoolean PVideoInputDevice_V4L2::TestAllFormats()
 {
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1018,7 +1146,33 @@ BOOL PVideoInputDevice_V4L2::TestAllFormats()
 void
 V4L2Names::Update()
 {
-  PTRACE(1,"Detecting V4L2 devices");
+  PTRACE(1,"PV4L2Plugin\tDetecting V4L2 devices");
+  PWaitAndSignal m(mutex);
+  inputDeviceNames.RemoveAll (); // flush the previous run
+#if defined(P_FREEBSD)
+  for (int i = 0; i < 10; i++) {
+    PString thisDevice = PString("/dev/video") + PString(i);
+    int videoFd=::v4l2_open((const char *)thisDevice, O_RDONLY | O_NONBLOCK);
+    if ((videoFd > 0) || (errno == EBUSY)) {
+      PBoolean valid = PFalse;
+      struct v4l2_capability videoCaps;
+      CLEAR(videoCaps);
+      if ((errno == EBUSY) ||
+          (v4l2_ioctl(videoFd, VIDIOC_QUERYCAP, &videoCaps) >= 0 &&
+          (videoCaps.capabilities & V4L2_CAP_VIDEO_CAPTURE))) {
+        PTRACE(1,"PV4L2Plugin\tdetected capture device " << videoCaps.card);
+        valid = PTrue;
+      }
+      else {
+        PTRACE(1,"PV4L2Plugin\t" << thisDevice << "is not deemed valid");
+      }
+      if (videoFd>0)
+        ::v4l2_close(videoFd);
+      if(valid)
+        inputDeviceNames += thisDevice;
+    }
+  }
+#else
   PDirectory   procvideo2_4("/proc/video/dev");
   PDirectory   procvideo2_6("/sys/class/video4linux");
   PDirectory * procvideo;
@@ -1038,31 +1192,30 @@ V4L2Names::Update()
     kernelVersion=KUNKNOWN;
     procvideo=0;
   }
-  inputDeviceNames.RemoveAll (); // flush the previous run
   if (procvideo) {
     PTRACE(2,"PV4L2Plugin\tdetected device metadata at "<<*procvideo);
-    if ((kernelVersion==K2_6 && procvideo->Open(PFileInfo::SubDirectory) || 
+    if (((kernelVersion==K2_6 && procvideo->Open(PFileInfo::SubDirectory)) || 
         (procvideo->Open(PFileInfo::RegularFile)))) {
       do {
         entry = procvideo->GetEntryName();
         if ((entry.Left(5) == "video")) {
           PString thisDevice = "/dev/" + entry;
-          int videoFd=::open((const char *)thisDevice, O_RDONLY | O_NONBLOCK);
+          int videoFd=::v4l2_open((const char *)thisDevice, O_RDONLY | O_NONBLOCK);
           if ((videoFd > 0) || (errno == EBUSY)) {
-            BOOL valid = FALSE;
+            PBoolean valid = PFalse;
             struct v4l2_capability videoCaps;
-            memset(&videoCaps,0,sizeof(videoCaps));
+            CLEAR(videoCaps);
             if ((errno == EBUSY) ||
-                (::ioctl(videoFd, VIDIOC_QUERYCAP, &videoCaps) >= 0 &&
+                (v4l2_ioctl(videoFd, VIDIOC_QUERYCAP, &videoCaps) >= 0 &&
                 (videoCaps.capabilities & V4L2_CAP_VIDEO_CAPTURE))) {
               PTRACE(1,"PV4L2Plugin\tdetected capture device " << videoCaps.card);
-              valid = TRUE;
+              valid = PTrue;
             }
             else {
               PTRACE(1,"PV4L2Plugin\t" << thisDevice << "is not deemed valid");
             }
             if (videoFd>0)
-              ::close(videoFd);
+              ::v4l2_close(videoFd);
             if(valid)
               inputDeviceNames += thisDevice;
           }
@@ -1076,16 +1229,17 @@ V4L2Names::Update()
   else {
     PTRACE(1,"Unable to detect v4l2 directory");
   }
+#endif
   if (inputDeviceNames.GetSize() == 0) {
     POrdinalToString vid;
     ReadDeviceDirectory("/dev/", vid);
 
     for (PINDEX i = 0; i < vid.GetSize(); i++) {
       PINDEX cardnum = vid.GetKeyAt(i);
-      int fd = ::open(vid[cardnum], O_RDONLY | O_NONBLOCK);
+      int fd = ::v4l2_open(vid[cardnum], O_RDONLY | O_NONBLOCK);
       if ((fd >= 0) || (errno == EBUSY)) {
         if (fd >= 0)
-          ::close(fd);
+          ::v4l2_close(fd);
         inputDeviceNames += vid[cardnum];
       }
     }
@@ -1097,22 +1251,111 @@ PString V4L2Names::BuildUserFriendly(PString devname)
 {
   PString Result;
 
-  int fd = ::open((const char *)devname, O_RDONLY);
+  int fd = ::v4l2_open((const char *)devname, O_RDONLY);
   if(fd < 0) {
     return devname;
   }
 
   struct v4l2_capability videocap;
-  memset(&videocap,0,sizeof(videocap));
-  if (::ioctl(fd, VIDIOC_QUERYCAP, &videocap) < 0)  {
-      ::close(fd);
-      return devname;
-    }
+  CLEAR(videocap);
+  if (v4l2_ioctl(fd, VIDIOC_QUERYCAP, &videocap) < 0)  {
+    ::v4l2_close(fd);
+    return devname;
+  }
   
-  ::close(fd);
+  ::v4l2_close(fd);
   PString ufname((const char*)videocap.card);
 
   return ufname;
 }
+
+/**
+ *
+ *
+ */
+PBoolean PVideoInputDevice_V4L2::QueueBuffers()
+{
+  if (PTrue == areBuffersQueued) {
+    PTRACE(3, "PVidInDev\tVideo buffers already queued! Do DequeueBuffers() first!");
+    return areBuffersQueued;
+  }
+
+  if (PFalse == isMapped) {
+    PTRACE(3, "Buffers are not mapped yet! Do SetMapping() first!");
+    return areBuffersQueued;
+  }
+
+  /* Queue all buffers */
+  currentvideoBuffer = 0;
+
+  for (unsigned int i = 0; i < videoBufferCount; i++) {
+    struct v4l2_buffer buf;
+    CLEAR(buf);
+
+    buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+    buf.memory = V4L2_MEMORY_MMAP;
+    buf.index = i;
+
+    if (v4l2_ioctl(videoFd, VIDIOC_QBUF, &buf) < 0) {
+      PTRACE(3, "PVidInDev\tVIDIOC_QBUF failed for buffer " << i << ": " << ::strerror(errno));
+      return areBuffersQueued;
+    }
+    PTRACE(6, "PVidInDev\tBuffer " << i << " queued");
+  }
+
+  areBuffersQueued = PTrue;
+  PTRACE(8, "PVidInDev\t" << videoBufferCount << " buffers successfully queued.");
+  return areBuffersQueued;
+}
+
+
+PBoolean PVideoInputDevice_V4L2::StartStreaming()
+{
+  PTRACE(8, "PVidInDev\tStart streaming for \"" << deviceName << "\" with fd=" << videoFd);
+
+  if (PTrue == isStreaming) {
+    PTRACE(4, "PVidInDev\tVideo buffers already streaming! Nothing to do.");
+    return isStreaming;
+  }
+
+  if (PFalse == areBuffersQueued) {
+    PTRACE(2, "Buffers are not queued yet! Do QueueBuffers() first!");
+    return isStreaming;
+  }
+
+  //
+  // Now start streaming
+  //
+  enum v4l2_buf_type type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+  if (v4l2_ioctl(videoFd, VIDIOC_STREAMON, &type) < 0) {
+    PTRACE(2, "PVidInDev\tSTREAMON failed with error " << ::strerror(errno));
+    return isStreaming;
+  }
+
+  isStreaming = PTrue;
+  PTRACE(8, "PVidInDev\tVideo Input Device \"" << deviceName << "\" successfully started streaming.");
+  return isStreaming;
+}
+
+
+void PVideoInputDevice_V4L2::StopStreaming(){
+  PTRACE(8, "PVidInDev\tStop streaming for \"" << deviceName << "\" with fd=" << videoFd);
+
+  if (PFalse == isStreaming) {
+    PTRACE(2, "PVidInDev\tVideo buffers already not streaming! Do StartStreaming() first.");
+    return;
+  }
+
+  int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+
+  if (v4l2_ioctl(videoFd, VIDIOC_STREAMOFF, &type) < 0) {
+    PTRACE(2, "PVidInDev\tSTREAMOFF failed : " << ::strerror(errno));
+    return;
+  }
+
+  isStreaming = PFalse;
+  PTRACE(8, "PVidInDev\tVideo Input Device \"" << deviceName << "\" successfully stopped streaming.");
+}
+
 
 // End Of File ///////////////////////////////////////////////////////////////

@@ -23,57 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pasn.h,v $
- * Revision 1.15  2005/12/22 02:29:22  csoutheren
- * Fixed PASNIPAddress constructor that accepts PIPSocket::Address
- *
- * Revision 1.14  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.13  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.12  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.11  1999/05/01 03:52:20  robertj
- * Fixed various egcs warnings.
- *
- * Revision 1.10  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.9  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.8  1998/11/30 02:50:54  robertj
- * New directory structure
- *
- * Revision 1.7  1998/09/23 06:19:44  robertj
- * Added open source copyright license.
- *
- * Revision 1.6  1997/08/20 08:48:56  craigs
- * Added GetString() to PASNNull
- *
- * Revision 1.5  1997/07/20 08:34:14  craigs
- * Added ASN NULL type
- *
- * Revision 1.4  1997/07/16 05:51:08  craigs
- * Added PASNString constructor with ptr and length
- *
- * Revision 1.3  1996/11/04 09:45:08  robertj
- * Fixed bug in IP number ASN type, should be binary not dot format string.
- *
- * Revision 1.2  1996/11/04 03:56:00  robertj
- * Added ASN types to class.
- *
- * Revision 1.1  1996/09/14 12:58:57  robertj
- * Initial revision
- *
+ * $Revision: 21788 $
+ * $Author: rjongbloed $
+ * $Date: 2008-12-11 23:42:13 -0600 (Thu, 11 Dec 2008) $
  */
 
-#ifndef _PASN_H
-#define _PASN_H
+#ifndef PTLIB_PASN_H
+#define PTLIB_PASN_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -91,7 +47,7 @@ typedef DWORD           PASNOid;
 class PASNObject;
 class PASNSequence;
 
-PLIST(PASNObjectList, PASNObject);
+PARRAY(PASNObjectArray, PASNObject);
 
 
 //////////////////////////////////////////////////////////////////////////
@@ -212,7 +168,7 @@ class PASNObject : public PObject
     /** Decode an ASN length in the buffer at the given ptr. The ptr is moved
        to the byte after the end of the encoded length.
      */
-    static BOOL DecodeASNLength (
+    static PBoolean DecodeASNLength (
       const PBYTEArray & buffer,  ///< buffer to decode data from
       PINDEX & ptr,               ///< ptr to decode from
       WORD & len                  ///< returned length
@@ -266,7 +222,7 @@ class PASNObject : public PObject
     );
     // Return the length of an encoded ASN integer with the specified value 
 
-    static BOOL DecodeASNInteger (
+    static PBoolean DecodeASNInteger (
       const PBYTEArray & buffer,  ///< buffer to decode from
       PINDEX & ptr,               ///< ptr to data in buffer
       PASNInt & value,            ///< returned value
@@ -274,7 +230,7 @@ class PASNObject : public PObject
     );
     // Decode an ASN integer value in the specified buffer 
 
-    static BOOL DecodeASNUnsigned (
+    static PBoolean DecodeASNUnsigned (
       const PBYTEArray & buffer,  ///< buffer to decode from
       PINDEX & ptr,               ///< ptr to data in buffer
       PASNUnsigned & value,       ///< returned value
@@ -344,7 +300,7 @@ class PASNString : public PASNObject
     PString GetTypeAsString() const;
 
   protected:
-    BOOL Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType type);
+    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType type);
     void Encode(PBYTEArray & buffer,             PASNObject::ASNType type);
 
     PString value;
@@ -410,7 +366,7 @@ class PASNUnsignedInteger : public PASNObject
     PASNUnsignedInteger()
       { value = 0; }
 
-    BOOL Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType theType);
+    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i, PASNObject::ASNType theType);
     void Encode(PBYTEArray & buffer, PASNObject::ASNType theType);
 
   private:
@@ -486,7 +442,7 @@ class PASNGauge : public PASNUnsignedInteger
     PASNGauge(const PBYTEArray & buffer, PINDEX & ptr)
       { Decode(buffer, ptr); }
 
-    BOOL Decode(const PBYTEArray & buffer, PINDEX & i)
+    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i)
       { return PASNUnsignedInteger::Decode(buffer, i, Gauge); }
 
     void Encode(PBYTEArray & buffer)
@@ -526,7 +482,7 @@ class PASNObjectID : public PASNObject
     PString GetTypeAsString() const;
 
   protected:
-    BOOL Decode(const PBYTEArray & buffer, PINDEX & i);
+    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i);
 
   private:
     PDWORDArray value;
@@ -587,23 +543,23 @@ class PASNSequence : public PASNObject
 
     void PrintOn(ostream & strm) const;
     void Encode(PBYTEArray & buffer);
-    BOOL Decode(const PBYTEArray & buffer, PINDEX & i);
+    PBoolean Decode(const PBYTEArray & buffer, PINDEX & i);
     WORD GetEncodedLength();
     ASNType GetType() const;
     PString GetTypeAsString() const;
 
-    BOOL Encode(PBYTEArray & buffer, PINDEX maxLen) ;
+    PBoolean Encode(PBYTEArray & buffer, PINDEX maxLen) ;
 
   private:
-    PASNObjectList sequence;
+    PASNObjectArray sequence;
     BYTE     type;
     ASNType  asnType;
     WORD     encodedLen;
     WORD     seqLen;
 };
 
-#endif
+
+#endif // PTLIB_PASN_H
 
 
-// End of File.
-
+// End Of File ///////////////////////////////////////////////////////////////

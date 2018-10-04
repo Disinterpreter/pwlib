@@ -36,6 +36,9 @@
 #define __TINYJPEG_INTERNAL_H_
 
 #include <setjmp.h>
+#include <ptbuildopts.h>
+
+#define SANITY_CHECK 1
 
 struct jdec_private;
 
@@ -44,7 +47,9 @@ struct jdec_private;
 #define HUFFMAN_HASH_MASK  (HUFFMAN_HASH_SIZE-1)
 
 #define HUFFMAN_TABLES	   4
-#define COMPONENTS	   4
+#define COMPONENTS	   3
+#define JPEG_MAX_WIDTH	   2048
+#define JPEG_MAX_HEIGHT	   2048
 
 struct huffman_table
 {
@@ -63,11 +68,18 @@ struct component
 {
   unsigned int Hfactor;
   unsigned int Vfactor;
+#ifndef P_MEDIALIB
   float *Q_table;		/* Pointer to the quantisation table to use */
+#else
+  uint16_t *Q_table;   /* Pointer to the quantisation table to use */
+#endif
   struct huffman_table *AC_table;
   struct huffman_table *DC_table;
   short int previous_DC;	/* Previous DC coefficient */
   short int DCT[64];		/* DCT coef */
+#if SANITY_CHECK
+  unsigned int cid;
+#endif
 };
 
 
@@ -89,10 +101,17 @@ struct jdec_private
   unsigned int reservoir, nbits_in_reservoir;
 
   struct component component_infos[COMPONENTS];
+#ifndef P_MEDIALIB
   float Q_tables[COMPONENTS][64];		/* quantization tables */
+#else
+  uint16_t Q_tables[COMPONENTS][64];   /* quantization tables */
+#endif
   struct huffman_table HTDC[HUFFMAN_TABLES];	/* DC huffman tables   */
   struct huffman_table HTAC[HUFFMAN_TABLES];	/* AC huffman tables   */
   int default_huffman_table_initialized;
+  int restart_interval;
+  int restarts_to_go;				/* MCUs left in this restart interval */
+  int last_rst_marker_seen;			/* Rst marker is incremented each time */
 
   /* Temp space used after the IDCT to store each components */
   uint8_t Y[64*4], Cr[64], Cb[64];
@@ -103,8 +122,8 @@ struct jdec_private
 
 };
 
-#define IDCT jpeg_idct_float
-void jpeg_idct_float (struct component *compptr, uint8_t *output_buf, int stride);
+#define IDCT tinyjpeg_idct_float
+void tinyjpeg_idct_float (struct component *compptr, uint8_t *output_buf, int stride);
 
 #endif
 

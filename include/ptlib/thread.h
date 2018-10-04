@@ -3,7 +3,7 @@
  *
  * Executable thread encapsulation class (pre-emptive if OS allows).
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -26,142 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: thread.h,v $
- * Revision 1.42  2006/05/25 23:28:27  csoutheren
- * Fixed compilation under gcc 4.0
- *
- * Revision 1.41  2006/05/23 22:11:27  csoutheren
- * Fixed compilation under gcc
- *
- * Revision 1.40  2006/05/23 00:58:05  csoutheren
- * Add templates for creating threads
- *
- * Revision 1.39  2006/01/29 22:35:46  csoutheren
- * Added fix for thread termination problems on SMP machines
- * Thanks to Derek Smithies
- *
- * Revision 1.38  2006/01/11 22:27:44  dereksmithies
- * Add extra comments describing the usage of Resume() in the constructor of a
- * class descended of PThread
- *
- * Revision 1.37  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.36  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.35  2003/10/08 21:39:34  dereksmithies
- * Add a #define to cope with backward compatability issues for PThreadIdentifier
- * Thanks to Andrey S Pankov and Craig Southeren for their input.
- *
- * Revision 1.34  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.33  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.32  2002/10/04 04:33:27  robertj
- * Added functions for getting operating system thread identifier values.
- *
- * Revision 1.31  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.30  2002/06/27 06:44:28  robertj
- * Changed "" to PString::Empty() where assigning to PString.
- *
- * Revision 1.29  2002/04/24 01:49:22  robertj
- * Fixed error in PTRACE_BLOCk nesting level to now work when no tracing enabled.
- *
- * Revision 1.28  2002/04/24 01:09:56  robertj
- * Fixed problem with PTRACE_BLOCK indent level being correct across threads.
- *
- * Revision 1.27  2001/09/10 02:51:22  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.26  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.25  2000/11/28 12:55:36  robertj
- * Added static function to create a new thread class and automatically
- *   run a function on another class in the context of that thread.
- *
- * Revision 1.24  2000/10/20 05:31:09  robertj
- * Added function to change auto delete flag on a thread.
- *
- * Revision 1.23  2000/06/26 11:17:19  robertj
- * Nucleus++ port (incomplete).
- *
- * Revision 1.22  2000/02/29 12:26:14  robertj
- * Added named threads to tracing, thanks to Dave Harvey
- *
- * Revision 1.21  1999/06/06 05:07:17  robertj
- * Fixed documentation error.
- *
- * Revision 1.20  1999/03/09 02:59:51  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.19  1999/02/16 08:11:17  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.18  1998/11/20 03:18:33  robertj
- * Added thread WaitForTermination() function.
- *
- * Revision 1.17  1998/10/31 12:47:59  robertj
- * Removed ability to start threads immediately, race condition with vtable (Main() function).
- *
- * Revision 1.16  1998/09/23 06:21:41  robertj
- * Added open source copyright license.
- *
- * Revision 1.15  1996/03/02 03:15:51  robertj
- * Added automatic deletion of thread object instances on thread completion.
- *
- * Revision 1.14  1995/12/10 11:44:32  robertj
- * Fixed bug in non-platform threads and semaphore timeouts.
- *
- * Revision 1.13  1995/11/21 11:49:44  robertj
- * Added timeout on semaphore wait.
- *
- * Revision 1.12  1995/07/31 12:10:40  robertj
- * Added semaphore class.
- *
- * Revision 1.11  1995/06/17 11:13:35  robertj
- * Documentation update.
- *
- * Revision 1.10  1995/03/14 12:42:49  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.9  1995/01/16  09:42:13  robertj
- * Documentation.
- *
- * Revision 1.8  1994/09/25  10:45:22  robertj
- * Virtualised IsNoLongerBlocked for unix platform.
- *
- * Revision 1.6  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.5  1994/08/21  23:43:02  robertj
- * Added SuspendBlock state to cooperative multi-threading to fix logic fault.
- *
- * Revision 1.4  1994/08/04  12:32:22  robertj
- * Better name of thread block check function.
- *
- * Revision 1.3  1994/07/21  12:33:49  robertj
- * Moved cooperative threads to common.
- *
- * Revision 1.2  1994/07/02  03:03:49  robertj
- * Added restartable threads.
- *
- * Revision 1.1  1994/06/25  11:55:15  robertj
- * Initial revision
- *
+ * $Revision: 28050 $
+ * $Author: rjongbloed $
+ * $Date: 2012-07-18 02:15:30 -0500 (Wed, 18 Jul 2012) $
  */
 
-#ifndef _PTHREAD
-#define _PTHREAD
+#ifndef PTLIB_THREAD_H
+#define PTLIB_THREAD_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -171,27 +42,26 @@
 #undef Priority
 #endif
 
+#include <ptlib/mutex.h>
+
 class PSemaphore;
 
-#define PThreadIdentifer PThreadIdentifier
-
-typedef P_THREADIDENTIFIER PThreadIdentifier;
 
 ///////////////////////////////////////////////////////////////////////////////
 // PThread
 
-/** This class defines a thread of execution in the system. A {\it thread} is
+/** This class defines a thread of execution in the system. A <i>thread</i> is
    an independent flow of processor instructions. This differs from a
-   {\it process} which also embodies a program address space and resource
+   <i>process</i> which also embodies a program address space and resource
    allocation. So threads can share memory and resources as they run in the
    context of a given process. A process always contains at least one thread.
-   This is reflected in this library by the #PProcess# class being
-   descended from the PThread class.
+   This is reflected in this library by the <code>PProcess</code> class being
+   descended from the <code>PThread</code> class.
 
    The implementation of a thread is platform dependent, but it is
    assumed that the platform has some support for native threads.
-   Previous versions of PWLib has some support for co-operative
-   threads, but this has been removed
+   Previous versions of PTLib/PWLib have some support for co-operative
+   threads, but this has been removed.
  */
 class PThread : public PObject
 {
@@ -202,20 +72,15 @@ class PThread : public PObject
   //@{
     /// Codes for thread priorities.
     enum Priority {
-      /// Will only run if all other threads are blocked.
-      LowestPriority,   
+      LowestPriority,  ///< Will only run if all other threads are blocked.
 
-      /// Runs approximately half as often as normal.
-      LowPriority,      
+      LowPriority,     ///< Runs approximately half as often as normal.
 
-      /// Normal priority for a thread.
-      NormalPriority,   
+      NormalPriority,  ///< Normal priority for a thread.
 
-      /// Runs approximately twice as often as normal.
-      HighPriority,     
+      HighPriority,    ///< Runs approximately twice as often as normal.
 
-      /// Is only thread that will run, unless blocked.
-      HighestPriority,  
+      HighestPriority, ///< Is only thread that will run, unless blocked.
 
       NumPriorities
     };
@@ -229,21 +94,21 @@ class PThread : public PObject
       NoAutoDeleteThread  
     };
 
-    /** Create a new thread instance. Unless the #startSuspended#
-       parameter is TRUE, the threads #Main()# function is called to
+    /** Create a new thread instance. Unless the <code>startSuspended</code>
+       parameter is <code>true</code>, the threads <code>Main()</code> function is called to
        execute the code for the thread.
        
        Note that the exact timing of the execution of code in threads can
        never be predicted. Thus you you can get a race condition on
        intialising a descendent class. To avoid this problem a thread is
-       always started suspended. You must call the Resume() function after
+       always started suspended. You must call the <code>Resume()</code> function after
        your descendent class construction is complete.
 
        If synchronisation is required between threads then the use of
        semaphores is essential.
 
-       If the #deletion# is set to #AutoDeleteThread#
-       then the PThread is assumed to be allocated with the new operator and
+       If the <code>deletion</code> is set to <code>AutoDeleteThread</code>
+       then the <code>PThread</code> is assumed to be allocated with the new operator and
        may be freed using the delete operator as soon as the thread is
        terminated or executes to completion (usually the latter).
 
@@ -252,27 +117,27 @@ class PThread : public PObject
        may be removed in subsequent versions.
      */
     PThread(
-      PINDEX ,                 ///< Not used - previously stack size
+      PINDEX,                 ///< Not used - previously stack size
       AutoDeleteFlag deletion = AutoDeleteThread,
         ///< Automatically delete PThread instance on termination of thread.
       Priority priorityLevel = NormalPriority,  ///< Initial priority of thread.
       const PString & threadName = PString::Empty() ///< The name of the thread (for Debug/Trace)
     );
 
-    /** Destroy the thread, this simply calls the #Terminate()# function
+    /** Destroy the thread, this simply calls the <code>Terminate()</code> function
        with all its restrictions and penalties. See that function for more
        information.
 
        Note that the correct way for a thread to terminate is to return from
-       the #Main()# function.
+       the <code>Main()</code> function.
      */
     ~PThread();
   //@}
 
-  /**@name Overrides from PObject */
+  /**@name Overrides from <code>PObject</code> */
   //@{
     /**Standard stream print function.
-       The PObject class has a << operator defined that calls this function
+       The <code>PObject</code> class has a << operator defined that calls this function
        polymorphically.
       */
     void PrintOn(
@@ -296,8 +161,8 @@ class PThread : public PObject
        called causing at the very least the possiblity of memory leaks.
 
        Note that the correct way for a thread to terminate is to return from
-       the #Main()# function or self terminate by calling
-       #Terminate()# within the context of the thread which can then
+       the <code>Main()</code> function or self terminate by calling
+       <code>Terminate()</code> within the context of the thread which can then
        assure that all resources are cleaned up.
      */
     virtual void Terminate();
@@ -305,51 +170,54 @@ class PThread : public PObject
     /** Determine if the thread has been terminated or ran to completion.
 
        @return
-       TRUE if the thread has been terminated.
+       <code>true</code> if the thread has been terminated.
      */
-    virtual BOOL IsTerminated() const;
+    virtual PBoolean IsTerminated() const;
+
+    /** Block and wait for the thread to terminate.
+     */
+    void WaitForTermination() const;
 
     /** Block and wait for the thread to terminate.
 
        @return
-       FALSE if the thread has not terminated and the timeout has expired.
+       <code>false</code> if the thread has not terminated and the timeout has expired, <code>true</code> otherwise.
      */
-    void WaitForTermination() const;
-    BOOL WaitForTermination(
+    PBoolean WaitForTermination(
       const PTimeInterval & maxWait  ///< Maximum time to wait for termination.
     ) const;
 
     /** Suspend or resume the thread.
     
-       If #susp# is TRUE this increments an internal count of
+       If <code>susp</code> is <code>true</code> this increments an internal count of
        suspensions that must be matched by an equal number of calls to
-       #Resume()# or #Suspend(FALSE)# before the
+       <code>Resume()</code> or <code>Suspend(false)</code> before the
        thread actually executes again.
 
-       If #susp# is FALSE then this decrements the internal count of
+       If <code>susp</code> is <code>false</code> then this decrements the internal count of
        suspensions. If the count is <= 0 then the thread will run. Note that
        the thread will not be suspended until an equal number of
-       #Suspend(TRUE)# calls are made.
+       <code>Suspend(true)</code> calls are made.
      */
     virtual void Suspend(
-      BOOL susp = TRUE    ///< Flag to suspend or resume a thread.
+      PBoolean susp = true    ///< Flag to suspend or resume a thread.
     );
 
     /** Resume thread execution, this is identical to
-       #Suspend(FALSE)#.
+       <code>Suspend(false)</code>.
 
       The Resume() method may be called from within the constructor of a
-      PThread descendant.  However, the Resume() should be in the
+      PThread descendant.  However, the <code>Resume()</code> should be in the
       constructor of the most descendant class. So, if you have a
       class B (which is descended of PThread), and a class C (which is
-      descended of B), placing the call to Resume in the constructor of B is
+      descended of B), placing the call to <code>Resume()</code> in the constructor of B is
       unwise.
 
-      If you do place a call to Resume in the constructor, it
+      If you do place a call to <code>Resume()</code> in the constructor, it
       should be at the end of the constructor, after all the other
       initialisation in the constructor.
 
-      The reason the call to Resume() should be at the end of the
+      The reason the call to <code>Resume()</code> should be at the end of the
       construction process is simple - you want the thread to start
       when all the variables in the class have been correctly
       initialised.
@@ -357,13 +225,13 @@ class PThread : public PObject
     virtual void Resume();
 
     /** Determine if the thread is currently suspended. This checks the
-       suspension count and if greater than zero returns TRUE for a suspended
+       suspension count and if greater than zero returns <code>true</code> for a suspended
        thread.
 
        @return
-       TRUE if thread is suspended.
+       <code>true</code> if thread is suspended.
      */
-    virtual BOOL IsSuspended() const;
+    virtual PBoolean IsSuspended() const;
 
     /// Suspend the current thread for the specified amount of time.
     static void Sleep(
@@ -420,8 +288,23 @@ class PThread : public PObject
       * if called by the owning thread. Calling this function for another
       * thread that may be terminating is a very bad idea.
       */
-    virtual PThreadIdentifier GetThreadId() const;
+    virtual PThreadIdentifier GetThreadId() const { return m_threadId; }
     static PThreadIdentifier GetCurrentThreadId();
+
+    /// Times for execution of the thread.
+    struct Times
+    {
+      PTimeInterval m_real;     ///< Total real time since thread start in milliseconds.
+      PTimeInterval m_kernel;   ///< Total kernel CPU time in milliseconds.
+      PTimeInterval m_user;     ///< Total user CPU time in milliseconds.
+      friend ostream & operator<<(ostream & strm, const Times & times);
+    };
+
+    /** Get the thread execution times.
+     */
+    bool GetTimes(
+      Times & times   ///< Times for thread execution.
+    );
 
     /** User override function for the main execution routine of the thread. A
        descendent class must provide the code that will be executed in the
@@ -452,8 +335,8 @@ class PThread : public PObject
     static void Yield();
 
     /**Create a simple thread executing the specified notifier.
-       This creates a simple PThread class that automatically executes the
-       function defined by the PNotifier in the context of a new thread.
+       This creates a simple <code>PThread</code> class that automatically executes the
+       function defined by the <code>PNotifier</code> in the context of a new thread.
       */
     static PThread * Create(
       const PNotifier & notifier,     ///< Function to execute in thread.
@@ -462,39 +345,58 @@ class PThread : public PObject
         ///< Automatically delete PThread instance on termination of thread.
       Priority priorityLevel = NormalPriority,  ///< Initial priority of thread.
       const PString & threadName = PString::Empty(), ///< The name of the thread (for Debug/Trace)
-      PINDEX stackSize = 10000         ///< Stack size on some platforms
+      PINDEX stackSize = 65536         ///< Stack size on some platforms
     );
+    static PThread * Create(
+      const PNotifier & notifier,     ///< Function to execute in thread.
+      const PString & threadName      ///< The name of the thread (for Debug/Trace)
+    ) { return Create(notifier, 0, NoAutoDeleteThread, NormalPriority, threadName); }
   //@}
-
-  protected:
-    void InitialiseProcessThread();
-    /* Initialialise the primordial thread, the one in the PProcess. This is
-       required due to the bootstrap logic of processes and threads.
-     */
+  
+    bool IsAutoDelete() const { return m_autoDelete; }
 
   private:
-    PThread();
-    // Create a new thread instance as part of a PProcess class.
+    PThread(bool isProcess);
+    // Create a new thread instance as part of a <code>PProcess</code> class.
 
     friend class PProcess;
+    friend class PExternalThread;
+    friend class PHouseKeepingThread;
     // So a PProcess can get at PThread() constructor but nothing else.
 
-    PThread(const PThread &) { }
+    PThread(const PThread &) : PObject () { }
     // Empty constructor to prevent copying of thread instances.
 
     PThread & operator=(const PThread &) { return *this; }
     // Empty assignment operator to prevent copying of thread instances.
 
-    BOOL autoDelete;
-    // Automatically delete the thread on completion.
+  protected:
+    bool   m_isProcess;
+    bool   m_autoDelete; // Automatically delete the thread on completion.
+    PINDEX m_originalStackSize;
 
-    // Give the thread a name for debugging purposes.
-    PString threadName;
+    PString m_threadName; // Give the thread a name for debugging purposes.
+    PMutex  m_threadNameMutex;
 
+    PThreadIdentifier m_threadId;
+
+#if PTRACING
+  public:
+    struct TraceInfo {
+      TraceInfo()
+      { traceBlockIndentLevel = 0; }
+
+      PStack<PStringStream> traceStreams;
+      unsigned traceLevel;
+      unsigned traceBlockIndentLevel;
+    };
+
+#ifndef P_HAS_THREADLOCAL_STORAGE
   private:
-    unsigned traceBlockIndentLevel;
-    friend class PTrace::Block;
-
+    friend class PTrace;
+    TraceInfo traceInfo;
+#endif // P_HAS_THREADLOCAL_STORAGE
+#endif // PTRACING
 
 // Include platform dependent part of class
 #ifdef _WIN32
@@ -504,85 +406,397 @@ class PThread : public PObject
 #endif
 };
 
+// Include definition of platform dependent thread ID format
+#if defined(_WIN32) && !defined(_WIN32_WCE)
+  #define PTHREAD_ID_FMT "%u"
+#else
+  #define PTHREAD_ID_FMT "0x%lx"
+#endif
+
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+
 /** Define some templates to simplify the declaration
-  * of simple PThread descendants with one or two paramaters 
+  * of simple <code>PThread</code> descendants with one or two paramaters 
   */
 
+/*
+   This class automates calling a global function with no arguments within it's own thread.
+   It is used as follows:
+
+   void GlobalFunction()
+   {
+   }
+
+   ...
+   PString arg;
+   new PThreadMain(&GlobalFunction)
+ */
 class PThreadMain : public PThread
 {
   PCLASSINFO(PThreadMain, PThread);
   public:
-    PThreadMain(BOOL autoDelete = FALSE)
-      : PThread(10000, autoDelete ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
-    { PThread::Resume(); }
-    virtual void Main() = 0;
-};
-
-template <class Arg1Type>
-class PThreadMain1Arg : public PThreadMain
-{
-  PCLASSINFO(PThreadMain1Arg, PThreadMain);
-  public:
-    PThreadMain1Arg(Arg1Type _arg1, BOOL autoDelete = FALSE)
-      : PThreadMain(autoDelete), arg1(_arg1)
-    { PThread::Resume(); }
-    virtual void Main();
+    typedef void (*FnType)(); 
+    PThreadMain(FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
+      , m_function(function)
+      { PThread::Resume(); }
+    PThreadMain(const char * file, int line, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,  NormalPriority,
+                psprintf("%s:%08x-%s:%i", GetClass(), (void *)this, file, line))
+      , m_function(function)
+      { PThread::Resume(); }
+    virtual void Main()
+      { (*m_function)(); }
 
   protected:
-    Arg1Type arg1;
+    FnType m_function;
 };
 
-template <class Arg1Type, class Arg2Type>
-class PThreadMain2Arg : public PThreadMain1Arg<Arg1Type>
+/*
+   This template automates calling a global function with one argument within it's own thread.
+   It is used as follows:
+
+   void GlobalFunction(PString arg)
+   {
+   }
+
+   ...
+   PString arg;
+   new PThread1Arg<PString>(arg, &GlobalFunction)
+ */
+template<typename Arg1Type>
+class PThread1Arg : public PThread
 {
-  typedef PThreadMain1Arg<Arg1Type> AncestorClass;
-  //PCLASSINFO(PThreadMain2Arg, AncestorClass);
+  PCLASSINFO(PThread1Arg, PThread);
   public:
-    PThreadMain2Arg(Arg1Type _arg1, Arg2Type _arg2, BOOL autoDelete = FALSE)
-      : AncestorClass(_arg1, autoDelete), arg2(_arg2)
+    typedef void (*FnType)(Arg1Type arg1);
+
+    PThread1Arg(Arg1Type arg1, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
+      , m_function(function)
+      , m_arg1(arg1)
     { PThread::Resume(); }
-    virtual void Main();
+    PThread1Arg(const char * file, int line, Arg1Type arg1, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, NormalPriority,
+                psprintf("%s:%08x-%s:%i", GetClass(), (void *)this, file, line))
+      , m_function(function)
+      , m_arg1(arg1)
+      { PThread::Resume(); }
+    virtual void Main()
+      { (*m_function)(m_arg1); }
 
   protected:
-    Arg2Type arg2;
+    FnType   m_function;
+    Arg1Type m_arg1;
 };
 
-template <class ObjType>
-class PThreadObj : public PThreadMain
+
+/*
+   This template automates calling a global function with two arguments within it's own thread.
+   It is used as follows:
+
+   void GlobalFunction(PString arg1, int arg2)
+   {
+   }
+
+   ...
+   PString arg;
+   new PThread2Arg<PString, int>(arg1, arg2, &GlobalFunction)
+ */
+template<typename Arg1Type, typename Arg2Type>
+class PThread2Arg : public PThread
 {
+  PCLASSINFO(PThread2Arg, PThread);
   public:
-  PCLASSINFO(PThreadObj, PThreadMain);
+    typedef void (*FnType)(Arg1Type arg1, Arg2Type arg2); 
+    PThread2Arg(Arg1Type arg1, Arg2Type arg2, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
+      , m_function(function)
+      , m_arg1(arg1)
+      , m_arg2(arg2)
+      { PThread::Resume(); }
+    PThread2Arg(const char * file, int line, Arg1Type arg1, Arg2Type arg2, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, NormalPriority,
+                psprintf("%s:%08x-%s:%i", GetClass(), (void *)this, file, line))
+      , m_function(function)
+      , m_arg1(arg1)
+      , m_arg2(arg2)
+      { PThread::Resume(); }
+    virtual void Main()
+      { (*m_function)(m_arg1, m_arg2); }
+
+  protected:
+    FnType   m_function;
+    Arg1Type m_arg1;
+    Arg2Type m_arg2;
+};
+
+/*
+   This template automates calling a global function with three arguments within it's own thread.
+   It is used as follows:
+
+   void GlobalFunction(PString arg1, int arg2, int arg3)
+   {
+   }
+
+   ...
+   PString arg;
+   new PThread3Arg<PString, int, int>(arg1, arg2, arg3, &GlobalFunction)
+ */
+template<typename Arg1Type, typename Arg2Type, typename Arg3Type>
+class PThread3Arg : public PThread
+{
+  PCLASSINFO(PThread3Arg, PThread);
+  public:
+    typedef void (*FnType)(Arg1Type arg1, Arg2Type arg2, Arg3Type arg3); 
+    PThread3Arg(Arg1Type arg1, Arg2Type arg2, Arg3Type arg3, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread)
+      , m_function(function)
+      , m_arg1(arg1)
+      , m_arg2(arg2)
+      , m_arg3(arg3)
+      { PThread::Resume(); }
+    PThread3Arg(const char * file, int line, Arg1Type arg1, Arg2Type arg2, Arg3Type arg3, FnType function, bool autoDel = false)
+      : PThread(10000, autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread, NormalPriority,
+                psprintf("%s:%08x-%s:%i", GetClass(), (void *)this, file, line))
+      , m_function(function)
+      , m_arg1(arg1)
+      , m_arg2(arg2)
+      , m_arg3(arg3)
+      { PThread::Resume(); }
+    virtual void Main()
+      { (*m_function)(m_arg1, m_arg2, m_arg3); }
+
+  protected:
+    FnType   m_function;
+    Arg1Type m_arg1;
+    Arg2Type m_arg2;
+    Arg2Type m_arg3;
+};
+
+/*
+   This template automates calling a member function with no arguments within it's own thread.
+   It is used as follows:
+
+   class Example {
+     public:
+      void Function()
+      {
+      }
+   };
+
+   ...
+   Example ex;
+   new PThreadObj<Example>(ex, &Example::Function)
+ */
+
+template <typename ObjType>
+class PThreadObj : public PThread
+{
+    PCLASSINFO(PThreadObj, PThread);
   public:
     typedef void (ObjType::*ObjTypeFn)(); 
-    PThreadObj(ObjType & _obj, ObjTypeFn _fn, BOOL autoDelete = FALSE)
-      : PThreadMain(autoDelete), obj(_obj), fn(_fn)
-    { PThread::Resume(); }
+
+    PThreadObj(
+      ObjType & obj,
+      ObjTypeFn function,
+      bool autoDel = false,
+      const char * name = NULL,
+      PThread::Priority priority = PThread::NormalPriority
+    ) : PThread(10000,
+                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
+                priority,
+                name)
+      , m_object(obj)
+      , m_function(function)
+    {
+      PThread::Resume();
+    }
+
     void Main()
-    { (obj.*fn)(); }
+    {
+      (m_object.*m_function)();
+    }
 
   protected:
-    ObjType obj;
-    ObjTypeFn fn;
+    ObjType & m_object;
+    ObjTypeFn m_function;
 };
 
-template <class ObjType, class Arg1Type>
-class PThreadObj1Arg : public PThreadMain
+
+/*
+   This template automates calling a member function with one argument within it's own thread.
+   It is used as follows:
+
+   class Example {
+     public:
+      void Function(PString arg)
+      {
+      }
+   };
+
+   ...
+   Example ex;
+   PString str;
+   new PThreadObj1Arg<Example>(ex, str, &Example::Function)
+ */
+template <class ObjType, typename Arg1Type>
+class PThreadObj1Arg : public PThread
 {
-  PCLASSINFO(PThreadObj1Arg, PThreadMain);
+    PCLASSINFO(PThreadObj1Arg, PThread);
   public:
-    typedef void (ObjType::*ObjTypeFn)(int); 
-    PThreadObj1Arg(ObjType & _obj, Arg1Type _arg1, ObjTypeFn _fn, BOOL autoDelete = FALSE)
-      : PThreadMain(autoDelete), obj(_obj), fn(_fn), arg1(_arg1)
-    { PThread::Resume(); }
+    typedef void (ObjType::*ObjTypeFn)(Arg1Type); 
+
+    PThreadObj1Arg(
+      ObjType & obj,
+      Arg1Type arg1,
+      ObjTypeFn function,
+      bool autoDel = false,
+      const char * name = NULL,
+      PThread::Priority priority = PThread::NormalPriority
+    ) : PThread(10000,
+                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
+                priority,
+                name)
+      , m_object(obj)
+      , m_function(function)
+      , m_arg1(arg1)
+    {
+      PThread::Resume();
+    }
+
     void Main()
-    { (obj.*fn)(arg1); }
+    {
+      (m_object.*m_function)(m_arg1);
+    }
 
   protected:
-    ObjType obj;
-    ObjTypeFn fn;
-    Arg1Type arg1;
+    ObjType & m_object;
+    ObjTypeFn m_function;
+    Arg1Type  m_arg1;
 };
 
-#endif // _PTHREAD
+template <class ObjType, typename Arg1Type, typename Arg2Type>
+class PThreadObj2Arg : public PThread
+{
+    PCLASSINFO(PThreadObj2Arg, PThread);
+  public:
+    typedef void (ObjType::*ObjTypeFn)(Arg1Type, Arg2Type);
+
+    PThreadObj2Arg(
+      ObjType & obj,
+      Arg1Type arg1,
+      Arg2Type arg2,
+      ObjTypeFn function,
+      bool autoDel = false,
+      const char * name = NULL,
+      PThread::Priority priority = PThread::NormalPriority
+    ) : PThread(10000,
+                autoDel ? PThread::AutoDeleteThread : PThread::NoAutoDeleteThread,
+                priority,
+                name)
+      , m_object(obj)
+      , m_function(function)
+      , m_arg1(arg1)
+      , m_arg2(arg2)
+    {
+      PThread::Resume();
+    }
+
+    void Main()
+    {
+      (m_object.*m_function)(m_arg1, m_arg2);
+    }
+
+  protected:
+    ObjType & m_object;
+    ObjTypeFn m_function;
+    Arg1Type  m_arg1;
+    Arg2Type  m_arg2;
+};
+
+
+///////////////////////////////////////////////////////////////////////////////
+//
+// PThreadLocalStorage
+//
+
+#ifdef _WIN32
+
+#define P_HAS_THREADLOCAL_STORAGE 1
+
+template <class Storage_T>
+class PThreadLocalStorage
+{
+  public:
+    typedef DWORD Key_T;
+    typedef Storage_T value_type;
+
+    PThreadLocalStorage()
+    { key = TlsAlloc(); }
+
+    ~PThreadLocalStorage()
+    { TlsFree(key);  }
+
+    Key_T GetKey() const
+    { return key; }
+
+    value_type * Get()
+    { return (value_type *) TlsGetValue(key); }
+
+    void Set(value_type * v)
+    { TlsSetValue(key, (LPVOID)v); }
+
+  protected:
+    DWORD key;
+};
+
+#elif defined(P_PTHREADS)
+
+#include <pthread.h>
+
+#define P_HAS_THREADLOCAL_STORAGE 1
+
+template <class Storage_T>
+class PThreadLocalStorage
+{
+  public:
+    typedef pthread_key_t Key_T;
+    typedef Storage_T value_type;
+
+    PThreadLocalStorage()
+    { pthread_key_create(&key, NULL); }
+
+    ~PThreadLocalStorage()
+    { pthread_key_delete(key); }
+
+    Key_T GetKey() const
+    { return key; }
+
+    value_type * Get()
+    { return (value_type *)pthread_getspecific(key); }
+
+    void Set(value_type * v)
+    { pthread_setspecific(key, v); }
+
+  private:
+    Key_T key;
+};
+
+#else
+
+#undef P_HAS_THREADLOCAL_STORAGE 1
+#warning("Thread local storage not supported");
+
+#endif
+
+
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
+
+#endif // PTLIB_THREAD_H
 
 // End Of File ///////////////////////////////////////////////////////////////

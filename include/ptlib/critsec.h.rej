@@ -1,0 +1,20 @@
+--- critsec.h	2013-08-14 18:20:32.000000000 -0500
++++ critsec.h	2016-05-04 19:40:01.626203961 -0500
+@@ -40,7 +40,7 @@
+ #if P_HAS_ATOMIC_INT
+ 
+ #if defined(__GNUC__)
+-#  if __GNUC__ >= 4 && __GNUC_MINOR__ >= 2
++#  if (__GNUC__ >= 4 && __GNUC_MINOR__ >= 2) || __GNUC__ >= 5
+ #     include <ext/atomicity.h>
+ #  else
+ #     include <bits/atomicity.h>
+--- unix.mak	2013-08-14 18:20:27.000000000 -0500
++++ unix.mak	2016-05-04 19:38:50.921583820 -0500
+@@ -729,4 +729,6 @@
+ 
+ LDLIBS		+= -l$(PTLIB_BASE)$(LIB_TYPE)
+ 
++STDCCFLAGS  += -Wno-deprecated-declarations
++
+ # End of unix.mak

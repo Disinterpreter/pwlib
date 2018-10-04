@@ -21,21 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.2  2006/05/24 02:28:18  dereksmithies
- * add separate thread to get the timer to start.
- * Add option to check if the timer has started.
- * Fix use of the parameters.
- *
- * Revision 1.1  2006/05/23 04:36:49  dereksmithies
- * Initial release of a test program to examine the operation of PTimer.
- *
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _PTimer_MAIN_H
 #define _PTimer_MAIN_H
+
+#include <ptlib/pprocess.h>
 
 /**A class that does a PTimer functionality. This class runs once. It
    is started, and on completion of the delay it toggles a flag. At
@@ -62,6 +56,8 @@ class MyTimer : public PTimer
   
   /**The time at which we started */
   PTime startTime;
+
+
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -78,7 +74,7 @@ class DelayThread : public PThread
   PCLASSINFO(DelayThread, PThread);
   
 public:
-  DelayThread(PINDEX _delay, BOOL _checkTimer);
+  DelayThread(PINDEX _delay, PBoolean _checkTimer);
     
   ~DelayThread();
 
@@ -87,7 +83,7 @@ public:
  protected:
   PINDEX delay;
 
-  BOOL checkTimer;
+  PBoolean checkTimer;
 
   MyTimer localPTimer;
 
@@ -142,20 +138,20 @@ class LauncherThread : public PThread
 public:
   LauncherThread()
     : PThread(10000, NoAutoDeleteThread)
-    { iteration = 0; keepGoing = TRUE; }
+    { iteration = 0; keepGoing = PTrue; }
   
   void Main();
     
   PINDEX GetIteration() { return iteration; }
 
-  virtual void Terminate() { keepGoing = FALSE; }
+  virtual void Terminate() { keepGoing = PFalse; }
 
   PTimeInterval GetElapsedTime() { return PTime() - startTime; }
 
  protected:
   PINDEX iteration;
   PTime startTime;
-  BOOL  keepGoing;
+  PBoolean  keepGoing;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -173,7 +169,7 @@ class PTimerTest : public PProcess
 
     PINDEX Interval()   { return interval; }
 
-    BOOL   CheckTimer() { return checkTimer; }
+    PBoolean   CheckTimer() { return checkTimer; }
 
     static PTimerTest & Current()
       { return (PTimerTest &)PProcess::Current(); }
@@ -186,7 +182,59 @@ class PTimerTest : public PProcess
 
     PINDEX interval;
 
-    BOOL   checkTimer;
+    PBoolean   checkTimer;
+
+
+    /**Code to run the second test supported by this application. */
+    void RunSecondTest();
+
+  /**First internal timer that we manage */
+  PTimer firstTimer;
+
+  /**Second internal timer that we manage */
+  PTimer secondTimer;
+
+#ifdef DOC_PLUS_PLUS
+  /**A pwlib callback function which is activated when the first timer
+   * fires */
+    void OnFirstTimerExpired(PTimer &, INT);
+
+  /**A pwlib callback function which is activated when the second timer 
+     fires.. */
+    void OnSecondTimerExpired(PTimer &, INT);
+#else
+    PDECLARE_NOTIFIER(PTimer, PTimerTest, OnFirstTimerExpired);
+
+    PDECLARE_NOTIFIER(PTimer, PTimerTest, OnSecondTimerExpired);
+#endif
+
+#ifdef DOC_PLUS_PLUS
+    /**This Thread will continually restart the first timer. If
+       there is a bug in pwlib, it will eventually lock up and do no more. At
+       which point, the monitor thread will fire, and say, nothing is
+       happening. This thread sets the value of an atomic integer every time
+       it runs, to indicate activity.*/
+    virtual void RestartFirstTimerMain(PThread &, INT);
+#else
+    PDECLARE_NOTIFIER(PThread, PTimerTest, RestartFirstTimerMain);
+#endif
+
+#ifdef DOC_PLUS_PLUS
+    /**This Thread will continually restart the second timer. If
+       there is a bug in pwlib, it will eventually lock up and do no more. At
+       which point, the monitor thread will fire, and say, nothing is
+       happening. This thread sets the value of an atomic integer every time
+       it runs, to indicate activity.*/
+    virtual void RestartSecondTimerMain(PThread &, INT);
+#else
+    PDECLARE_NOTIFIER(PThread, PTimerTest, RestartSecondTimerMain);
+#endif
+
+/**The integer that is set, to indicate activity of the RestartTimer thread */
+    PAtomicInteger restartActivity;
+
+    
+
 };
 
 

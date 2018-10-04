@@ -23,10 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.1  2004/08/11 07:39:05  csoutheren
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include "precompile.h"
@@ -48,17 +47,50 @@ void Emailtest::Main()
   PArgList & args = GetArguments();
 
   args.Parse(
-             "-server:"
-             "-to:"
-             "-from:"
-             "-re:"
-             "-attachment:"
+             "h-help.   "
+             "v-version.    "
+             "s-server:"
+             "t-to:"
+             "f-from:"
+             "r-re:"
+             "a-attachment:"
 
 #if PTRACING
              "o-output:"             "-no-output."
              "t-trace."              "-no-trace."
 #endif
   );
+ 
+  if (args.HasOption('h')) {
+    cout << "usage: " <<  (const char *)GetName()
+         << endl
+         << "     -s or --server srv     : set mail server" << endl
+         << "     -t or --to     dst     : set to address" << endl
+         << "     -f or --from   frm     : set from address " << endl
+         << "     -r or --re     sbj     : set subject " << endl
+         << "     -a or --attachment atc : list of attachments " << endl
+         << "     -h or --help           : get help on usage " << endl
+         << "     -v or --version        : report program version " << endl
+#if PTRACING
+         << "  -t --trace   : Enable trace, use multiple times for more detail" << endl
+         << "  -o --output  : File for trace output, default is stderr" << endl
+#endif
+         << endl;
+    return;
+  }
+
+ if (args.HasOption('v')) {
+    cout << endl
+         << "Product Name: " <<  (const char *)GetName() << endl
+         << "Manufacturer: " <<  (const char *)GetManufacturer() << endl
+         << "Version     : " <<  (const char *)GetVersion(PTrue) << endl
+         << "System      : " <<  (const char *)GetOSName() << '-'
+         <<  (const char *)GetOSHardware() << ' '
+         <<  (const char *)GetOSVersion() << endl
+         << endl;
+    return;
+  }
+  
 
 #if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
@@ -123,9 +155,9 @@ void Emailtest::Main()
         PString fileType = filename.GetType();
         PString contentType = PMIMEInfo::GetContentType(fileType);
         if ((fileType *= "txt") || (fileType == "html"))
-          email.SetTransferEncoding("7bit", FALSE);
+          email.SetTransferEncoding("7bit", PFalse);
         else
-          email.SetTransferEncoding("base64", TRUE);
+          email.SetTransferEncoding("base64", PTrue);
         BYTE buffer[1024];
         for (;;) {
           if (!file.Read(buffer, sizeof(buffer)))

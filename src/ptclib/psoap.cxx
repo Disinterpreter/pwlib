@@ -23,35 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psoap.cxx,v $
- * Revision 1.9  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.8  2004/04/24 01:06:32  rjongbloed
- * Apploed  patch that impliments a number of checks to avoid segfaults when dealing with
- *   various clients. Thanks Ben Lear
- *
- * Revision 1.7  2004/01/17 17:45:59  csoutheren
- * Changed to use PString::MakeEmpty
- *
- * Revision 1.6  2003/10/08 21:58:13  dereksmithies
- * Add client authentication support. many thanks to Ben Lear.
- *
- * Revision 1.5  2003/04/28 00:09:14  craigs
- * Patches from Andreas Sikkema
- *
- * Revision 1.4  2003/03/31 06:20:56  craigs
- * Split the expat wrapper from the XML file handling to allow reuse of the parser
- *
- * Revision 1.3  2003/02/09 23:31:54  robertj
- * Added referention PString's for efficiency.
- *
- * Revision 1.2  2003/02/09 23:22:46  robertj
- * Fixed spelling errors, and setting return values, thanks Andreas Sikkema
- *
- * Revision 1.1  2003/02/04 22:46:48  robertj
- * Added basic SOAP support, thanks Andreas Sikkema
- *
+ * $Revision: 25612 $
+ * $Author: rjongbloed $
+ * $Date: 2011-04-20 00:03:55 -0500 (Wed, 20 Apr 2011) $
  */
 
 #ifdef __GNUC__
@@ -62,9 +36,12 @@
 #include <ptlib.h>
 
 
-#if P_EXPAT
+#if P_SOAP
 
 #include <ptclib/psoap.h>
+
+
+#define new PNEW
 
 
 
@@ -93,7 +70,7 @@ PSOAPMessage::PSOAPMessage( const PString & method, const PString & nameSpace ) 
 
 
 
-void PSOAPMessage::SetMethod( const PString & name, const PString & nameSpace )
+void PSOAPMessage::SetMethod( const PString & name, const PString & nameSpace, const PString & methodPrefix )
 {
   PXMLElement* rtElement = 0;
   
@@ -103,26 +80,29 @@ void PSOAPMessage::SetMethod( const PString & name, const PString & nameSpace )
     
     rtElement = GetRootElement();
 
-    rtElement->SetAttribute("xmlns:SOAP-ENV", "http://schemas.xmlsoap.org/soap/envelope/", TRUE );
-    rtElement->SetAttribute("xmlns:xsi", "http://www.w3.org/1999/XMLSchema-instance", TRUE );
-    rtElement->SetAttribute("xmlns:xsd", "http://www.w3.org/1999/XMLSchema", TRUE );
-    rtElement->SetAttribute("xmlns:SOAP-ENC", "http://schemas.xmlsoap.org/soap/encoding/", TRUE );
+    rtElement->SetAttribute("xmlns:SOAP-ENV", "http://schemas.xmlsoap.org/soap/envelope/", PTrue );
+    rtElement->SetAttribute("xmlns:xsi", "http://www.w3.org/1999/XMLSchema-instance", PTrue );
+    rtElement->SetAttribute("xmlns:xsd", "http://www.w3.org/1999/XMLSchema", PTrue );
+    rtElement->SetAttribute("xmlns:SOAP-ENC", "http://schemas.xmlsoap.org/soap/encoding/", PTrue );
 
     pSOAPBody = new PXMLElement( rtElement, "SOAP-ENV:Body");
 
-    rtElement->AddChild( pSOAPBody, TRUE );
+    rtElement->AddChild( pSOAPBody, PTrue );
   }
 
   if ( pSOAPMethod == 0 )
   {
     rtElement = GetRootElement();
 
-    pSOAPMethod = new PXMLElement( rtElement, PString( "m:") + name );
-    if ( nameSpace != "" )
+    pSOAPMethod = new PXMLElement(rtElement, methodPrefix + name);
+    if (!nameSpace.IsEmpty())
     {
-      pSOAPMethod->SetAttribute("xmlns:m", nameSpace, TRUE );
+      if (methodPrefix.IsEmpty())
+        pSOAPMethod->SetAttribute("xmlns", nameSpace, true);
+      else
+        pSOAPMethod->SetAttribute("xmlns:m", nameSpace, true);
     }
-    pSOAPBody->AddChild( pSOAPMethod, TRUE );
+    pSOAPBody->AddChild( pSOAPMethod, PTrue );
   }
 
 }
@@ -153,64 +133,18 @@ void PSOAPMessage::AddParameter( PString name, PString type, PString value )
       pParameter->SetAttribute( "xsi:type", PString( "xsd:" ) + type );
     }
     
-    pParameter->AddChild( pParameterData, TRUE );
+    pParameter->AddChild( pParameterData, PTrue );
 
-    AddParameter( pParameter, TRUE );
+    AddParameter( pParameter, PTrue );
   }
 }
 
-void PSOAPMessage::AddParameter( PXMLElement* parameter, BOOL dirty )
+void PSOAPMessage::AddParameter( PXMLElement* parameter, PBoolean dirty )
 {
   if ( pSOAPMethod )
   {
     pSOAPMethod->AddChild( parameter, dirty );
   }
-}
-
-void PSOAPMessage::PrintOn(ostream & strm) const
-{
-  BOOL newLine = ( options & PXMLParser::NewLineAfterElement ) != 0;
-
-  PString ver = version;
-  PString enc = encoding;
-  int salone = standAlone;
-
-  if ( ver.IsEmpty() )
-    ver= "1.0";
-  if ( enc.IsEmpty() )
-    enc = "UTF-8";
-  if ( salone == -2 )
-    salone = -1;
-
-  strm << "<?xml version=\"" << ver << "\" encoding=\"" << enc << "\"";
-  switch ( salone ) {
-    case 0:
-      strm << " standalone=\"no\"";
-      break;
-    case 1:
-      strm << " standalone=\"yes\"";
-      break;
-    default:
-      break;
-  }
-
-  strm << "?>";
-  if ( newLine )
-    strm << endl;
-
-  if ( rootElement != NULL ) {
-    rootElement->Output(strm, *(this), 2 );
-  }
-}
-
-PString PSOAPMessage::AsString( void )
-{
-  PStringStream stringStream;
-  PrintOn( stringStream );
-
-  PString SOAPString = stringStream;
-
-  return SOAPString;
 }
 
 
@@ -257,37 +191,37 @@ PINDEX stringToFaultCode( PString & faultStr )
   return PSOAPMessage::Server;
 }
 
-BOOL PSOAPMessage::GetParameter( const PString & name, PString & value )
+PBoolean PSOAPMessage::GetParameter( const PString & name, PString & value )
 {
   PXMLElement* pElement = GetParameter( name );
   if(pElement == NULL)
-    return FALSE;
+    return PFalse;
 
 
   if ( pElement->GetAttribute( "xsi:type") == "xsd:string" )
   {
     value = pElement->GetData();
-    return TRUE;
+    return PTrue;
   }
 
   value.MakeEmpty();
-  return FALSE;
+  return PFalse;
 }
 
-BOOL PSOAPMessage::GetParameter( const PString & name, int & value )
+PBoolean PSOAPMessage::GetParameter( const PString & name, int & value )
 {
   PXMLElement* pElement = GetParameter( name );
   if(pElement == NULL)
-    return FALSE;
+    return PFalse;
 
   if ( pElement->GetAttribute( "xsi:type") == "xsd:int" )
   {
     value = pElement->GetData().AsInteger();
-    return TRUE;
+    return PTrue;
   }
 
   value = -1;
-  return FALSE;
+  return PFalse;
 }
 
 PXMLElement* PSOAPMessage::GetParameter( const PString & name )
@@ -302,10 +236,10 @@ PXMLElement* PSOAPMessage::GetParameter( const PString & name )
   }
 }
 
-BOOL PSOAPMessage::Load( const PString & str )
+PBoolean PSOAPMessage::Load( const PString & str )
 {
   if ( !PXML::Load( str ) )
-    return FALSE;
+    return PFalse;
  
   if ( rootElement != NULL )
   {
@@ -341,13 +275,13 @@ BOOL PSOAPMessage::Load( const PString & str )
           }
           else
           {
-            return TRUE;
+            return PTrue;
           }
         }
       }
     }
   }
-  return FALSE;
+  return PFalse;
 }
 
 void PSOAPMessage::SetFault( PINDEX code, const PString & text) 
@@ -399,7 +333,7 @@ PSOAPServerResource::PSOAPServerResource(
 {
 }
 
-BOOL PSOAPServerResource::SetMethod(const PString & methodName, const PNotifier & func)
+PBoolean PSOAPServerResource::SetMethod(const PString & methodName, const PNotifier & func)
 {
   // Set the method for the notifier function and add it to the list
   PWaitAndSignal m( methodMutex );
@@ -421,22 +355,22 @@ BOOL PSOAPServerResource::SetMethod(const PString & methodName, const PNotifier 
   // set the function
   methodInfo->methodFunc = func;
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PSOAPServerResource::LoadHeaders( PHTTPRequest& /* request */ )    // Information on this request.
+PBoolean PSOAPServerResource::LoadHeaders( PHTTPRequest& /* request */ )    // Information on this request.
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
+PBoolean PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
                                 const PStringToString & /*data*/)
 {
-  PTRACE( 2, "PSOAPServerResource\tReceived post data, request: " << request.entityBody );
+  PTRACE(4, "PSOAPServerResource\tReceived post data, request: " << request.entityBody );
 
   PString reply;
 
-  BOOL ok = FALSE;
+  PBoolean ok = PFalse;
 
   // Check for the SOAPAction header
   PString* pSOAPAction = request.inMIME.GetAt( "SOAPAction" );
@@ -457,14 +391,14 @@ BOOL PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
       }
       else
       {
-        ok = FALSE;
+        ok = PFalse;
         reply = FormatFault( PSOAPMessage::Client, "Incorrect SOAPAction in HTTP Header: " + *pSOAPAction ).AsString();
       }
     }
   }
   else
   {
-    ok = FALSE;
+    ok = PFalse;
     reply = FormatFault( PSOAPMessage::Client, "SOAPAction is missing in HTTP Header" ).AsString();
   }
 
@@ -476,7 +410,7 @@ BOOL PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
     request.code = PHTTP::InternalServerError;
 
   // Set the correct content-type
-  request.outMIME.SetAt(PHTTP::ContentTypeTag, "text/xml");
+  request.outMIME.SetAt(PHTTP::ContentTypeTag(), "text/xml");
 
   // Start constructing the response
   PINDEX len = reply.GetLength();
@@ -487,17 +421,17 @@ BOOL PSOAPServerResource::OnPOSTData( PHTTPRequest & request,
 }
 
 
-BOOL PSOAPServerResource::OnSOAPRequest( const PString & body, PString & reply )
+PBoolean PSOAPServerResource::OnSOAPRequest( const PString & body, PString & reply )
 {
   // Load the HTTP body into the SOAP (XML) parser
   PSOAPMessage request;
-  BOOL ok = request.Load( body );
+  PBoolean ok = request.Load( body );
 
   // If parsing the XML to SOAP failed reply with an error
   if ( !ok ) 
   { 
     reply = FormatFault( PSOAPMessage::Client, "XML error:" + request.GetErrorString() ).AsString();
-    return FALSE;
+    return PFalse;
   }
 
 
@@ -507,12 +441,12 @@ BOOL PSOAPServerResource::OnSOAPRequest( const PString & body, PString & reply )
   // Retrieve the method from the SOAP messsage
   request.GetMethod( method, nameSpace );
 
-  PTRACE( 3, "PSOAPServerResource\tReceived SOAP message for method " << method);
+  PTRACE(4, "PSOAPServerResource\tReceived SOAP message for method " << method);
 
   return OnSOAPRequest( method, request, reply );
 }
 
-BOOL PSOAPServerResource::OnSOAPRequest( const PString & methodName, 
+PBoolean PSOAPServerResource::OnSOAPRequest( const PString & methodName, 
                                             PSOAPMessage & request,
                                             PString & reply )
 {
@@ -524,7 +458,7 @@ BOOL PSOAPServerResource::OnSOAPRequest( const PString & methodName,
   if ( pos == P_MAX_INDEX ) 
   {
     reply = FormatFault( PSOAPMessage::Client, "Unknown method = " + methodName ).AsString();
-    return FALSE;
+    return PFalse;
   }
   
   PSOAPServerMethod * methodInfo = ( PSOAPServerMethod * )methodList.GetAt( pos );
@@ -576,7 +510,7 @@ PSOAPClient::PSOAPClient( const PURL & _url )
   timeout = 10000;
 }
 
-BOOL PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace )
+PBoolean PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace )
 {
   PSOAPMessage request( method, nameSpace );
   PSOAPMessage response;
@@ -584,19 +518,19 @@ BOOL PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace
   return MakeRequest( request, response );
 }
 
-BOOL PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace, PSOAPMessage & response )
+PBoolean PSOAPClient::MakeRequest( const PString & method, const PString & nameSpace, PSOAPMessage & response )
 {
   PSOAPMessage request( method, nameSpace );
 
   return MakeRequest( request, response );
 }
 
-BOOL PSOAPClient::MakeRequest( PSOAPMessage & request, PSOAPMessage & response )
+PBoolean PSOAPClient::MakeRequest( PSOAPMessage & request, PSOAPMessage & response )
 {
   return  PerformRequest( request, response );
 }
 
-BOOL PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & response )
+PBoolean PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & response )
 {
   // create SOAP request
   PString soapRequest;
@@ -610,7 +544,7 @@ BOOL PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & respons
         << request.GetErrorLine() 
         << ") :" 
         << request.GetErrorString();
-    return FALSE;
+    return PFalse;
   }
 
   // End with a newline
@@ -622,7 +556,7 @@ BOOL PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & respons
   PHTTPClient client;
   PMIMEInfo sendMIME, replyMIME;
   sendMIME.SetAt( "Server", url.GetHostName() );
-  sendMIME.SetAt( PHTTP::ContentTypeTag, "text/xml" );
+  sendMIME.SetAt( PHTTP::ContentTypeTag(), "text/xml" );
   sendMIME.SetAt( "SOAPAction", soapAction );
 
   if(url.GetUserName() != "") {
@@ -634,30 +568,18 @@ BOOL PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & respons
   // Set thetimeout
   client.SetReadTimeout( timeout );
 
+  PString replyBody;
+
   // Send the POST request to the server
-  BOOL ok = client.PostData( url, sendMIME, soapRequest, replyMIME );
-
-  // Find the length of the response
-  PINDEX contentLength;
-  if ( replyMIME.Contains( PHTTP::ContentLengthTag ) )
-    contentLength = ( PINDEX ) replyMIME[ PHTTP::ContentLengthTag ].AsUnsigned();
-  else if ( ok)
-    contentLength = P_MAX_INDEX;
-  else
-    contentLength = 0;
-
-  // Retrieve the response
-  PString replyBody = client.ReadString( contentLength );
-
-  PTRACE( 5, "PSOAP\tIncoming SOAP is " << replyBody );
+  bool ok = client.PostData( url, sendMIME, soapRequest, replyMIME, replyBody);
 
   // Check if the server really gave us something
   if ( !ok || replyBody.IsEmpty() ) 
-  {
     txt << "HTTP POST failed: "
         << client.GetLastResponseCode() << ' '
         << client.GetLastResponseInfo();
-  }
+  else
+    PTRACE( 5, "PSOAP\tIncoming SOAP is " << replyBody );
 
   // Parse the response only if the response code from the server
   // is either 500 (Internal server error) or 200 (RequestOK)
@@ -683,20 +605,19 @@ BOOL PSOAPClient::PerformRequest( PSOAPMessage & request, PSOAPMessage & respons
   }
 
 
-  if ( ( client.GetLastResponseCode() != PHTTP::RequestOK ) &&
-       ( client.GetLastResponseCode() != PHTTP::InternalServerError ) && 
+  if ( ( client.GetLastResponseCode() != PHTTP::RequestOK ) ||
        ( !ok ) )
   {
     response.SetFault( PSOAPMessage::Server, txt );
-    return FALSE;
+    return PFalse;
   }
 
 
-  return TRUE;
+  return PTrue;
 }
 
 
-#endif // P_EXPAT
+#endif // P_SOAP
 
 
 // End of File ////////////////////////////////////////////////////////////////

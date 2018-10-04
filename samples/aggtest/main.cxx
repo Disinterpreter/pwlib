@@ -23,13 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.cxx,v $
- * Revision 1.2  2006/01/18 07:16:56  csoutheren
- * Latest version of socket aggregation code
- *
- * Revision 1.1  2005/12/22 03:55:52  csoutheren
- * Added initial version of socket aggregation classes
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include "precompile.h"
@@ -48,11 +44,11 @@ AggTest::AggTest()
 class MyUDPSocket : public PUDPSocket
 {
   public:
-    BOOL OnRead()
+    PBoolean OnRead()
     {
       BYTE buffer[1024];
       Read(buffer, 1024);
-      return TRUE;
+      return PTrue;
     }
 
 };

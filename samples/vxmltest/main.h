@@ -5,17 +5,15 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.h,v $
- * Revision 1.2  2004/06/02 08:30:22  csoutheren
- * Tweaks to avoid some problems with reading single bytes from a PCM stream
- *
- * Revision 1.1  2002/08/06 05:26:33  craigs
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _Vxmltest_MAIN_H
 #define _Vxmltest_MAIN_H
+
+#include <ptlib/pprocess.h>
 
 class PVXMLSession;
 
@@ -29,7 +27,7 @@ class Vxmltest : public PProcess
     PDECLARE_NOTIFIER(PThread, Vxmltest, InputThread);
 
   protected:
-    BOOL inputRunning;
+    PBoolean inputRunning;
     PVXMLSession * vxml;
 };
 

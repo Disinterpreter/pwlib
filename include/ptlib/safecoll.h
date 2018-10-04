@@ -23,73 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: safecoll.h,v $
- * Revision 1.15  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.14  2004/11/08 02:34:18  csoutheren
- * Refactored code to (hopefully) compile on Linux
- *
- * Revision 1.13  2004/11/07 12:55:38  rjongbloed
- * Fixed safe ptr casting so keeps associated collection for use in for loops.
- *
- * Revision 1.12  2004/10/28 12:19:44  rjongbloed
- * Added oeprator! to assure test for NULL that some people use is correct for PSafePtr
- *
- * Revision 1.11  2004/10/14 12:31:45  rjongbloed
- * Added synchronous mode for safe collection RemoveAll() to wait until all objects
- *   have actually been deleted before returning.
- *
- * Revision 1.10  2004/10/04 12:54:33  rjongbloed
- * Added functions for locking an unlocking to "auto-unlock" classes.
- *
- * Revision 1.9  2004/08/12 12:37:40  rjongbloed
- * Fixed bug recently introduced so removes deleted object from deletion list.
- * Also changed removal list to be correct type.
- *
- * Revision 1.8  2004/08/05 12:15:56  rjongbloed
- * Added classes for auto unlocking read only and read write mutex on
- *   PSafeObject - similar to PWaitAndSIgnal.
- * Utilised mutable keyword for mutex and improved the constness of functions.
- * Added DisallowDeleteObjects to safe collections so can have a PSafeObject in
- *   multiple collections.
- * Added a tempalte function to do casting of PSafePtr to a PSafePtr of a derived
- *   class.
- * Assured that a PSafeObject present on a collection always increments its
- *   reference count so while in collection it is not deleted.
- *
- * Revision 1.7  2002/12/10 07:36:57  robertj
- * Fixed possible deadlock in PSafeCollection find functions.
- *
- * Revision 1.6  2002/10/29 00:06:14  robertj
- * Changed template classes so things like PSafeList actually creates the
- *   base collection class as well.
- * Allowed for the PSafeList::Append() to return a locked pointer to the
- *   object just appended.
- *
- * Revision 1.5  2002/10/04 08:22:40  robertj
- * Changed read/write mutex so can be called by same thread without deadlock
- *   removing the need to a lock count in safe pointer.
- * Added asserts if try and dereference a NULL safe pointer.
- * Added more documentation on behaviour.
- *
- * Revision 1.4  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.3  2002/08/29 06:51:11  robertj
- * Added optimisiation, separate mutex for toBeRemoved list.
- *
- * Revision 1.2  2002/05/06 00:44:45  robertj
- * Made the lock/unlock read only const so can be used in const functions.
- *
- * Revision 1.1  2002/05/01 04:16:43  robertj
- * Added thread safe collection classes.
- *
+ * $Revision: 27948 $
+ * $Author: rjongbloed $
+ * $Date: 2012-06-30 22:54:23 -0500 (Sat, 30 Jun 2012) $
  */
  
-#ifndef _SAFE_COLLECTION_H
-#define _SAFE_COLLECTION_H
+#ifndef PTLIB_SAFE_COLLECTION_H
+#define PTLIB_SAFE_COLLECTION_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -152,7 +92,29 @@
   automatic unlocking of objects ones the pointer goes out of scope. It may
   also be used to lock each object of a collection in turn.
 
-  The enumeration
+  The enumeration of a PSafeCollection of PSafeObjects utilises the PSafePtr
+  class in a classic "for loop" manner.
+
+  <CODE>
+    for (PSafePtr<MyClass> iter(collection, PSafeReadWrite); iter != NULL; ++iter)
+      iter->Process();
+  </CODE>
+
+  There is one piece if important behaviour in the above. If while enumerating
+  a specic object in the collection, that object is "safely deleted", you are
+  guaranteed that the object is still usable and has not been phsyically
+  deleted, however it will no longer be in the collection, so the enumeration
+  will stop as it can no longer determine where in the collection it was.
+
+  What to do in this case is to take a "snapshot" at a point of time that can be safely and completely
+  iterated over:
+
+  <CODE>
+    PSafeList<MyClass> collCopy = collection;
+    for (PSafePtr<MyClass> iter(callCopy, PSafeReadWrite); iter != NULL; ++iter)
+      iter->Process();
+  </CODE>
+
  */
 class PSafeObject : public PObject
 {
@@ -162,7 +124,9 @@ class PSafeObject : public PObject
   //@{
     /**Create a thread safe object.
      */
-    PSafeObject();
+    PSafeObject(
+        PSafeObject * indirectLock = NULL ///< Other safe object to be locked when this is locked
+    );
   //@}
 
   /**@name Operations */
@@ -172,7 +136,7 @@ class PSafeObject : public PObject
        deallocated) as the caller thread is using the object, but not
        necessarily at this time locking it.
 
-       If the function returns FALSE, then the object has been flagged for
+       If the function returns false, then the object has been flagged for
        deletion and the calling thread should immediately cease using the
        object.
 
@@ -185,7 +149,7 @@ class PSafeObject : public PObject
        It is recommended that the PSafePtr<> class is used to manage this
        rather than the application calling this function directly.
       */
-    BOOL SafeReference();
+    PBoolean SafeReference();
 
     /**Decrement the reference count for object.
        This indicates that the thread no longer has anything to do with the
@@ -193,8 +157,11 @@ class PSafeObject : public PObject
 
        It is recommended that the PSafePtr<> class is used to manage this
        rather than the application calling this function directly.
+
+       @return true if reference count has reached zero and is not being
+               safely deleted elsewhere ie SafeRemove() not called
       */
-    void SafeDereference();
+    PBoolean SafeDereference();
 
     /**Lock the object for Read Only access.
        This will lock the object in read only mode. Multiple threads may lock
@@ -203,7 +170,7 @@ class PSafeObject : public PObject
        occur and no read/write lock can be present for any read only locks to
        occur.
 
-       If the function returns FALSE, then the object has been flagged for
+       If the function returns false, then the object has been flagged for
        deletion and the calling thread should immediately cease use of the
        object, possibly executing the SafeDereference() function to remove
        any references it may have acquired.
@@ -213,7 +180,7 @@ class PSafeObject : public PObject
        recommended that the PSafePtr<> class is used to automatically manage
        the reference counting and locking of objects.
       */
-    BOOL LockReadOnly() const;
+    PBoolean LockReadOnly() const;
 
     /**Release the read only lock on an object.
        Unlock the read only mutex that a thread had obtained. Multiple threads
@@ -234,7 +201,7 @@ class PSafeObject : public PObject
        occur and no read/write lock can be present for any read only locks to
        occur.
 
-       If the function returns FALSE, then the object has been flagged for
+       If the function returns false, then the object has been flagged for
        deletion and the calling thread should immediately cease use of the
        object, possibly executing the SafeDereference() function to remove
        any references it may have acquired.
@@ -244,7 +211,7 @@ class PSafeObject : public PObject
        recommended that the PSafePtr<> class is used to automatically manage
        the reference counting and locking of objects.
       */
-    BOOL LockReadWrite();
+    PBoolean LockReadWrite();
 
     /**Release the read/write lock on an object.
        Unlock the read/write mutex that a thread had obtained. Multiple threads
@@ -276,14 +243,30 @@ class PSafeObject : public PObject
        This is typically used by the PSafeCollection class and is not expected
        to be used directly by an application.
       */
-    BOOL SafelyCanBeDeleted() const;
+    PBoolean SafelyCanBeDeleted() const;
+
+    /**Do any garbage collection that may be required by the object so that it
+       may be finally deleted. This is especially useful if there a references
+       back to this object which this object is in charge of disposing of. This
+       reference "glare" is to be resolved by this function being called every
+       time the owner collection is cleaning up, causing a cascade of clean ups
+       that might need to be required.
+
+       Default implementation simply returns true.
+
+       @return true if object may be deleted.
+      */
+    virtual bool GarbageCollection();
   //@}
 
-  protected:
-    mutable PMutex          safetyMutex;
-            unsigned        safeReferenceCount;
-            BOOL            safelyBeingRemoved;
-    mutable PReadWriteMutex safeInUseFlag;
+  private:
+    mutable PMutex    safetyMutex;
+    unsigned          safeReferenceCount;
+    bool              safelyBeingRemoved;
+    PReadWriteMutex   safeInUseMutex;
+    PReadWriteMutex * safeInUse;
+
+  friend class PSafeCollection;
 };
 
 
@@ -294,14 +277,14 @@ class PSafeLockReadOnly
   public:
     PSafeLockReadOnly(const PSafeObject & object);
     ~PSafeLockReadOnly();
-    BOOL Lock();
+    PBoolean Lock();
     void Unlock();
-    BOOL IsLocked() const { return locked; }
+    PBoolean IsLocked() const { return locked; }
     bool operator!() const { return !locked; }
 
   protected:
     PSafeObject & safeObject;
-    BOOL          locked;
+    PBoolean          locked;
 };
 
 
@@ -313,14 +296,14 @@ class PSafeLockReadWrite
   public:
     PSafeLockReadWrite(const PSafeObject & object);
     ~PSafeLockReadWrite();
-    BOOL Lock();
+    PBoolean Lock();
     void Unlock();
-    BOOL IsLocked() const { return locked; }
+    PBoolean IsLocked() const { return locked; }
     bool operator!() const { return !locked; }
 
   protected:
     PSafeObject & safeObject;
-    BOOL          locked;
+    PBoolean          locked;
 };
 
 
@@ -367,7 +350,7 @@ class PSafeCollection : public PObject
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual BOOL SafeRemove(
+    virtual PBoolean SafeRemove(
       PSafeObject * obj   ///< Object to remove from collection
     );
 
@@ -379,7 +362,7 @@ class PSafeCollection : public PObject
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual BOOL SafeRemoveAt(
+    virtual PBoolean SafeRemoveAt(
       PINDEX idx    ///< Object index to remove
     );
 
@@ -387,7 +370,7 @@ class PSafeCollection : public PObject
     /**Remove all objects in collection.
       */
     virtual void RemoveAll(
-      BOOL synchronous = FALSE  ///< Wait till objects are deleted before returning
+      PBoolean synchronous = false  ///< Wait till objects are deleted before returning
     );
 
     /**Disallow the automatic delete any objects that have been removed.
@@ -395,20 +378,20 @@ class PSafeCollection : public PObject
        deletion using PSafeObject::SafeRemove() and DeleteObject().
       */
     void AllowDeleteObjects(
-      BOOL yes = TRUE   ///< New value for flag for deleting objects
+      PBoolean yes = true   ///< New value for flag for deleting objects
     ) { deleteObjects = yes; }
 
     /**Disallow the automatic delete any objects that have been removed.
        Objects are simply removed from the collection and not marked for
        deletion using PSafeObject::SafeRemove() and DeleteObject().
       */
-    void DisallowDeleteObjects() { deleteObjects = FALSE; }
+    void DisallowDeleteObjects() { deleteObjects = false; }
 
     /**Delete any objects that have been removed.
-       Returns TRUE if all objects in the collection have been removed and
+       Returns true if all objects in the collection have been removed and
        their pending deletions carried out.
       */
-    virtual BOOL DeleteObjectsToBeRemoved();
+    virtual PBoolean DeleteObjectsToBeRemoved();
 
     /**Delete an objects that has been removed.
       */
@@ -428,7 +411,7 @@ class PSafeCollection : public PObject
        Note that usefulness of this function is limited as it is merely an
        instantaneous snapshot of the state of the collection.
       */
-    BOOL IsEmpty() const { return GetSize() == 0; }
+    PBoolean IsEmpty() const { return GetSize() == 0; }
 
     /**Get the mutex for the collection.
       */
@@ -436,15 +419,21 @@ class PSafeCollection : public PObject
   //@}
 
   protected:
+    void CopySafeCollection(PCollection * other);
+    void CopySafeDictionary(PAbstractDictionary * other);
     void SafeRemoveObject(PSafeObject * obj);
     PDECLARE_NOTIFIER(PTimer, PSafeCollection, DeleteObjectsTimeout);
 
-    PCollection  *     collection;
+    PCollection      * collection;
     mutable PMutex     collectionMutex;
-    BOOL               deleteObjects;
+    bool               deleteObjects;
     PList<PSafeObject> toBeRemoved;
     PMutex             removalMutex;
     PTimer             deleteObjectsTimer;
+
+  private:
+    PSafeCollection(const PSafeCollection & other) : PObject(other) { }
+    void operator=(const PSafeCollection &) { }
 
   friend class PSafePtrBase;
 };
@@ -465,9 +454,6 @@ enum PSafetyMode {
 
   NOTE: the PSafePtr will allow safe and mutexed access to objects but is not
   thread safe itself! You should not share PSafePtr instances across threads.
-  You can assign a PSafePtr to another instance across a thread boundary
-  provided it is on a reference and no read only or read/write locks are
-  present.
 
   See the PSafeObject class for more details.
  */
@@ -537,14 +523,28 @@ class PSafePtrBase : public PObject
        Note this is not a value comparison and will only return EqualTo if the
        two PSafePtrBase instances are pointing to the same instance.
       */
-    Comparison Compare(
+    virtual Comparison Compare(
       const PObject & obj   ///< Other instance to compare against
+    ) const;
+
+    /** Output the contents of the object to the stream. The exact output is
+       dependent on the exact semantics of the descendent class. This is
+       primarily used by the standard <code>#operator<<</code> function.
+
+       The default behaviour is to print the class name.
+     */
+    virtual void PrintOn(
+      ostream &strm   // Stream to print the object into.
     ) const;
   //@}
 
   /**@name Operations */
   //@{
-    /**Return TRUE if pointer is NULL.
+    /**Set the pointer to NULL, unlocking/dereferencing existing pointer value.
+      */
+    virtual void SetNULL();
+
+    /**Return true if pointer is NULL.
       */
     bool operator!() const { return currentObject == NULL; }
 
@@ -553,8 +553,12 @@ class PSafePtrBase : public PObject
     PSafetyMode GetSafetyMode() const { return lockMode; }
 
     /**Change the locking mode used by this pointer.
+
+       If the function returns false, then the object has been flagged for
+       deletion and the calling thread should immediately cease use of the
+       object. This instance pointer will be set to NULL.
       */
-    BOOL SetSafetyMode(
+    virtual PBoolean SetSafetyMode(
       PSafetyMode mode  ///< New locking mode
     );
 
@@ -563,20 +567,21 @@ class PSafePtrBase : public PObject
     const PSafeCollection * GetCollection() const { return collection; }
   //@}
 
-    void Assign(const PSafePtrBase & ptr);
-    void Assign(const PSafeCollection & safeCollection);
-    void Assign(PSafeObject * obj);
-    void Assign(PINDEX idx);
+    virtual void Assign(const PSafePtrBase & ptr);
+    virtual void Assign(const PSafeCollection & safeCollection);
+    virtual void Assign(PSafeObject * obj);
+    virtual void Assign(PINDEX idx);
 
   protected:
-    void Next();
-    void Previous();
+    virtual void Next();
+    virtual void Previous();
+    virtual void DeleteObject(PSafeObject * obj);
 
     enum EnterSafetyModeOption {
       WithReference,
       AlreadyReferenced
     };
-    BOOL EnterSafetyMode(EnterSafetyModeOption ref);
+    PBoolean EnterSafetyMode(EnterSafetyModeOption ref);
 
     enum ExitSafetyModeOption {
       WithDereference,
@@ -584,10 +589,133 @@ class PSafePtrBase : public PObject
     };
     void ExitSafetyMode(ExitSafetyModeOption ref);
 
+    virtual void LockPtr() { }
+    virtual void UnlockPtr() { }
+
   protected:
     const PSafeCollection * collection;
     PSafeObject           * currentObject;
     PSafetyMode             lockMode;
+};
+
+
+/** This class defines a base class for thread-safe pointer to an object.
+
+  This is part of a set of classes to solve the general problem of a
+  collection (eg a PList or PDictionary) of objects that needs to be a made
+  thread safe. Any thread can add, read, write or remove an object with both
+  the object and the database of objects itself kept thread safe.
+
+  NOTE: unlikel PSafePtrBase, pointers based on this class are thread safe
+  themseleves, at the expense of performance on every operation.
+
+  See the PSafeObject class for more details.
+ */
+class PSafePtrMultiThreaded : public PSafePtrBase
+{
+    PCLASSINFO(PSafePtrMultiThreaded, PSafePtrBase);
+
+  /**@name Construction */
+  //@{
+  protected:
+    /**Create a new pointer to a PSafeObject.
+       An optional locking mode may be provided to lock the object for reading
+       or writing and automatically unlock it on destruction.
+
+       Note that this version is not associated with a collection so the ++
+       and -- operators will not work.
+     */
+    PSafePtrMultiThreaded(
+      PSafeObject * obj = NULL,         ///< Physical object to point to.
+      PSafetyMode mode = PSafeReference ///< Locking mode for the object
+    );
+
+    /**Create a new pointer to a PSafeObject.
+       An optional locking mode may be provided to lock the object for reading
+       or writing and automatically unlock it on destruction.
+
+       The idx'th entry of the collection is pointed to by this object. If the
+       idx is beyond the size of the collection, the pointer is NULL.
+     */
+    PSafePtrMultiThreaded(
+      const PSafeCollection & safeCollection, ///< Collection pointer will enumerate
+      PSafetyMode mode,                       ///< Locking mode for the object
+      PINDEX idx                              ///< Index into collection to point to
+    );
+
+    /**Create a new pointer to a PSafeObject.
+       An optional locking mode may be provided to lock the object for reading
+       or writing and automatically unlock it on destruction.
+
+       The obj parameter is only set if it contained in the collection,
+       otherwise the pointer is NULL.
+     */
+    PSafePtrMultiThreaded(
+      const PSafeCollection & safeCollection, ///< Collection pointer will enumerate
+      PSafetyMode mode,                       ///< Locking mode for the object
+      PSafeObject * obj                       ///< Inital object in collection to point to
+    );
+
+    /**Copy the pointer to the PSafeObject.
+       This will create a copy of the pointer with the same locking mode and
+       lock on the PSafeObject. It will also increment the reference count on
+       the PSafeObject as well.
+      */
+    PSafePtrMultiThreaded(
+      const PSafePtrMultiThreaded & enumerator   ///< Pointer to copy
+    );
+
+  public:
+    /**Unlock and dereference the PSafeObject this is pointing to.
+      */
+    ~PSafePtrMultiThreaded();
+  //@}
+
+  /**@name Overrides from class PObject */
+  //@{
+    /**Compare the pointers.
+       Note this is not a value comparison and will only return EqualTo if the
+       two PSafePtrBase instances are pointing to the same instance.
+      */
+    virtual Comparison Compare(
+      const PObject & obj   ///< Other instance to compare against
+    ) const;
+  //@}
+
+  /**@name Operations */
+  //@{
+    /**Set the pointer to NULL, unlocking/dereferencing existing pointer value.
+      */
+    virtual void SetNULL();
+
+    /**Change the locking mode used by this pointer.
+
+       If the function returns false, then the object has been flagged for
+       deletion and the calling thread should immediately cease use of the
+       object. This instance pointer will be set to NULL.
+      */
+    virtual PBoolean SetSafetyMode(
+      PSafetyMode mode  ///< New locking mode
+    );
+  //@}
+
+    virtual void Assign(const PSafePtrMultiThreaded & ptr);
+    virtual void Assign(const PSafePtrBase & ptr);
+    virtual void Assign(const PSafeCollection & safeCollection);
+    virtual void Assign(PSafeObject * obj);
+    virtual void Assign(PINDEX idx);
+
+  protected:
+    virtual void Next();
+    virtual void Previous();
+    virtual void DeleteObject(PSafeObject * obj);
+
+    virtual void LockPtr() { m_mutex.Wait(); }
+    virtual void UnlockPtr();
+
+  protected:
+    mutable PMutex m_mutex;
+    PSafeObject  * m_objectToDelete;
 };
 
 
@@ -598,23 +726,21 @@ class PSafePtrBase : public PObject
   thread safe. Any thread can add, read, write or remove an object with both
   the object and the database of objects itself kept thread safe.
 
-  There are two modes of safe pointer, one that is enumerating a collection
+  There are two modes of safe pointer: one that is enumerating a collection;
   and one that is independent of the collection that the safe object is in.
-  There are some subtle semantics that must be observed in each of these two
+  There are subtle semantics that must be observed in each of these two
   modes especially when switching from one to the other.
 
-  NOTE: the PSafePtr will allow safe and mutexed access to objects but is not
-  thread safe itself! You should not share PSafePtr instances across threads.
-  You can assign a PSafePtr to another instance across a thread boundary
-  provided it is on a reference and no read only or read/write locks are
-  present.
+  NOTE: the PSafePtr will allow safe and mutexed access to objects but may not
+  be thread safe itself! This depends on the base class being used. If the more
+  efficient PSafePtrBase class is used you should not share PSafePtr instances
+  across threads.
 
-  See the PSafeObject class for more details. Especially in regard to
+  See the PSafeObject class for more details, especially in regards to
   enumeration of collections.
  */
-template <class T> class PSafePtr : public PSafePtrBase
+template <class T, class BaseClass = PSafePtrBase> class PSafePtr : public BaseClass
 {
-    PCLASSINFO(PSafePtr, PSafePtrBase);
   public:
   /**@name Construction */
   //@{
@@ -628,7 +754,7 @@ template <class T> class PSafePtr : public PSafePtrBase
     PSafePtr(
       T * obj = NULL,                   ///< Physical object to point to.
       PSafetyMode mode = PSafeReference ///< Locking mode for the object
-    ) : PSafePtrBase(obj, mode) { }
+    ) : BaseClass(obj, mode) { }
 
     /**Create a new pointer to a PSafeObject.
        An optional locking mode may be provided to lock the object for reading
@@ -641,7 +767,7 @@ template <class T> class PSafePtr : public PSafePtrBase
       const PSafeCollection & safeCollection, ///< Collection pointer will enumerate
       PSafetyMode mode = PSafeReadWrite,      ///< Locking mode for the object
       PINDEX idx = 0                          ///< Index into collection to point to
-    ) : PSafePtrBase(safeCollection, mode, idx) { }
+    ) : BaseClass(safeCollection, mode, idx) { }
 
     /**Create a new pointer to a PSafeObject.
        An optional locking mode may be provided to lock the object for reading
@@ -654,7 +780,7 @@ template <class T> class PSafePtr : public PSafePtrBase
       const PSafeCollection & safeCollection, ///< Collection pointer will enumerate
       PSafetyMode mode,                       ///< Locking mode for the object
       PSafeObject * obj                       ///< Inital object in collection to point to
-    ) : PSafePtrBase(safeCollection, mode, obj) { }
+    ) : BaseClass(safeCollection, mode, obj) { }
 
     /**Copy the pointer to the PSafeObject.
        This will create a copy of the pointer with the same locking mode and
@@ -663,7 +789,7 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     PSafePtr(
       const PSafePtr & ptr   ///< Pointer to copy
-    ) : PSafePtrBase(ptr) { }
+    ) : BaseClass(ptr) { }
 
     /**Copy the pointer to the PSafeObject.
        This will create a copy of the pointer with the same locking mode and
@@ -672,7 +798,7 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     PSafePtr & operator=(const PSafePtr & ptr)
       {
-        Assign(ptr);
+        BaseClass::Assign(ptr);
         return *this;
       }
 
@@ -682,7 +808,7 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     PSafePtr & operator=(const PSafeCollection & safeCollection)
       {
-        Assign(safeCollection);
+        BaseClass::Assign(safeCollection);
         return *this;
       }
 
@@ -703,7 +829,7 @@ template <class T> class PSafePtr : public PSafePtrBase
      */
     PSafePtr & operator=(T * obj)
       {
-        Assign(obj);
+        this->Assign(obj);
         return *this;
       }
 
@@ -718,8 +844,21 @@ template <class T> class PSafePtr : public PSafePtrBase
      */
     PSafePtr & operator=(PINDEX idx)
       {
-        Assign(idx);
+        BaseClass::Assign(idx);
         return *this;
+      }
+
+    /**Set the safe pointer to the specified object.
+       This will return a PSafePtr for the previous value of this. It does
+       this in a thread safe manner so "test and set" semantics are obeyed.
+      */
+    PSafePtr Set(T * obj)
+      {
+        this->LockPtr();
+        PSafePtr oldPtr = *this;
+        this->Assign(obj);
+        this->UnlockPtr();
+        return oldPtr;
       }
   //@}
 
@@ -727,15 +866,15 @@ template <class T> class PSafePtr : public PSafePtrBase
   //@{
     /**Return the physical pointer to the object.
       */
-    operator T*()    const { return  (T *)currentObject; }
+    operator T*()    const { return  (T *)BaseClass::currentObject; }
 
     /**Return the physical pointer to the object.
       */
-    T & operator*()  const { return *(T *)PAssertNULL(currentObject); }
+    T & operator*()  const { return *(T *)PAssertNULL(BaseClass::currentObject); }
 
     /**Allow access to the physical object the pointer is pointing to.
       */
-    T * operator->() const { return  (T *)PAssertNULL(currentObject); }
+    T * operator->() const { return  (T *)PAssertNULL(BaseClass::currentObject); }
 
     /**Post-increment the pointer.
        This requires that the pointer has been created with a PSafeCollection
@@ -743,8 +882,8 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     T * operator++(int)
       {
-        T * previous = (T *)currentObject;
-        Next();
+        T * previous = (T *)BaseClass::currentObject;
+        BaseClass::Next();
         return previous;
       }
 
@@ -754,8 +893,8 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     T * operator++()
       {
-        Next();
-        return (T *)currentObject;
+        BaseClass::Next();
+        return (T *)BaseClass::currentObject;
       }
 
     /**Post-decrement the pointer.
@@ -764,8 +903,8 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     T * operator--(int)
       {
-        T * previous = (T *)currentObject;
-        Previous();
+        T * previous = (T *)BaseClass::currentObject;
+        BaseClass::Previous();
         return previous;
       }
 
@@ -775,25 +914,10 @@ template <class T> class PSafePtr : public PSafePtrBase
       */
     T * operator--()
       {
-        Previous();
-        return (T *)currentObject;
+        BaseClass::Previous();
+        return (T *)BaseClass::currentObject;
       }
   //@}
-
-  /**Cast the pointer to a different type. The pointer being cast to MUST
-     be a derived class or NULL is returned.
-    */
-      /*
-  template <class Base>
-  static PSafePtr<T> DownCast(const PSafePtr<Base> & oldPtr)
-  {
-    PSafePtr<T> newPtr;
-    Base * realPtr = oldPtr;
-    if (realPtr != NULL && PIsDescendant(realPtr, T))
-      newPtr.Assign(oldPtr);
-    return newPtr;
-  }
-  */
 };
 
 
@@ -833,6 +957,30 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
     PSafeColl()
       : PSafeCollection(new Coll)
       { }
+
+    /**Copy constructor for safe collection.
+       Note the left hand side will always have DisallowDeleteObjects() set.
+      */
+    PSafeColl(const PSafeColl & other)
+      : PSafeCollection(new Coll)
+    {
+      PWaitAndSignal lock2(other.collectionMutex);
+      CopySafeCollection(dynamic_cast<Coll *>(other.collection));
+    }
+
+    /**Assign one safe collection to another.
+       Note the left hand side will always have DisallowDeleteObjects() set.
+      */
+    PSafeColl & operator=(const PSafeColl & other)
+    {
+      if (&other != this) {
+        RemoveAll(true);
+        PWaitAndSignal lock1(collectionMutex);
+        PWaitAndSignal lock2(other.collectionMutex);
+        CopySafeCollection(dynamic_cast<Coll *>(other.collection));
+      }
+      return *this;
+    }
   //@}
 
   /**@name Operations */
@@ -843,12 +991,13 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
       */
     virtual PSafePtr<Base> Append(
       Base * obj,       ///< Object to add to safe collection.
-      PSafetyMode mode = PSafeReference
+      PSafetyMode mode = PSafeReference   ///< Safety mode for returned locked PSafePtr
     ) {
         PWaitAndSignal mutex(collectionMutex);
-        if (!obj->SafeReference())
-          return NULL;
-        return PSafePtr<Base>(*this, mode, collection->Append(obj));
+        if (PAssert(collection->GetObjectsIndex(obj) == P_MAX_INDEX, "Cannot insert safe object twice") &&
+            obj->SafeReference())
+          return PSafePtr<Base>(*this, mode, collection->Append(obj));
+        return NULL;
       }
 
     /**Remove an object to the collection.
@@ -859,7 +1008,7 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual BOOL Remove(
+    virtual PBoolean Remove(
       Base * obj          ///< Object to remove from safe collection
     ) {
         return SafeRemove(obj);
@@ -873,7 +1022,7 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual BOOL RemoveAt(
+    virtual PBoolean RemoveAt(
       PINDEX idx     ///< Index to remove
     ) {
         return SafeRemoveAt(idx);
@@ -916,6 +1065,8 @@ template <class Coll, class Base> class PSafeColl : public PSafeCollection
  */
 template <class Base> class PSafeArray : public PSafeColl<PArray<Base>, Base>
 {
+  public:
+    typedef PSafePtr<Base> value_type;
 };
 
 
@@ -925,6 +1076,8 @@ template <class Base> class PSafeArray : public PSafeColl<PArray<Base>, Base>
  */
 template <class Base> class PSafeList : public PSafeColl<PList<Base>, Base>
 {
+  public:
+    typedef PSafePtr<Base> value_type;
 };
 
 
@@ -934,6 +1087,8 @@ template <class Base> class PSafeList : public PSafeColl<PList<Base>, Base>
  */
 template <class Base> class PSafeSortedList : public PSafeColl<PSortedList<Base>, Base>
 {
+  public:
+    typedef PSafePtr<Base> value_type;
 };
 
 
@@ -957,6 +1112,30 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
       */
     PSafeDictionaryBase()
       : PSafeCollection(new Coll) { }
+
+    /**Copy constructor for safe collection.
+       Note the left hand side will always have DisallowDeleteObjects() set.
+      */
+    PSafeDictionaryBase(const PSafeDictionaryBase & other)
+      : PSafeCollection(new Coll)
+    {
+      PWaitAndSignal lock2(other.collectionMutex);
+      CopySafeDictionary(dynamic_cast<Coll *>(other.collection));
+    }
+
+    /**Assign one safe collection to another.
+       Note the left hand side will always have DisallowDeleteObjects() set.
+      */
+    PSafeDictionaryBase & operator=(const PSafeDictionaryBase & other)
+    {
+      if (&other != this) {
+        RemoveAll(true);
+        PWaitAndSignal lock1(collectionMutex);
+        PWaitAndSignal lock2(other.collectionMutex);
+        CopySafeDictionary(dynamic_cast<Coll *>(other.collection));
+      }
+      return *this;
+    }
   //@}
 
   /**@name Operations */
@@ -969,7 +1148,8 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
       {
         collectionMutex.Wait();
         SafeRemove(((Coll *)collection)->GetAt(key));
-        if (obj->SafeReference())
+        if (PAssert(collection->GetObjectsIndex(obj) == P_MAX_INDEX, "Cannot insert safe object twice") &&
+            obj->SafeReference())
           ((Coll *)collection)->SetAt(key, obj);
         collectionMutex.Signal();
       }
@@ -982,7 +1162,7 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
        As for Append() full mutual exclusion locking on the collection itself
        is maintained.
       */
-    virtual BOOL RemoveAt(
+    virtual PBoolean RemoveAt(
       const Key & key   ///< Key to fund object to delete
     ) {
         PWaitAndSignal mutex(collectionMutex);
@@ -991,7 +1171,7 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
 
     /**Determine of the dictionary contains an entry for the key.
       */
-    virtual BOOL Contains(
+    virtual PBoolean Contains(
       const Key & key
     ) {
         PWaitAndSignal lock(collectionMutex);
@@ -1025,6 +1205,17 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
         ptr.SetSafetyMode(mode);
         return ptr;
       }
+
+    /**Get an array containing all the keys for the dictionary.
+      */
+    PArray<Key> GetKeys() const
+    {
+      PArray<Key> keys;
+      collectionMutex.Wait();
+      ((Coll *)collection)->AbstractGetKeys(keys);
+      collectionMutex.Signal();
+      return keys;
+    }
   //@}
 };
 
@@ -1035,10 +1226,12 @@ template <class Coll, class Key, class Base> class PSafeDictionaryBase : public 
  */
 template <class Key, class Base> class PSafeDictionary : public PSafeDictionaryBase<PDictionary<Key, Base>, Key, Base>
 {
+  public:
+    typedef PSafePtr<Base> value_type;
 };
 
 
-#endif // _SAFE_COLLECTION_H
+#endif // PTLIB_SAFE_COLLECTION_H
 
 
-/////////////////////////////////////////////////////////////////////////////
+// End Of File ///////////////////////////////////////////////////////////////

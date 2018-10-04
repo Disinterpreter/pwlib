@@ -7,20 +7,9 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.cxx,v $
- * Revision 1.4  2003/09/26 13:41:32  rjongbloed
- * Added special test to give more indicative error if try to compile without Expat support.
- *
- * Revision 1.3  2003/04/17 00:03:23  craigs
- * Changed default port from 6666 to 8000 to remove conflicts with other programs
- * that use that port by default
- *
- * Revision 1.2  2002/10/23 15:58:18  craigs
- * Fixed problem with parsing requests, and added sample return value
- *
- * Revision 1.1  2002/10/02 08:58:20  craigs
- * Initial version
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -45,7 +34,7 @@ Xmlrpcsrvr::Xmlrpcsrvr()
 }
 
 
-BOOL Xmlrpcsrvr::OnStart()
+PBoolean Xmlrpcsrvr::OnStart()
 {
   GetFile().GetDirectory().Change();
 
@@ -82,7 +71,7 @@ void Xmlrpcsrvr::OnControl()
 
 PString Xmlrpcsrvr::GetPageGraphic()
 {
-  return Xmlrpcsrvr::GetPageGraphic();
+  return PHTTPServiceProcess::GetPageGraphic();
 }
 
 
@@ -91,12 +80,12 @@ void Xmlrpcsrvr::AddUnregisteredText(PHTML &)
 }
 
 
-BOOL Xmlrpcsrvr::Initialise(const char * initMsg)
+PBoolean Xmlrpcsrvr::Initialise(const char * initMsg)
 {
   //  create the home page
   static const char welcomeHtml[] = "welcome.html";
   if (PFile::Exists(welcomeHtml))
-    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, TRUE), PHTTPSpace::Overwrite);
+    httpNameSpace.AddResource(new PServiceHTTPFile(welcomeHtml, PTrue), PHTTPSpace::Overwrite);
   else {
     PHTML html;
     html << PHTML::Title("Welcome to "+GetName())
@@ -106,7 +95,7 @@ BOOL Xmlrpcsrvr::Initialise(const char * initMsg)
          << gifHTML
          << PHTML::Heading(1)
          << PProcess::GetOSClass() << ' ' << PProcess::GetOSName()
-         << " Version " << GetVersion(TRUE) << PHTML::BreakLine()
+         << " Version " << GetVersion(PTrue) << PHTML::BreakLine()
          << ' ' << compilationDate.AsString("d MMMM yy")
          << PHTML::BreakLine()
          << "by"
@@ -119,7 +108,7 @@ BOOL Xmlrpcsrvr::Initialise(const char * initMsg)
          << PHTML::HRule()
          << PHTML::Paragraph()
 
-         << PHTML::HotLink("http://www.equival.com.au/xmlrpcsrvr/relnotes/" + GetVersion(TRUE) + ".html")
+         << PHTML::HotLink("http://www.equival.com.au/xmlrpcsrvr/relnotes/" + GetVersion(PTrue) + ".html")
          << "Release notes" << PHTML::HotLink()
          << " on this version of " << GetProductName() << " are available."
          << PHTML::Paragraph()
@@ -137,11 +126,11 @@ BOOL Xmlrpcsrvr::Initialise(const char * initMsg)
     PSYSTEMLOG(Info, "Opened master socket for HTTP: " << httpListeningSocket->GetPort());
   else {
     PSYSTEMLOG(Fatal, "Cannot run without HTTP port: " << httpListeningSocket->GetErrorText());
-    return FALSE;
+    return PFalse;
   }
 
   PSYSTEMLOG(Info, "Service " << GetName() << ' ' << initMsg);
-  return TRUE;
+  return PTrue;
 }
 
 

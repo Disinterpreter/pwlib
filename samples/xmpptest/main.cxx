@@ -7,14 +7,9 @@
  *
  * Copyright 2004 Reitek S.p.A.
  *
- * $Log: main.cxx,v $
- * Revision 1.2  2004/05/09 07:23:49  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.1  2004/04/26 01:51:58  rjongbloed
- * More implementation of XMPP, thanks a lot to Federico Pinna & Reitek S.p.A.
- *
- *
+ * $Revision: 25065 $
+ * $Author: rjongbloed $
+ * $Date: 2011-01-14 02:03:15 -0600 (Fri, 14 Jan 2011) $
  */
 
 #include "main.h"
@@ -33,32 +28,40 @@ public:
   ConnectDialog(wxWindow *parent)
     : _ConnectDialog(parent) { }
 
-  void      SetJID(const PString& jid);
-  void      SetPwd(const PString& pwd);
-  void      SetRememberPwd(bool b = true);
+  void SetJID(const XMPP::JID & jid)
+  {
+    if (m_JID)
+      m_JID->SetValue(PwxString(jid));
+  }
 
-  XMPP::JID GetJID() const;
-  PString   GetPwd() const;
-  bool      GetRememberPwd() const;
+  void SetPwd(const PwxString & pwd)
+  {
+    if (m_Pwd)
+      m_Pwd->SetValue(pwd);
+  }
+
+  void SetRememberPwd(bool b = true)
+  {
+    if (m_RememberPwd)
+      m_RememberPwd->SetValue(b);
+  }
+
+  XMPP::JID GetJID() const
+  { 
+    return m_JID != NULL ? XMPP::JID(PwxString(m_JID->GetValue())) : PString::Empty();
+  }
+
+  PString GetPwd() const
+  {
+    return m_Pwd != NULL ? PwxString(m_Pwd->GetValue()) : PString::Empty();
+  }
+
+  bool GetRememberPwd() const
+  {
+    return m_RememberPwd != NULL && m_RememberPwd->GetValue();
+  }
 };
 
-void ConnectDialog::SetJID(const PString& jid)
-{ if (m_JID) m_JID->SetValue((const char *)jid); }
-
-void ConnectDialog::SetPwd(const PString& pwd)
-{ if (m_Pwd) m_Pwd->SetValue((const char *)pwd); }
-
-void ConnectDialog::SetRememberPwd(bool b)
-{ if (m_RememberPwd) m_RememberPwd->SetValue(b); }
-
-XMPP::JID ConnectDialog::GetJID() const
-{ return m_JID != NULL ?  XMPP::JID(PString((const char *)m_JID->GetValue())) : PString::Empty(); }
-
-PString ConnectDialog::GetPwd() const
-{ return m_Pwd != NULL ? (const char *)m_Pwd->GetValue() : PString::Empty(); }
-
-bool ConnectDialog::GetRememberPwd() const
-{ return m_RememberPwd != NULL ? m_RememberPwd->GetValue() : false; }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -76,7 +79,7 @@ XMPPFrame::XMPPFrame()
     m_Roster(new XMPP::Roster), m_Client(NULL)
 {
   m_Roster->RosterChangedHandlers().Add(new PCREATE_SMART_NOTIFIER(OnRosterChanged));
-  Show(TRUE);
+  Show(PTrue);
 }
 
 
@@ -113,7 +116,7 @@ void XMPPFrame::OnConnect(wxCommandEvent& WXUNUSED(event))
   m_Client->SessionEstablishedHandlers().Add(new PCREATE_SMART_NOTIFIER(OnSessionEstablished));
   m_Client->SessionReleasedHandlers().Add(new PCREATE_SMART_NOTIFIER(OnSessionReleased));
   m_Client->MessageHandlers().Add(new PCREATE_SMART_NOTIFIER(OnMessage));
-  SetStatusText("Connecting...", 0);
+  SetStatusText(wxT("Connecting..."), 0);
   m_Client->Start();
 }
 
@@ -134,13 +137,13 @@ void XMPPFrame::OnDisconnect(wxCommandEvent& WXUNUSED(event))
 void XMPPFrame::OnQuit(wxCommandEvent& event)
 {
   OnDisconnect(event);
-  Close(TRUE);
+  Close(PTrue);
 }
 
 
 void XMPPFrame::OnSessionEstablished(XMPP::C2S::StreamHandler& client, INT)
 {
-  SetStatusText("Connected", 0);
+  SetStatusText(wxT("Connected"), 0);
 
   m_Roster->Attach(m_Client);
 }
@@ -148,7 +151,7 @@ void XMPPFrame::OnSessionEstablished(XMPP::C2S::StreamHandler& client, INT)
 
 void XMPPFrame::OnSessionReleased(XMPP::C2S::StreamHandler& client, INT)
 {
-  SetStatusText("Disconnected", 0);
+  SetStatusText(wxT("Disconnected"), 0);
   m_Roster->Detach();
 }
 
@@ -157,7 +160,7 @@ void XMPPFrame::OnMessage(XMPP::Message& msg, INT)
 {
   // If it's valid and it's not in-band data
   if (msg.GetElement("data") == NULL) {
-    wxMessageDialog dialog(this, (const char *)msg.GetBody(), (const char *)msg.GetFrom(), wxOK);
+    wxMessageDialog dialog(this, PwxString(msg.GetBody()), PwxString(msg.GetFrom()), wxOK);
     dialog.ShowModal();
   }
 }
@@ -178,16 +181,16 @@ void XMPPFrame::OnRosterChanged(XMPP::Roster&, INT)
 
     for (PINDEX j = 0, jmax = s.GetSize() ; j < jmax ; j++) {
 
-      const PString& key = s.GetKeyAt(j);
+      PwxString key = s.GetKeyAt(j);
       wxTreeItemId g_id;
 
       if (!groups.Contains(key)) {
-        g_id = m_RosterTree->AppendItem(rootID, (const char *)key);
+        g_id = m_RosterTree->AppendItem(rootID, key);
         groups.SetAt(key, new POrdinalKey(g_id));
       }
 
-      g_id = (PINDEX)groups[key];
-      wxTreeItemId i_id = m_RosterTree->AppendItem(g_id, (const char *)item.GetName());
+      g_id = (void *)(PINDEX)groups[key];
+      wxTreeItemId i_id = m_RosterTree->AppendItem(g_id, PwxString(item.GetName()));
       m_RosterTree->Expand(g_id);
 
       const XMPP::Roster::Item::PresenceInfo& pres = item.GetPresence();
@@ -199,7 +202,7 @@ void XMPPFrame::OnRosterChanged(XMPP::Roster&, INT)
           PString show;
           pres[res].GetShow(&show);
           res += " - " + show;
-          m_RosterTree->AppendItem(i_id, (const char *)res);
+          m_RosterTree->AppendItem(i_id, PwxString(res));
         }
       }
       m_RosterTree->Expand(i_id);

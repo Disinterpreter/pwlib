@@ -6,6 +6,7 @@
  * Portable Windows Library
  *
  * Copyright (c) 1993-2002 Equivalence Pty. Ltd.
+ * Copyright (c) 2007 ISVO(Asia) Pte. Ltd.
  *
  * The contents of this file are subject to the Mozilla Public License
  * Version 1.0 (the "License"); you may not use this file except in
@@ -23,108 +24,310 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: snmpserv.cxx,v $
- * Revision 1.4  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.3  1998/11/30 04:52:09  robertj
- * New directory structure
- *
- * Revision 1.2  1998/09/23 06:22:42  robertj
- * Added open source copyright license.
- *
- * Revision 1.1  1996/09/14 13:02:18  robertj
- * Initial revision
- *
+ * $Revision: 26773 $
+ * $Author: rjongbloed $
+ * $Date: 2011-12-07 00:43:33 -0600 (Wed, 07 Dec 2011) $
  */
 
 #include <ptlib.h>
+
+#ifdef P_SNMP
+
 #include <ptclib/psnmp.h>
 
+#define new PNEW
 
-BOOL PSNMPServer::SendGetResponse (PSNMPVarBindingList &)
+
+#define SNMP_VERSION 0
+
+static const char defaultCommunity[] = "public";
+
+PSNMPServer::PSNMPServer(PIPSocket::Address binding, WORD localPort, PINDEX timeout, PINDEX rxSize, PINDEX txSize)
+#ifdef _MSC_VER
+#pragma warning(disable:4355)
+#endif
+ : m_thread(*this, &PSNMPServer::Main, true, "SNMP Server")
+#ifdef _MSC_VER
+#pragma warning(default:4355)
+#endif
+ , community(defaultCommunity)
+ , version(SNMP_VERSION)
+ , maxRxSize(rxSize)
+ , maxTxSize(txSize)
+{
+  SetReadTimeout(PTimeInterval(0, timeout));
+  baseSocket = new PUDPSocket;
+
+  if (!baseSocket->Listen(binding, 0, localPort)) {
+    PTRACE(4,"SNMPsrv\tError: Unable to Listen on port " << localPort);
+  }
+  else {
+    Open(baseSocket);
+    m_thread.Resume();
+  }
+}
+
+void PSNMPServer::Main()
+{
+   if (!HandleChannel())
+	     Close();
+}
+
+PSNMPServer::~PSNMPServer()
+{
+	Close();
+}
+
+PBoolean PSNMPServer::HandleChannel()
+{
+
+  PBYTEArray readBuffer;
+  PBYTEArray sendBuffer(maxTxSize);
+
+
+  for (;;) {
+   	if (!IsOpen())
+	  return PFalse;
+
+		// Reading
+	    PINDEX rxSize = 0;
+		readBuffer.SetSize(maxRxSize);
+		for (;;) {
+			if (!Read(readBuffer.GetPointer()+rxSize, maxRxSize - rxSize)) {
+
+			// if the buffer was too small, then we are receiving datagrams
+			// and the datagram was too big
+			if (PChannel::GetErrorCode() == PChannel::BufferTooSmall) 
+				lastErrorCode = RxBufferTooSmall;
+			else
+				lastErrorCode = NoResponse;
+
+			PTRACE(4,"SNMPsrv\tRenewing Socket due to timeout" << lastErrorCode);
+
+			} else if ((rxSize + GetLastReadCount()) >= 10)
+			break;
+
+			else 
+			rxSize += GetLastReadCount();
+		}
+
+	    rxSize += GetLastReadCount();
+		readBuffer.SetSize(rxSize);
+
+		PIPSocket::Address remoteAddress;
+		WORD remotePort;
+		baseSocket->GetLastReceiveAddress(remoteAddress, remotePort);
+
+		if (!Authorise(remoteAddress)) {
+		  PTRACE(4,"SNMPsrv\tReceived UnAuthorized Message from IP " << remoteAddress);
+		  continue;
+		}
+		// process the request
+		if (ProcessPDU(readBuffer, sendBuffer) == PTrue) {
+			// send the packet
+			baseSocket->SetSendAddress(remoteAddress, remotePort);
+			PTRACE(4, "SNMPsrv\tWriting " << sendBuffer.GetSize() << " Bytes to basesocket");
+			if (!Write(sendBuffer, sendBuffer.GetSize())) {
+			    PTRACE(4,"SNMPsrv\tWrite Error.");
+			    continue;
+			}
+			sendBuffer.SetSize(maxTxSize); //revert to max tx
+		}
+  }
+
+}
+
+
+PBoolean PSNMPServer::Authorise(const PIPSocket::Address & /*received*/)
+{
+  return PFalse;
+}
+
+
+void PSNMPServer::SetVersion(PASNInt newVersion)
+{
+  version = newVersion;
+}
+
+
+
+PSNMP::ErrorType PSNMPServer::SendGetResponse (PSNMPVarBindingList &)
 {
   PAssertAlways("SendGetResponse not yet implemented");
   return GenErr;
 }
 
 
-void PSNMPServer::OnGetRequest (PSNMPVarBindingList &)
+PBoolean PSNMPServer::OnGetRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
 {
+	return PFalse;
 }
 
 
-void PSNMPServer::OnGetNextRequest (PSNMPVarBindingList &)
+PBoolean PSNMPServer::OnGetNextRequest (PINDEX , PSNMP::BindingList &, PSNMP::ErrorType &)
 {
+	return PFalse;
 }
 
 
-void PSNMPServer::OnSetRequest (PSNMPVarBindingList &)
+PBoolean PSNMPServer::OnSetRequest (PINDEX , PSNMP::BindingList &,PSNMP::ErrorType &)
 {
+	return PFalse;
 }
 
 
-BOOL PSNMP::DecodeTrap(const PBYTEArray & readBuffer,
-                                       PINDEX & version,
-                                      PString & community,
-                                      PString & enterprise,
-                           PIPSocket::Address & address,
-                                       PINDEX & genericTrapType,
-                                      PINDEX  & specificTrapType,
-                                 PASNUnsigned & timeTicks,
-                          PSNMPVarBindingList & varsOut)
+template <typename PDUType>
+static void DecodeOID(const PDUType & pdu, PINDEX & reqID, PSNMP::BindingList & varlist)
 {
-  // parse the response
-  PASNSequence response(readBuffer);
-  PINDEX seqLen = response.GetSize();
+   reqID = pdu.m_request_id;
+   const PSNMP_VarBindList & vars = pdu.m_variable_bindings;
 
-  // check PDU
-  if (seqLen != 3 ||
-      response[0].GetType() != PASNObject::Integer ||
-      response[1].GetType() != PASNObject::String ||
-      response[2].GetType() != PASNObject::Choice) 
-    return FALSE;
+  // create the Requested list
+  for (PINDEX i = 0; i < vars.GetSize(); i++) {
+    varlist.push_back(pair<PString,PRFC1155_ObjectSyntax>(vars[i].m_name.AsString(),vars[i].m_value));
+  }
+}
 
-  // check the PDU data
-  const PASNSequence & rPduData = response[2].GetSequence();
-  seqLen = rPduData.GetSize();
-  if (seqLen != 6 ||
-      rPduData.GetChoice()  != Trap ||
-      rPduData[0].GetType() != PASNObject::ObjectID ||
-      rPduData[1].GetType() != PASNObject::IPAddress ||
-      rPduData[2].GetType() != PASNObject::Integer ||
-      rPduData[3].GetType() != PASNObject::Integer ||
-      rPduData[4].GetType() != PASNObject::TimeTicks ||
-      rPduData[5].GetType() != PASNObject::Sequence) 
-    return FALSE;
+template <typename PDUType>
+static void EncodeOID(PDUType & pdu, const PINDEX & reqID, 
+					  const PSNMP::BindingList & varlist, 
+					  const PSNMP::ErrorType & errCode)
+{
+   pdu.m_request_id = reqID;
+   pdu.m_error_status = errCode;
+   pdu.m_error_index = 0;
 
-  version          = response[0].GetInteger();
-  community        = response[1].GetString();
-  enterprise       = rPduData[0].GetString();
-  address          = rPduData[1].GetIPAddress();
-  genericTrapType  = rPduData[2].GetInteger();
-  specificTrapType = rPduData[3].GetInteger();
-  timeTicks        = rPduData[4].GetUnsigned();
+   if (errCode == PSNMP::NoError) {
+	   // Build the response list
+		PSNMP_VarBindList & vars = pdu.m_variable_bindings;
+		PINDEX i = 0;
+		vars.SetSize((int)varlist.size());
+		PSNMP::BindingList::const_iterator Iter = varlist.begin();
+		while (Iter != varlist.end()) {
+		  vars[i].m_name.SetValue(Iter->first);
+		  vars[i].m_value = Iter->second;
+		  i++;
+		  ++Iter;
+		}
+   }
+}
 
-  // check the variable bindings
-  const PASNSequence & rBindings = rPduData[5].GetSequence();
-  PINDEX bindingCount = rBindings.GetSize();
+PBoolean PSNMPServer::MIB_LocalMatch(PSNMP_PDU & pdu)
+{
+  PBoolean found = PFalse;
+  PSNMP_VarBindList & vars = pdu.m_variable_bindings;
+  PINDEX size = vars.GetSize();
+ 
+  for(PINDEX x = 0 ;x < size; x++){
+    PRFC1155_ObjectSyntax *obj = (PRFC1155_ObjectSyntax*) objList.GetAt(vars[x].m_name);
+    if (obj != NULL){
+      vars[x].m_value = *obj;
+      found = PTrue;
+    }
+    else{
+      pdu.m_error_status = PSNMP::NoSuchName;
+    }
+  }
+  return found;
+}
 
-  // create the return list
-  for (PINDEX i = 0; i < bindingCount; i++) {
-    if (rBindings[i].GetType() != PASNObject::Sequence) 
-      return TRUE;
+PBoolean PSNMPServer::ConfirmCommunity(PASN_OctetString & /*community*/)
+{
+	return PFalse;
+}
 
-    const PASNSequence & rVar = rBindings[i].GetSequence();
-    if (rVar.GetSize() != 2 ||
-        rVar[0].GetType() != PASNObject::ObjectID) 
-      return TRUE;
+PBoolean PSNMPServer::ConfirmVersion(PASN_Integer vers)
+{
+  return version == vers ? PTrue : PFalse;
+}
 
-    varsOut.Append(rVar[0].GetString(), (PASNObject *)rVar[1].Clone());
+PBoolean PSNMPServer::ProcessPDU(const PBYTEArray & readBuffer, PBYTEArray & sendBuffer)
+{
+
+  PSNMP_Message msg;
+  
+  if (!msg.Decode((PASN_Stream &)readBuffer)) {
+	  PTRACE(4,"SNMPsrv\tERROR DECODING PDU");
+	  return PFalse;
   }
 
-  return TRUE;
+  PTRACE(4, "SNMPsrv\tEncoded message" << msg);
+
+  if (!ConfirmVersion(msg.m_version)){
+    PTRACE(4, "SNMPsrv\tVersion mismatch on request, ignoring");
+    return PFalse;
+  }
+
+  if (!ConfirmCommunity(msg.m_community)){
+    PTRACE(4, "SNMPsrv\tCommunity string mismatch on request, ignoring");
+    return PFalse;
+  }
+
+  PSNMP::BindingList varlist;
+  PINDEX reqID;
+
+  PSNMP_Message resp;
+  PSNMP_PDUs sendpdu;
+
+  PBoolean retval = PTrue;
+  PSNMP::ErrorType errCode = PSNMP::NoError;
+  switch (msg.m_pdu.GetTag()) {
+    case PSNMP_PDUs::e_get_request:
+      DecodeOID<PSNMP_GetRequest_PDU>(msg.m_pdu, reqID, varlist);
+      retval = OnGetRequest(reqID, varlist, errCode);
+      if (retval == PTrue){
+        sendpdu.SetTag(PSNMP_PDUs::e_get_response);
+        EncodeOID<PSNMP_GetResponse_PDU>(sendpdu, reqID,varlist,errCode);
+        resp.m_pdu = sendpdu;
+        resp.m_version = msg.m_version;
+        resp.m_community = msg.m_community;
+        PSNMP_GetResponse_PDU & mpdu = (PSNMP_GetResponse_PDU &) resp.m_pdu;
+        if (!MIB_LocalMatch(mpdu)){
+          retval = PFalse;
+          break;
+        }
+        resp.Encode((PASN_Stream &)sendBuffer);
+      }
+      
+    break;
+    case PSNMP_PDUs::e_get_next_request:
+      DecodeOID<PSNMP_GetNextRequest_PDU>(msg.m_pdu, reqID, varlist);
+      retval = OnGetNextRequest(reqID,varlist,errCode);
+      if (retval == PTrue){
+        sendpdu.SetTag(PSNMP_PDUs::e_get_response);   
+        EncodeOID<PSNMP_GetResponse_PDU>(sendpdu, reqID,varlist,errCode);
+        resp.m_pdu = sendpdu;
+        resp.m_version = msg.m_version;
+        resp.m_community = msg.m_community;
+        PSNMP_GetResponse_PDU & mpdu = (PSNMP_GetResponse_PDU &) resp.m_pdu;
+        if (!MIB_LocalMatch(mpdu)){
+          retval = PFalse;
+          break;
+        }
+        resp.Encode((PASN_Stream &)sendBuffer);
+      }
+      break;
+
+    case PSNMP_PDUs::e_set_request:
+      DecodeOID<PSNMP_SetRequest_PDU>(msg.m_pdu, reqID, varlist);
+      retval = OnSetRequest(reqID, varlist, errCode);
+      break;
+
+    case PSNMP_PDUs::e_get_response:
+    case PSNMP_PDUs::e_trap:
+    default:
+      PTRACE(4,"SNMPsrv\tSNMP Request/Response not supported");
+      errCode= PSNMP::GenErr;
+      retval = PFalse;
+  }
+
+  if (retval) {
+    PTRACE(4, "SNMPSrv\tSNMP Response " << resp);
+  }
+
+  return retval;
 }
 
+#endif
 
 // End Of File ///////////////////////////////////////////////////////////////

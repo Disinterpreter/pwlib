@@ -23,11 +23,11 @@
 #include <ptlib/unix/ptlib/maccoreaudio.h>
 #include <iostream>  // used for Volume Listener
  
-
+#include <CoreServices/CoreServices.h>
 
 PCREATE_SOUND_PLUGIN(CoreAudio, PSoundChannelCoreAudio);
  
-namespace PWLibStupidOSXHacks
+namespace PWLibStupidLinkerHacks
 {
 	int loadCoreAudioStuff;
 }
@@ -44,6 +44,7 @@ namespace PWLibStupidOSXHacks
       OSStatus error = static_cast<OSStatus>(err);\
       PTRACE(1, "CoreAudio Error " << __func__ << " "  \
            <<  error   << "("  << (char*)&err <<  ")" ); \
+			error = err; \
     }         
    
 ostream& operator<<(ostream &os, AudioStreamBasicDescription &inDesc)
@@ -140,19 +141,19 @@ PSound & PSound::operator=(const PBYTEArray & data)
   return *this;
 }
 
-BOOL PSound::Load(const PFilePath & filename)
+PBoolean PSound::Load(const PFilePath & filename)
 {  
   PAssert(0, PUnimplementedFunction); 
   return false;
 }
 
-BOOL PSound::Save(const PFilePath & filename)
+PBoolean PSound::Save(const PFilePath & filename)
 {  
    PAssert(0, PUnimplementedFunction); 
    return false;
 }
 
-BOOL PSound::Play()
+PBoolean PSound::Play()
 {
    PAssert(0, PUnimplementedFunction); 
    return false;
@@ -168,8 +169,8 @@ void PSound::SetFormat(unsigned numChannels,
    formatInfo.SetSize(0);
 }
 
-BOOL PSound::PlayFile(const PFilePath & file,
-           BOOL wait)
+PBoolean PSound::PlayFile(const PFilePath & file,
+           PBoolean wait)
 {
    PAssert(0, PUnimplementedFunction); 
    return false;
@@ -818,7 +819,7 @@ OSStatus PSoundChannelCoreAudio::SetDeviceAsCurrent(AudioDeviceID id)
  * The major task of Open() is to find the matching device ID.
  *
  */
-BOOL PSoundChannelCoreAudio::Open(const PString & deviceName,
+PBoolean PSoundChannelCoreAudio::Open(const PString & deviceName,
               Directions dir,
               unsigned numChannels,
               unsigned sampleRate,
@@ -917,7 +918,7 @@ OSStatus PSoundChannelCoreAudio::MatchHALOutputFormat()
    checkStatus(err);  
 
    // make sure it is non-interleaved
-   BOOL isInterleaved = 
+   PBoolean isInterleaved = 
             !(hwASBD.mFormatFlags & kAudioFormatFlagIsNonInterleaved);
 
    hwASBD.mFormatFlags |= kAudioFormatFlagIsNonInterleaved; 
@@ -1002,7 +1003,7 @@ OSStatus PSoundChannelCoreAudio::MatchHALInputFormat()
    /*
     * make it one-channel, non-interleaved, keeping same sample rate 
     */
-   BOOL isInterleaved = 
+   PBoolean isInterleaved = 
             !(asbd.mFormatFlags & kAudioFormatFlagIsNonInterleaved); 
 
    PTRACE_IF(5, isInterleaved, "channels are interleaved ");
@@ -1042,7 +1043,7 @@ OSStatus PSoundChannelCoreAudio::MatchHALInputFormat()
 
 
 
-BOOL PSoundChannelCoreAudio::SetFormat(unsigned numChannels,
+PBoolean PSoundChannelCoreAudio::SetFormat(unsigned numChannels,
                   unsigned sampleRate,
                   unsigned bitsPerSample)
 {
@@ -1052,7 +1053,7 @@ BOOL PSoundChannelCoreAudio::SetFormat(unsigned numChannels,
 
    if(state != open_){
       PTRACE(1, "Please select a device first");
-      return FALSE;
+      return PFalse;
    }
   
    /*
@@ -1077,7 +1078,7 @@ BOOL PSoundChannelCoreAudio::SetFormat(unsigned numChannels,
   
    if(mDeviceID == kAudioDeviceDummy){
       PTRACE(1, "Dummy device");
-      return TRUE;
+      return PTrue;
    }
 
    OSStatus err;
@@ -1128,14 +1129,14 @@ BOOL PSoundChannelCoreAudio::SetFormat(unsigned numChannels,
    //}
 
    state = setformat_;
-   return TRUE;
+   return PTrue;
 }
 
 
 /* gets never called, see sound.h:
  * baseChannel->PChannel::GetHandle(); 
  */
-BOOL PSoundChannelCoreAudio::IsOpen() const
+PBoolean PSoundChannelCoreAudio::IsOpen() const
 {
    //return (os_handle != -1);
    return (state != init_ || state != destroy_);
@@ -1152,7 +1153,7 @@ int PSoundChannelCoreAudio::GetHandle() const
    return -1;
 }
 
-BOOL PSoundChannelCoreAudio::Abort()
+PBoolean PSoundChannelCoreAudio::Abort()
 {
    PTRACE(1, "Abort");
    PAssert(0, PUnimplementedFunction);
@@ -1173,7 +1174,7 @@ BOOL PSoundChannelCoreAudio::Abort()
  * count:   Number of buffers
  *
  */
-BOOL PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
+PBoolean PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
                   PINDEX bufferCount)
 {
    OSStatus err = noErr;
@@ -1181,7 +1182,7 @@ BOOL PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
    if(state != setformat_){
       // use GetError
       PTRACE(1, "Please specify a format first");
-      return FALSE;
+      return PFalse;
    }
 
    PTRACE(3, __func__ << direction << " : "
@@ -1196,7 +1197,7 @@ BOOL PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
    if(mDeviceID == kAudioDeviceDummy){
       // abort here
       PTRACE(1, "Dummy device");
-      return TRUE;
+      return PTrue;
    }
 
    mCircularBuffer = new CircularBuffer(bufferSize * bufferCount );
@@ -1229,7 +1230,7 @@ BOOL PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
    }
    checkStatus(err);
    if (err) {
-     return FALSE;
+     return PFalse;
    }
 
    PTRACE(2, __func__ <<  " AudioDevice buffer size set to " 
@@ -1310,92 +1311,93 @@ BOOL PSoundChannelCoreAudio::SetBuffers(PINDEX bufferSize,
   
    state = setbuffer_;
 
-   return TRUE;
+   return PTrue;
 
 }
 
 OSStatus PSoundChannelCoreAudio::SetupAdditionalRecordBuffers()
 {
-
-   OSStatus err = noErr;
-   UInt32 bufferSizeFrames, bufferSizeBytes;
+  OSStatus err = noErr;
+  UInt32 bufferSizeFrames, bufferSizeBytes;
    
-   /** 
-    * build buffer list to take over the data from the microphone 
-    */
-   UInt32 propertySize = sizeof(UInt32);
-   err = AudioDeviceGetProperty( mDeviceID,
+  /** 
+   * build buffer list to take over the data from the microphone 
+   */
+  UInt32 propertySize = sizeof(UInt32);
+  err = AudioDeviceGetProperty( mDeviceID,
       0,  // channel, probably all  
       true,  // isInput 
       //false,  // isInput ()
       kAudioDevicePropertyBufferFrameSize,
       &propertySize,
       &bufferSizeFrames);
-   checkStatus(err);
-   bufferSizeBytes = bufferSizeFrames * hwASBD.mBytesPerFrame;
+  checkStatus(err);
+  bufferSizeBytes = bufferSizeFrames * hwASBD.mBytesPerFrame;
 	bufferSizeBytes += bufferSizeBytes / 10; // +10%
 
-   //calculate size of ABL given the last field, assum non-interleaved 
-	UInt32 mChannelsPerFrame = hwASBD.mChannelsPerFrame;
-	UInt32 propsize = (UInt32) &(((AudioBufferList *)0)->mBuffers[mChannelsPerFrame]);
+  //calculate size of ABL given the last field, assum non-interleaved 
+  UInt32 mChannelsPerFrame = hwASBD.mChannelsPerFrame;
+  //UInt32 propsize = (UInt32) &(((AudioBufferList *)0)->mBuffers[mChannelsPerFrame]);
+  UInt32 propsize = sizeof(AudioBuffer) * mChannelsPerFrame + sizeof(AudioBufferList);
 
-   //malloc buffer lists
-   mInputBufferList = (AudioBufferList *)malloc(propsize);
-   mInputBufferList->mNumberBuffers = hwASBD.mChannelsPerFrame;
+  //malloc buffer lists
+  mInputBufferList = (AudioBufferList *)malloc(propsize);
+  mInputBufferList->mNumberBuffers = hwASBD.mChannelsPerFrame;
 
-   //pre-malloc buffers for AudioBufferLists
-   for(UInt32 i =0; i< mInputBufferList->mNumberBuffers ; i++) {
+  //pre-malloc buffers for AudioBufferLists
+  for(UInt32 i =0; i< mInputBufferList->mNumberBuffers ; i++) {
       mInputBufferList->mBuffers[i].mNumberChannels = 1;
       mInputBufferList->mBuffers[i].mDataByteSize = bufferSizeBytes;
       mInputBufferList->mBuffers[i].mData = malloc(bufferSizeBytes);
-   }
-   mRecordInputBufferSize = bufferSizeBytes;
+  }
+  mRecordInputBufferSize = bufferSizeBytes;
 
-   /** allocate ringbuffer to cache data before passing them to the converter */
-   // take only one buffer -> mono, use double buffering
-   mInputCircularBuffer = new CircularBuffer(bufferSizeBytes * 2);
+  /** allocate ringbuffer to cache data before passing them to the converter */
+  // take only one buffer -> mono, use double buffering
+  mInputCircularBuffer = new CircularBuffer(bufferSizeBytes * 2);
 
 
-   /** 
-    * Build buffer list that is passed to the Converter to be filled with 
-    * the converted frames.
-    */
-   // given the number of input bytes how many bytes to expect at the output?
-   bufferSizeBytes += MIN_INPUT_FILL * hwASBD.mBytesPerFrame;
-   propertySize = sizeof(UInt32);
-   err = AudioConverterGetProperty(converter,
+  /** 
+   * Build buffer list that is passed to the Converter to be filled with 
+   * the converted frames.
+   */
+  // given the number of input bytes how many bytes to expect at the output?
+  bufferSizeBytes += MIN_INPUT_FILL * hwASBD.mBytesPerFrame;
+  propertySize = sizeof(UInt32);
+  err = AudioConverterGetProperty(converter,
          kAudioConverterPropertyCalculateOutputBufferSize,
          &propertySize,
          &bufferSizeBytes);
-   checkStatus(err);
+  checkStatus(err);
 
 
-   //calculate number of buffers from channels
-   mChannelsPerFrame = pwlibASBD.mChannelsPerFrame;
-   propsize = (UInt32) &(((AudioBufferList *)0)->mBuffers[mChannelsPerFrame]);
+  //calculate number of buffers from channels
+  mChannelsPerFrame = pwlibASBD.mChannelsPerFrame;
+  //propsize = (UInt32) &(((AudioBufferList *)0)->mBuffers[mChannelsPerFrame]);
+  propsize = sizeof(AudioBuffer) * mChannelsPerFrame + sizeof(AudioBufferList);
 
-   //malloc buffer lists
-   mOutputBufferList = (AudioBufferList *)malloc(propsize);
-   mOutputBufferList->mNumberBuffers = pwlibASBD.mChannelsPerFrame;
+  //malloc buffer lists
+  mOutputBufferList = (AudioBufferList *)malloc(propsize);
+  mOutputBufferList->mNumberBuffers = pwlibASBD.mChannelsPerFrame;
 
-   //pre-malloc buffers for AudioBufferLists
-   for(UInt32 i =0; i< mOutputBufferList->mNumberBuffers ; i++) {
-      mOutputBufferList->mBuffers[i].mNumberChannels = 1;
-      mOutputBufferList->mBuffers[i].mDataByteSize = bufferSizeBytes;
-      mOutputBufferList->mBuffers[i].mData = malloc(bufferSizeBytes);
-   }
-   mRecordOutputBufferSize = bufferSizeBytes;
+  //pre-malloc buffers for AudioBufferLists
+  for(UInt32 i =0; i< mOutputBufferList->mNumberBuffers ; i++) {
+     mOutputBufferList->mBuffers[i].mNumberChannels = 1;
+     mOutputBufferList->mBuffers[i].mDataByteSize = bufferSizeBytes;
+     mOutputBufferList->mBuffers[i].mData = malloc(bufferSizeBytes);
+  }
+  mRecordOutputBufferSize = bufferSizeBytes;
 
-   return err;
+  return err;
 }
  
 
-BOOL PSoundChannelCoreAudio::GetBuffers(PINDEX & size,
+PBoolean PSoundChannelCoreAudio::GetBuffers(PINDEX & size,
                   PINDEX & count)
 {
    size = bufferSizeBytes;
    count = bufferCount;
-   return TRUE;
+   return PTrue;
 }
 
 
@@ -1439,7 +1441,7 @@ OSStatus PSoundChannelCoreAudio::VolumeChangePropertyListener(AudioDeviceID id,
  * http://lists.apple.com/archives/coreaudio-api/2001/Nov/msg00155.html
  * In short a stream contains several channels, e. g. 2 in case of stereo.
  */
-BOOL PSoundChannelCoreAudio::GetVolume(unsigned & volume)
+PBoolean PSoundChannelCoreAudio::GetVolume(unsigned & volume)
 {
    OSStatus err = noErr;
    UInt32 theSize;
@@ -1450,7 +1452,7 @@ BOOL PSoundChannelCoreAudio::GetVolume(unsigned & volume)
 	   //in the case of a dummy device, we simply return 0 in all cases
       PTRACE(1, "Dummy device");
 	  volume = 0;
-      return TRUE;
+      return PTrue;
    }
 
 
@@ -1471,10 +1473,10 @@ BOOL PSoundChannelCoreAudio::GetVolume(unsigned & volume)
    if (err == kAudioHardwareNoError) {
      // volume is between 0 and 100? 
      volume = (unsigned) (theValue * 100);
-     return TRUE;
+     return PTrue;
    } else {
 		volume = 0;
-      return FALSE;
+      return PFalse;
 	}
 }
 
@@ -1485,7 +1487,7 @@ BOOL PSoundChannelCoreAudio::GetVolume(unsigned & volume)
  * which means it maps to the first two channels of the device.
  * The Master Channel (0) is unusable because not all devices support it 
  */
-BOOL PSoundChannelCoreAudio::SetVolume(unsigned volume)
+PBoolean PSoundChannelCoreAudio::SetVolume(unsigned volume)
 {
    OSStatus err = noErr;
    Boolean isWritable;
@@ -1495,12 +1497,12 @@ BOOL PSoundChannelCoreAudio::SetVolume(unsigned volume)
 
    if(mDeviceID == kAudioDeviceDummy) {
       PTRACE(1, "Dummy device");
-      return FALSE;
+      return PFalse;
    }
 
    if(state < setformat_){ // we need to know the stream format
 		PTRACE(2, __func__ << "AudioStreamBasicDescription not initialized yet");
-		return FALSE;
+		return PFalse;
 	}
 
 
@@ -1560,7 +1562,7 @@ BOOL PSoundChannelCoreAudio::SetVolume(unsigned volume)
 	// or that all threads/instances get the message to be quiet 
 	{
 		pthread_mutex_lock(&GetIsMuteMutex());
-		isMute() = (volume == 0) ? TRUE : FALSE;
+		isMute() = (volume == 0) ? PTrue : PFalse;
 		pthread_mutex_unlock(&GetIsMuteMutex());
 
 		/* No sense to mute this channel, it might opened just as a mixer.
@@ -1569,19 +1571,19 @@ BOOL PSoundChannelCoreAudio::SetVolume(unsigned volume)
 	}
 
    if (!err)
-      return TRUE;
+      return PTrue;
    else
-      return FALSE;
+      return PFalse;
 }
  
 
-BOOL PSoundChannelCoreAudio::Write(const void *buf,PINDEX len)
+PBoolean PSoundChannelCoreAudio::Write(const void *buf,PINDEX len)
 {
    PTRACE(5, "Write called with len " << len);
 
    if(state < setbuffer_){
       PTRACE(1, __func__ << " Please initialize device first");
-      return FALSE;
+      return PFalse;
    }
 
 	pthread_mutex_lock(&GetIsMuteMutex());
@@ -1600,7 +1602,7 @@ BOOL PSoundChannelCoreAudio::Write(const void *buf,PINDEX len)
       UInt32 nr_samples = len / pwlibASBD.mBytesPerFrame; 
       usleep(UInt32(nr_samples/pwlibASBD.mSampleRate * 1000000)); // 10E-6 [s]
 		pthread_mutex_unlock(&GetIsMuteMutex());
-      return TRUE;  
+      return PTrue;  
    }
 
    // Start the device before putting datA into the buffer
@@ -1617,53 +1619,53 @@ BOOL PSoundChannelCoreAudio::Write(const void *buf,PINDEX len)
    // Write to circular buffer with locking 
    lastWriteCount = mCircularBuffer->Fill((const char*)buf, len, true);
 
-   return (TRUE);
+   return (PTrue);
 }
 
 
-BOOL PSoundChannelCoreAudio::PlaySound(const PSound & sound,
-                  BOOL wait)
+PBoolean PSoundChannelCoreAudio::PlaySound(const PSound & sound,
+                  PBoolean wait)
 {
    if (!Write((const BYTE *)sound, sound.GetSize()))
-     return FALSE;
+     return PFalse;
   
    if (wait)
      return WaitForPlayCompletion();
 
-   return TRUE;
+   return PTrue;
 }
 
-BOOL PSoundChannelCoreAudio::PlayFile(const PFilePath & file,
-                 BOOL wait)
+PBoolean PSoundChannelCoreAudio::PlayFile(const PFilePath & file,
+                 PBoolean wait)
 {
    PTRACE(1, __func__ );
   PAssert(0, PUnimplementedFunction);
 
-  return TRUE; 
+  return PTrue; 
 }
 
-BOOL PSoundChannelCoreAudio::HasPlayCompleted()
-{
-   PTRACE(1, __func__ );
-  PAssert(0, PUnimplementedFunction);
-   return false;
-}
-
-BOOL PSoundChannelCoreAudio::WaitForPlayCompletion()
+PBoolean PSoundChannelCoreAudio::HasPlayCompleted()
 {
    PTRACE(1, __func__ );
   PAssert(0, PUnimplementedFunction);
    return false;
 }
 
-BOOL PSoundChannelCoreAudio::Read(void *buf,
+PBoolean PSoundChannelCoreAudio::WaitForPlayCompletion()
+{
+   PTRACE(1, __func__ );
+  PAssert(0, PUnimplementedFunction);
+   return false;
+}
+
+PBoolean PSoundChannelCoreAudio::Read(void *buf,
               PINDEX len)
 {
    PTRACE(5, "Read called with len " << len);
 
    if(state < setbuffer_){
       PTRACE(1, __func__ << " Please initialize device first");
-      return FALSE;
+      return PFalse;
    }
 
 	pthread_mutex_lock(&GetIsMuteMutex());
@@ -1683,7 +1685,7 @@ BOOL PSoundChannelCoreAudio::Read(void *buf,
       UInt32 nr_samples = len / pwlibASBD.mBytesPerFrame; 
       usleep(UInt32(nr_samples/pwlibASBD.mSampleRate * 1000000)); // 10E-6 [s]
 		pthread_mutex_unlock(&GetIsMuteMutex());
-      return TRUE;  
+      return PTrue;  
    }
 
    // Start the device before draining data or the thread might be locked 
@@ -1698,29 +1700,29 @@ BOOL PSoundChannelCoreAudio::Read(void *buf,
 	pthread_mutex_unlock(&GetIsMuteMutex());
 
    lastReadCount = mCircularBuffer->Drain((char*)buf, len, true);
-   return (TRUE);
+   return (PTrue);
 }
 
 
-BOOL PSoundChannelCoreAudio::RecordSound(PSound & sound)
+PBoolean PSoundChannelCoreAudio::RecordSound(PSound & sound)
 {
    PTRACE(1, __func__ );
   PAssert(0, PUnimplementedFunction);
    return false;
 }
 
-BOOL PSoundChannelCoreAudio::RecordFile(const PFilePath & file)
+PBoolean PSoundChannelCoreAudio::RecordFile(const PFilePath & file)
 {
    PTRACE(1, __func__ );
   PAssert(0, PUnimplementedFunction);
    return false;
 }
 
-BOOL PSoundChannelCoreAudio::StartRecording()
+PBoolean PSoundChannelCoreAudio::StartRecording()
 {
    if(state != setbuffer_){
       PTRACE(1, __func__ << " Initialize the device first");
-      return FALSE;
+      return PFalse;
    }
 
 	pthread_mutex_lock(&GetIsMuteMutex());
@@ -1734,40 +1736,40 @@ BOOL PSoundChannelCoreAudio::StartRecording()
    return false;
 }
 
-BOOL PSoundChannelCoreAudio::isRecordBufferFull()
+PBoolean PSoundChannelCoreAudio::isRecordBufferFull()
 {
    PAssert(direction == Recorder, PInvalidParameter);
    if(state != setbuffer_){
       PTRACE(1, __func__ << " Initialize the device first");
-      return FALSE;
+      return PFalse;
    }
    
    return (mCircularBuffer->size() > bufferSizeBytes);
 }
 
-BOOL PSoundChannelCoreAudio::AreAllRecordBuffersFull()
+PBoolean PSoundChannelCoreAudio::AreAllRecordBuffersFull()
 {
    PAssert(direction == Recorder, PInvalidParameter);
    if(state != setbuffer_){
       PTRACE(1, __func__ << " Initialize the device first");
-      return FALSE;
+      return PFalse;
    }
 
    return (mCircularBuffer->Full());
 }
 
-BOOL PSoundChannelCoreAudio::WaitForRecordBufferFull()
+PBoolean PSoundChannelCoreAudio::WaitForRecordBufferFull()
 {
    PTRACE(1, __func__ );
   PAssert(0, PUnimplementedFunction);
   if (os_handle < 0) {
-    return FALSE;
+    return PFalse;
   }
 
   return PXSetIOBlock(PXReadBlock, readTimeout);
 }
 
-BOOL PSoundChannelCoreAudio::WaitForAllRecordBuffersFull()
+PBoolean PSoundChannelCoreAudio::WaitForAllRecordBuffersFull()
 {
    PTRACE(1, __func__ );
    PAssert(0, PUnimplementedFunction);

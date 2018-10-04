@@ -5,22 +5,16 @@
  *
  * Copyright 2004 Reitek S.p.A.
  *
- * $Log: main.h,v $
- * Revision 1.3  2005/08/08 08:15:59  rjongbloed
- * Fixed precompiled header usage
- *
- * Revision 1.2  2004/05/09 07:23:49  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.1  2004/04/26 01:51:58  rjongbloed
- * More implementation of XMPP, thanks a lot to Federico Pinna & Reitek S.p.A.
- *
+ * $Revision: 25065 $
+ * $Author: rjongbloed $
+ * $Date: 2011-01-14 02:03:15 -0600 (Fri, 14 Jan 2011) $
  */
 
 #ifndef _XMPPTest_MAIN_H
 #define _XMPPTest_MAIN_H
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 #include <ptlib/notifier_ext.h>
 #include <ptclib/xmpp_c2s.h>
 #include <ptclib/xmpp_roster.h>
@@ -28,7 +22,10 @@
 
 #include <wx/wx.h>
 
+#include <ptlib/wxstring.h>
+
 #include "MainFrame.h"
+
 
 class XMPPFrameBase : public PObject
 {

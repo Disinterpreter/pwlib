@@ -5,6 +5,7 @@
 //
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
 
 class Hello : public PProcess
 {
@@ -17,7 +18,9 @@ PCREATE_PROCESS(Hello)
 
 void Hello::Main()
 {
-  cout << "Hello world!\n";
+  cout << "Hello world!\n\n"
+          "From " << GetOSClass() << ' ' << GetOSName() << " (" << GetOSVersion() << ")"
+          " on " << GetOSHardware() << ", PTLib version " << GetLibVersion() << endl;
 }
 
 // End of hello.cxx

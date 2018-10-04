@@ -26,21 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pvidfile.h,v $
- * Revision 1.3  2006/02/24 04:51:26  csoutheren
- * Fixed problem with using CIF from video files
- * Added support for video files in y4m format
- *
- * Revision 1.2  2006/02/20 06:49:45  csoutheren
- * Added video file and video file input device code
- *
- * Revision 1.1  2006/02/20 06:17:28  csoutheren
- * Added ability to read video from a file
- *
+ * $Revision: 25197 $
+ * $Author: rjongbloed $
+ * $Date: 2011-02-24 21:03:12 -0600 (Thu, 24 Feb 2011) $
  */
 
-#ifndef _PVIDFILE
-#define _PVIDFILE
+#ifndef PTLIB_PVIDFILE_H
+#define PTLIB_PVIDFILE_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -48,49 +40,63 @@
 
 #include <ptlib.h>
 
+#if P_VIDEO
 #if P_VIDFILE
+
+#include <ptlib/videoio.h>
+
 
 /**
  * Abstract class for a file containing a sequence of video frames
  */
-class PVideoFile : public PFile
+class PVideoFile : public PVideoFrameInfo
 {
-  PCLASSINFO(PVideoFile, PFile);
-  public:
+  PCLASSINFO(PVideoFile, PVideoFrameInfo);
+  protected:
     PVideoFile();
 
-    PVideoFile(
-      PINDEX width,
-      PINDEX height,
-      OpenMode mode,          ///< Mode in which to open the file.
-      int opts = ModeDefault  ///< #OpenOptions enum# for open operation.
+  public:
+    virtual PBoolean Open(
+      const PFilePath & name,    // Name of file to open.
+      PFile::OpenMode mode = PFile::ReadWrite, // Mode in which to open the file.
+      int opts = PFile::ModeDefault     // <code>OpenOptions</code> enum# for open operation.
     );
 
-    /**Create a file object with the specified name and open it in the
-       specified mode and with the specified options.
+    virtual PBoolean IsOpen() const { return m_file.IsOpen(); }
+    virtual PBoolean Close() { return m_file.Close(); }
 
-       The #PChannel::IsOpen()# function may be used after object
-       construction to determine if the file was successfully opened.
-     */
-    PVideoFile(
-      PINDEX width,
-      PINDEX height,
-      const PFilePath & name,    ///< Name of file to open.
-      OpenMode mode = ReadWrite, ///< Mode in which to open the file.
-      int opts = ModeDefault     ///< #OpenOptions enum# for open operation.
+    virtual PBoolean WriteFrame(const void * frame);
+    virtual PBoolean ReadFrame(void * frame);
+
+    virtual off_t GetLength() const;
+    virtual PBoolean SetLength(
+      off_t len   // New length of file in frames.
     );
 
-    virtual PINDEX GetWidth() const    { return yuvWidth; }
-    virtual PINDEX GetHeight() const   { return yuvHeight; }
+    virtual off_t GetPosition() const;
+    virtual PBoolean SetPosition(
+      off_t pos,                                       ///< New position to set.
+      PFile::FilePositionOrigin origin = PFile::Start  ///< Origin for position change.
+    );
 
-    virtual void SetWidth(PINDEX v);
-    virtual void SetHeight(PINDEX v);
+    virtual PBoolean SetFrameSize(
+      unsigned width,   ///< New width of frame
+      unsigned height   ///< New height of frame
+    );
+    virtual PBoolean SetFrameRate(
+      unsigned rate  ///< Frames  per second
+    );
 
-    virtual BOOL WriteFrame(const void * frame) = 0;
-    virtual BOOL ReadFrame(void * frame) = 0;
+    const PFilePath & GetFilePath() const { return m_file.GetFilePath(); }
+    PINDEX GetFrameBytes() const { return m_frameBytes; }
+
 
   protected:
-    PINDEX yuvWidth, yuvHeight, yuvSize;
+    bool   m_fixedFrameSize;
+    bool   m_fixedFrameRate;
+    PINDEX m_frameBytes;
+    off_t  m_headerOffset;
+    PFile  m_file;
 };
 
 /**
@@ -104,59 +110,25 @@ class PYUVFile : public PVideoFile
   public:
     PYUVFile();
 
-    PYUVFile(
-      PINDEX width,
-      PINDEX height,
-      OpenMode mode,          ///< Mode in which to open the file.
-      int opts = ModeDefault  ///< #OpenOptions enum# for open operation.
-    );
-
-    /**Create a file object with the specified name and open it in the
-       specified mode and with the specified options.
-
-       The #PChannel::IsOpen()# function may be used after object
-       construction to determine if the file was successfully opened.
-     */
-    PYUVFile(
-      PINDEX width,
-      PINDEX height,
-      const PFilePath & name,    ///< Name of file to open.
-      OpenMode mode = ReadWrite, ///< Mode in which to open the file.
-      int opts = ModeDefault     ///< #OpenOptions enum# for open operation.
-    );
-
-    virtual BOOL Open(
-      OpenMode mode = ReadWrite,  // Mode in which to open the file.
-      int opts = ModeDefault      // Options for open operation.
-    );
-    virtual BOOL Open(
+    virtual PBoolean Open(
       const PFilePath & name,    // Name of file to open.
-      OpenMode mode = ReadWrite, // Mode in which to open the file.
-      int opts = ModeDefault     // #OpenOptions enum# for open operation.
+      PFile::OpenMode mode = PFile::ReadWrite, // Mode in which to open the file.
+      int opts = PFile::ModeDefault     // <code>OpenOptions</code> enum# for open operation.
     );
 
-    virtual off_t GetLength() const;
-      
-    virtual BOOL SetLength(
-      off_t len   // New length of file.
-    );
-
-    virtual BOOL SetPosition(
-      off_t pos,                         ///< New position to set.
-      FilePositionOrigin origin = Start  ///< Origin for position change.
-    );
-
-    virtual off_t GetPosition() const;
-
-    virtual BOOL WriteFrame(const void * frame);
-    virtual BOOL ReadFrame(void * frame);
+    virtual PBoolean WriteFrame(const void * frame);
+    virtual PBoolean ReadFrame(void * frame);
 
   protected:
-    void Construct();
-    PINDEX offset;
-    BOOL y4mMode;
+    bool m_y4mMode;
 };
 
+PFACTORY_LOAD(PYUVFile);
+
+#endif
 #endif
 
-#endif // P_VIDFILE
+#endif // PTLIB_PVIDFILE_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

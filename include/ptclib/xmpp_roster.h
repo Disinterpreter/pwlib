@@ -24,18 +24,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: xmpp_roster.h,v $
- * Revision 1.2  2004/05/09 07:23:46  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.1  2004/04/26 01:51:57  rjongbloed
- * More implementation of XMPP, thanks a lot to Federico Pinna & Reitek S.p.A.
- *
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _XMPP_ROSTER
-#define _XMPP_ROSTER
+#ifndef PTLIB_XMPP_ROSTER_H
+#define PTLIB_XMPP_ROSTER_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -78,19 +73,19 @@ namespace XMPP
       const PStringSet&   GetGroups() const     { return m_Groups; }
       const PresenceInfo& GetPresence() const   { return m_Presence; }
 
-      virtual void  SetJID(const JID& jid, BOOL dirty = TRUE)
+      virtual void  SetJID(const JID& jid, PBoolean dirty = true)
                                                 { m_JID = jid; if (dirty) SetDirty(); }
-      virtual void  SetType(ItemType type, BOOL dirty = TRUE)
+      virtual void  SetType(ItemType type, PBoolean dirty = true)
                                                 { m_Type = type; if (dirty) SetDirty(); }
-      virtual void  SetName(const PString& name, BOOL dirty = TRUE) 
+      virtual void  SetName(const PString& name, PBoolean dirty = true) 
                                                 { m_Name = name; if (dirty) SetDirty(); }
 
-      virtual void  AddGroup(const PString& group, BOOL dirty = TRUE);
-      virtual void  RemoveGroup(const PString& group, BOOL dirty = TRUE);
+      virtual void  AddGroup(const PString& group, PBoolean dirty = true);
+      virtual void  RemoveGroup(const PString& group, PBoolean dirty = true);
 
       virtual void  SetPresence(const Presence& p);
 
-      void SetDirty(BOOL b = TRUE) { m_IsDirty = b; }
+      void SetDirty(PBoolean b = true) { m_IsDirty = b; }
 
       /** This operator will set the dirty flag
        */
@@ -110,7 +105,7 @@ namespace XMPP
       // a presence stanza if kept.
       PDictionary<PString, Presence> m_Presence;
 
-      BOOL        m_IsDirty; // item modified locally, server needs to be updated
+      PBoolean        m_IsDirty; // item modified locally, server needs to be updated
     };
     PLIST(ItemList, Item);
 
@@ -122,13 +117,13 @@ namespace XMPP
 
     virtual Item * FindItem(const PString& jid);
 
-    virtual BOOL SetItem(Item * item, BOOL localOnly = FALSE);
-    virtual BOOL RemoveItem(const PString& jid, BOOL localOnly = FALSE);
-    virtual BOOL RemoveItem(Item * item, BOOL localOnly = FALSE);
+    virtual PBoolean SetItem(Item * item, PBoolean localOnly = false);
+    virtual PBoolean RemoveItem(const PString& jid, PBoolean localOnly = false);
+    virtual PBoolean RemoveItem(Item * item, PBoolean localOnly = false);
 
     virtual void  Attach(XMPP::C2S::StreamHandler * handler);
     virtual void  Detach();
-    virtual void  Refresh(BOOL sendPresence = TRUE);
+    virtual void  Refresh(PBoolean sendPresence = true);
 
     virtual PNotifierList& ItemChangedHandlers()    { return m_ItemChangedHandlers; }
     virtual PNotifierList& RosterChangedHandlers()  { return m_RosterChangedHandlers; }
@@ -150,7 +145,6 @@ namespace XMPP
 
 #endif  // P_EXPAT
 
-#endif  // _XMPP_ROSTER
+#endif  // PTLIB_XMPP_ROSTER_H
 
 // End of File ///////////////////////////////////////////////////////////////
-

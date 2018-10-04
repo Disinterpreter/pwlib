@@ -3,7 +3,7 @@
  *
  * Mother of all ancestor classes.
  *
- * Portable Windows Library
+ * Portable Tools Library
  *
  * Copyright (c) 1993-1998 Equivalence Pty. Ltd.
  *
@@ -26,407 +26,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: object.h,v $
- * Revision 1.117  2006/04/10 23:57:27  csoutheren
- * Checked in changes to remove some warnings with gcc effc++ flag
- *
- * Revision 1.116  2006/03/20 00:24:56  csoutheren
- * Applied patch #1446482
- * Thanks to Adam Butcher
- *
- * Revision 1.115  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.114  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.113  2005/09/18 11:05:36  dominance
- * include/ptlib/channel.h, include/ptlib/pstring.h, src/ptlib/common/contain.cxx,
- * src/ptlib/common/pchannel.cxx:
- *   correct the STL defined checking to use proper syntax.
- *
- * include/ptlib/object.h:
- *   re-add typedef to compile on mingw
- *
- * make/ptlib-config.in:
- *   import a long-standing fix from the Debian packs which allows usage of
- *   ptlib-config without manually adding -lpt for each of the subsequent
- *   projects
- *
- * Revision 1.112  2005/08/30 06:36:39  csoutheren
- * Added ability to rotate output logs on a daily basis
- *
- * Revision 1.111  2005/03/10 06:37:20  csoutheren
- * Removed use of typeid on WIndows to get class name because it is not threadsafe
- * In fact, lets just use #classname everywhere because that will always work
- * Thanks to Vyacheslav Frolov
- *
- * Revision 1.110  2004/08/14 14:17:29  csoutheren
- * Fixed problem with PAssert and associated functions caused by using expressions
- * as statements. inline functions are your friend :)
- *
- * Revision 1.109  2004/08/05 12:09:35  rjongbloed
- * Added macros for "remove const" and "down cast" funcions with and without RTTI.
- * Added ability to disable Asserts.
- * Change PAssert macros so pass through the boolean result so that they can be used
- *   in if statements, allowing a chance to continue if ignore assert.
- *
- * Revision 1.108  2004/07/11 07:56:35  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.107  2004/07/03 06:49:49  rjongbloed
- * Added PTRACE_PARAM() macro to fix warnings on parameters used in PTRACE
- *  macros only.
- *
- * Revision 1.106  2004/06/01 07:42:19  csoutheren
- * Restored memory allocation checking
- * Added configure flag to enable, thanks to Derek Smithies
- *
- * Revision 1.105  2004/06/01 05:22:43  csoutheren
- * Restored memory check functionality
- *
- * Revision 1.104  2004/05/12 04:36:17  csoutheren
- * Fixed problems with using sem_wait and friends on systems that do not
- * support atomic integers
- *
- * Revision 1.103  2004/04/18 04:33:36  rjongbloed
- * Changed all operators that return BOOL to return standard type bool. This is primarily
- *   for improved compatibility with std STL usage removing many warnings.
- *
- * Revision 1.102  2004/04/11 13:26:25  csoutheren
- * Removed namespace problems and removed warnings for Windows <string>
- *
- * Revision 1.101  2004/04/11 03:20:41  csoutheren
- * Added Unix implementation of PCriticalSection
- *
- * Revision 1.100  2004/04/11 02:55:17  csoutheren
- * Added PCriticalSection for Windows
- * Added compile time option for PContainer to use critical sections to provide thread safety under some circumstances
- *
- * Revision 1.99  2004/04/09 11:54:46  csoutheren
- * Added configure.in check for STL streams, and tested with gcc 2.95.3,
- * gcc 3.3.1, and gcc 3.3.3
- *
- * Revision 1.98  2004/04/09 07:53:51  rjongbloed
- * Fixed backward compatibility after STL streams change
- *
- * Revision 1.97  2004/04/09 00:56:35  csoutheren
- * Fixed problem with new class name code
- *
- * Revision 1.96  2004/04/09 00:42:58  csoutheren
- * Changed Unix build to use slightly different method for
- * keep class names, as GCC does not use actual class names for typeinfo
- *
- * Revision 1.95  2004/04/04 13:24:18  rjongbloed
- * Changes to support native C++ Run Time Type Information
- *
- * Revision 1.94  2004/04/03 08:57:31  csoutheren
- * Replaced pseudo-RTTI with real RTTI
- *
- * Revision 1.93  2004/04/03 08:22:20  csoutheren
- * Remove pseudo-RTTI and replaced with real RTTI
- *
- * Revision 1.92  2004/04/03 07:41:00  csoutheren
- * Fixed compile problem with ostringstream/ostrstream
- *
- * Revision 1.91  2004/04/03 07:16:05  rjongbloed
- * Fixed backward compatibility with MSVC 6
- *
- * Revision 1.90  2004/04/03 06:54:22  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.89  2003/09/17 09:00:59  csoutheren
- * Moved PSmartPointer and PNotifier into seperate files
- * Added detection for system regex libraries on all platforms
- *
- * Revision 1.88  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.87  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.86  2002/10/14 21:42:37  rogerh
- * Only use malloc.h on Windows
- *
- * Revision 1.85  2002/10/10 04:43:43  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.84  2002/10/08 12:41:51  robertj
- * Changed for IPv6 support, thanks Sébastien Josset.
- *
- * Revision 1.83  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.82  2002/08/06 02:27:58  robertj
- * GNU C++ v3 compatibility.
- *
- * Revision 1.81  2002/06/25 02:22:47  robertj
- * Improved assertion system to allow C++ class name to be displayed if
- *   desired, especially relevant to container classes.
- *
- * Revision 1.80  2002/06/14 10:29:43  rogerh
- * STL + gcc 3.1 compile fix. Submitted by Klaus Kaempf <kkaempf@suse.de>
- *
- * Revision 1.79  2002/06/13 08:34:05  rogerh
- * gcc 3.1 needs iostream instead of iostream.h
- *
- * Revision 1.78  2002/05/22 00:23:31  craigs
- * Added GMTTime flag to tracing options
- *
- * Revision 1.77  2002/04/19 00:20:51  craigs
- * Added option to append to log file rather than create anew each time
- *
- * Revision 1.76  2002/01/26 23:55:55  craigs
- * Changed for GCC 3.0 compatibility, thanks to manty@manty.net
- *
- * Revision 1.75  2001/10/18 19:56:26  yurik
- * Fixed WinCE x86 compilation problems with memory check off
- *
- * Revision 1.74  2001/08/12 11:26:07  robertj
- * Put back PMEMORY_CHECK taken out by the Carbon port.
- *
- * Revision 1.73  2001/08/11 07:57:30  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.72  2001/05/03 06:27:29  robertj
- * Added return value to PMemoryCheck::SetIgnoreAllocations() so get previous state.
- *
- * Revision 1.71  2001/03/24 01:11:10  robertj
- * Added missing PTRACE_IF define in non PTRACING mode.
- *
- * Revision 1.70  2001/03/23 05:34:09  robertj
- * Added PTRACE_IF to output trace if a conditional is TRUE.
- *
- * Revision 1.69  2001/03/01 02:15:16  robertj
- * Fixed PTRACE_LINE() so drops filename and line which may not be in trace otherwise.
- *
- * Revision 1.68  2001/02/22 08:16:41  robertj
- * Added standard trace file setup subroutine.
- *
- * Revision 1.67  2001/02/13 03:27:24  robertj
- * Added function to do heap validation.
- *
- * Revision 1.66  2001/02/09 04:41:27  robertj
- * Removed added non memrycheck implementations of new/delete when using GNU C++.
- *
- * Revision 1.65  2001/02/07 04:47:49  robertj
- * Added changes for possible random crashes in multi DLL environment
- *   due to memory allocation wierdness, thanks Milan Dimitrijevic.
- *
- * Revision 1.64  2001/01/24 06:15:44  yurik
- * Windows CE port-related declarations
- *
- * Revision 1.63  2000/07/28 05:13:47  robertj
- * Fixed silly mistake in runtime_malloc() function, should return a pointer!
- *
- * Revision 1.62  2000/07/20 05:46:34  robertj
- * Added runtime_malloc() function for cases where memory check code must be bypassed.
- *
- * Revision 1.61  2000/07/13 15:45:35  robertj
- * Removed #define std that causes everyone so much grief!
- *
- * Revision 1.60  2000/06/26 11:17:19  robertj
- * Nucleus++ port (incomplete).
- *
- * Revision 1.59  2000/02/29 12:26:14  robertj
- * Added named threads to tracing, thanks to Dave Harvey
- *
- * Revision 1.58  2000/01/07 12:31:12  robertj
- * Fixed 8 byte alignment on memory heap checking.
- *
- * Revision 1.57  2000/01/05 00:29:12  robertj
- * Fixed alignment problems in memory checking debug functions.
- *
- * Revision 1.56  1999/11/30 00:22:54  robertj
- * Updated documentation for doc++
- *
- * Revision 1.55  1999/11/01 00:10:27  robertj
- * Added override of new functions for MSVC memory check code.
- *
- * Revision 1.54  1999/10/19 09:21:30  robertj
- * Added functions to get current trace options and level.
- *
- * Revision 1.53  1999/09/13 13:15:06  robertj
- * Changed PTRACE so will output to system log in PServiceProcess applications.
- *
- * Revision 1.52  1999/08/24 08:15:23  robertj
- * Added missing operator on smart pointer to return the pointer!
- *
- * Revision 1.51  1999/08/24 06:54:36  robertj
- * Cleaned up the smart pointer code (macros).
- *
- * Revision 1.50  1999/08/22 13:38:39  robertj
- * Fixed termination hang up problem with memory check code under unix pthreads.
- *
- * Revision 1.49  1999/08/17 03:46:40  robertj
- * Fixed usage of inlines in optimised version.
- *
- * Revision 1.48  1999/08/10 10:45:09  robertj
- * Added mutex in memory check detection code.
- *
- * Revision 1.47  1999/07/18 15:08:24  robertj
- * Fixed 64 bit compatibility
- *
- * Revision 1.46  1999/06/14 07:59:37  robertj
- * Enhanced tracing again to add options to trace output (timestamps etc).
- *
- * Revision 1.45  1999/05/01 11:29:19  robertj
- * Alpha linux port changes.
- *
- * Revision 1.44  1999/04/18 12:58:39  robertj
- * MSVC 5 backward compatibility
- *
- * Revision 1.43  1999/03/09 10:30:17  robertj
- * Fixed ability to have PMEMORY_CHECK on/off on both debug/release versions.
- *
- * Revision 1.42  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.41  1999/02/23 07:11:26  robertj
- * Improved trace facility adding trace levels and #define to remove all trace code.
- *
- * Revision 1.40  1999/02/22 10:48:14  robertj
- * Fixed delete operator prototypes for MSVC6 and GNU compatibility.
- *
- * Revision 1.39  1999/02/19 11:33:02  robertj
- * Fixed compatibility problems with GNU/MSVC6
- *
- * Revision 1.38  1999/02/16 08:12:22  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.37  1999/01/07 03:35:35  robertj
- * Added default for PCHAR8 to ANSI, removes need for compiler option.
- *
- * Revision 1.36  1998/12/15 09:00:29  robertj
- * Fixed 8 byte alignment problem in memory leak check code for sparc.
- *
- * Revision 1.35  1998/11/03 00:57:19  robertj
- * Added allocation breakpoint variable.
- *
- * Revision 1.34  1998/10/26 11:05:26  robertj
- * Added raw free for things allocated within the runtime library.
- *
- * Revision 1.33  1998/10/18 14:26:55  robertj
- * Improved tracing functions.
- *
- * Revision 1.32  1998/10/15 07:47:21  robertj
- * Added ability to ignore G++lib memory leaks.
- *
- * Revision 1.31  1998/10/15 01:53:58  robertj
- * GNU compatibility.
- *
- * Revision 1.30  1998/10/13 14:23:29  robertj
- * Complete rewrite of memory leak detection.
- *
- * Revision 1.29  1998/09/23 06:20:57  robertj
- * Added open source copyright license.
- *
- * Revision 1.28  1998/09/14 12:29:11  robertj
- * Fixed memory leak dump under windows to not include static globals.
- * Fixed problem with notifier declaration not allowing implementation inline after macro.
- *
- * Revision 1.27  1997/07/08 13:13:45  robertj
- * DLL support.
- *
- * Revision 1.26  1997/04/27 05:50:11  robertj
- * DLL support.
- *
- * Revision 1.25  1997/02/05 11:54:10  robertj
- * Fixed problems with memory check and leak detection.
- *
- * Revision 1.24  1996/09/16 12:57:23  robertj
- * DLL support
- *
- * Revision 1.23  1996/08/17 10:00:23  robertj
- * Changes for Windows DLL support.
- *
- * Revision 1.22  1996/07/15 10:27:51  robertj
- * Changed endian classes to be memory mapped.
- *
- * Revision 1.21  1996/05/09 12:14:48  robertj
- * Fixed up 64 bit integer class for Mac platform.
- *
- * Revision 1.20  1996/02/24 14:19:29  robertj
- * Fixed bug in endian independent integer code for memory transfers.
- *
- * Revision 1.19  1996/01/28 02:46:43  robertj
- * Removal of MemoryPointer classes as usage didn't work for GNU.
- * Added missing bit shift operators to 64 bit integer class.
- *
- * Revision 1.18  1996/01/23 13:14:32  robertj
- * Added const version of PMemoryPointer.
- * Added constructor to endian classes for the base type.
- *
- * Revision 1.17  1996/01/02 11:54:11  robertj
- * Mac OS compatibility changes.
- *
- * Revision 1.16  1995/11/09 12:17:10  robertj
- * Added platform independent base type access classes.
- *
- * Revision 1.15  1995/06/17 11:12:47  robertj
- * Documentation update.
- *
- * Revision 1.14  1995/06/04 12:34:19  robertj
- * Added trace functions.
- *
- * Revision 1.13  1995/04/25 12:04:35  robertj
- * Fixed borland compatibility.
- * Fixed function hiding ancestor virtuals.
- *
- * Revision 1.12  1995/03/14 12:41:54  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.11  1995/03/12  04:40:55  robertj
- * Changed standard error code for not open from file to channel.
- *
- * Revision 1.10  1995/02/19  04:19:14  robertj
- * Added dynamically linked command processing.
- *
- * Revision 1.9  1995/02/05  00:48:07  robertj
- * Fixed template version.
- *
- * Revision 1.8  1995/01/15  04:51:31  robertj
- * Mac compatibility.
- * Added levels of memory checking.
- *
- * Revision 1.7  1995/01/09  12:38:31  robertj
- * Changed variable names around during documentation run.
- * Fixed smart pointer comparison.
- * Fixed serialisation stuff.
- * Documentation.
- *
- * Revision 1.6  1995/01/03  09:39:06  robertj
- * Put standard malloc style memory allocation etc into memory check system.
- *
- * Revision 1.5  1994/12/12  10:08:30  robertj
- * Renamed PWrapper to PSmartPointer..
- *
- * Revision 1.4  1994/12/05  11:23:28  robertj
- * Fixed PWrapper macros.
- *
- * Revision 1.3  1994/11/19  00:22:55  robertj
- * Changed PInteger to be INT, ie standard type like BOOL/WORD etc.
- * Moved null object check in notifier to construction rather than use.
- * Added virtual to the callback function in notifier destination class.
- *
- * Revision 1.2  1994/11/03  09:25:30  robertj
- * Made notifier destination object not to be descendent of PObject.
- *
- * Revision 1.1  1994/10/30  12:01:37  robertj
- * Initial revision
- *
+ * $Revision: 28201 $
+ * $Author: rjongbloed $
+ * $Date: 2012-08-14 21:30:31 -0500 (Tue, 14 Aug 2012) $
  */
 
-#ifndef _POBJECT_H
-#define _POBJECT_H
+#ifndef PTLIB_OBJECT_H
+#define PTLIB_OBJECT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(_WIN32_WCE)
 #include "msos/ptlib/contain.h"
 #else
 #include "unix/ptlib/contain.h"
@@ -440,56 +52,62 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-#ifdef _WIN32
-  #include <malloc.h>
-#endif
-
 #include <string.h>
 
-#ifdef __USE_STL__
-  #include <string>
-  #include <iomanip>
-  #include <iostream>
-  #if (__GNUC__ >= 3)
-    #include <sstream>
-    typedef std::ostringstream ostrstream;
+#include <string>
+#include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <vector>
+#include <list>
+#include <map>
+#include <algorithm>
+
+
+#define P_REMOVE_VIRTUAL_INTERNAL_BASE(fn) __inline virtual struct ptlib_virtual_function_changed_or_removed ****** fn { return 0; }
+
+#if defined(_MSC_VER)
+  #if _MSC_VER < 1310
+    #define P_DEPRECATED
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) P_REMOVE_VIRTUAL_INTERNAL_BASE(fn)
+  #elif _MSC_VER < 1400
+    #define P_DEPRECATED __declspec(deprecated)
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) __inline virtual __declspec(deprecated) type fn body
   #else
-    #include <strstream>
+    #define P_DEPRECATED __declspec(deprecated)
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) __inline virtual __declspec(deprecated("Virtual function signature changed or function deprecated")) type fn body
   #endif
-  //using namespace std;
-  #ifdef _STLP_IOS_BASE_H
-  typedef std::ios_base::fmtflags _Ios_Fmtflags;
+#elif defined(__GNUC__)
+  #if __GNUC__ < 4
+    #define P_DEPRECATED
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) P_REMOVE_VIRTUAL_INTERNAL_BASE(fn)
+  #else
+    #define P_DEPRECATED __attribute__((deprecated))
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) __attribute__((warn_unused_result)) __attribute__((deprecated)) P_REMOVE_VIRTUAL_INTERNAL_BASE(fn)
   #endif
 #else
-  #if (__GNUC__ >= 3)
-    #include <iostream>
-    #ifndef __MWERKS__
-      #include <iomanip>
-    #endif
-  #else
-    #include <iostream.h>
-    #ifdef __GNUC__
-      #include <strstream.h>
-    #else
-      #include <strstrea.h>
-    #endif
-    #ifndef __MWERKS__
-      #include <iomanip.h>
-    #endif
-  #endif
+    #define P_DEPRECATED
+    #define P_REMOVE_VIRTUAL_INTERNAL(type, fn, body) P_REMOVE_VIRTUAL_INTERNAL_BASE(fn)
 #endif
 
-#ifdef _WIN32_WCE
-  #include <stdlibx.h>
+#define P_REMOVE_VIRTUAL_VOID(fn)       P_REMOVE_VIRTUAL_INTERNAL(void, fn, {})
+#define P_REMOVE_VIRTUAL(type, fn, ret) P_REMOVE_VIRTUAL_INTERNAL(type, fn, { return ret; })
+
+
+// P_USE_INTEGER_BOOL is the default and gives the old behaviour (it
+// is also used for C translation units).
+// without P_USE_INTEGER_BOOL, the ANSI C++ bool is used.
+
+#if defined(P_USE_INTEGER_BOOL) || !defined(__cplusplus)
+   typedef BOOL PBoolean;
+#  define PTrue TRUE
+#  define PFalse FALSE
+#else
+   typedef bool PBoolean;
+#  define PTrue true
+#  define PFalse false
 #endif
 
-#if (__GNUC__ < 3)
-typedef long _Ios_Fmtflags;
-#endif
-
-#if _MSC_VER<1300
-#define _BADOFF -1
-#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // Disable inlines when debugging for faster compiles (the compiler doesn't
@@ -523,27 +141,27 @@ typedef long _Ios_Fmtflags;
 #define PAssert2(b, c, m) (b)
 #define PAssertOS(b) (b)
 #define PAssertNULL(p) (p)
-#define PAssertAlways(m)
-#define PAssertAlways2(c, m)
+#define PAssertAlways(m) {}
+#define PAssertAlways2(c, m) {}
 
 #else // P_USE_ASSERTS
 
 /// Standard assert messages for the PAssert macro.
 enum PStandardAssertMessage {
-  PLogicError,              // A logic error occurred.
-  POutOfMemory,             // A new or malloc failed.
-  PNullPointerReference,    // A reference was made through a NULL pointer.
-  PInvalidCast,             // An invalid cast to descendant is required.
-  PInvalidArrayIndex,       // An index into an array was negative.
-  PInvalidArrayElement,     // A NULL array element object was accessed.
-  PStackEmpty,              // A Pop() was made of a stack with no elements.
-  PUnimplementedFunction,   // Funtion is not implemented.
-  PInvalidParameter,        // Invalid parameter was passed to a function.
-  POperatingSystemError,    // Error was returned by Operating System.
-  PChannelNotOpen,          // Operation attempted when channel not open.
-  PUnsupportedFeature,      // Feature is not supported.
-  PInvalidWindow,           // Access through invalid window.
-  PMaxStandardAssertMessage
+  PLogicError,              ///< A logic error occurred.
+  POutOfMemory,             ///< A new or malloc failed.
+  PNullPointerReference,    ///< A reference was made through a NULL pointer.
+  PInvalidCast,             ///< An invalid cast to descendant is required.
+  PInvalidArrayIndex,       ///< An index into an array was negative.
+  PInvalidArrayElement,     ///< A NULL array element object was accessed.
+  PStackEmpty,              ///< A Pop() was made of a stack with no elements.
+  PUnimplementedFunction,   ///< Funtion is not implemented.
+  PInvalidParameter,        ///< Invalid parameter was passed to a function.
+  POperatingSystemError,    ///< Error was returned by Operating System.
+  PChannelNotOpen,          ///< Operation attempted when channel not open.
+  PUnsupportedFeature,      ///< Feature is not supported.
+  PInvalidWindow,           ///< Access through invalid window.
+  PMaxStandardAssertMessage ///< Number of standard assert message.
 };
 
 #define __CLASS__ NULL
@@ -565,27 +183,27 @@ inline bool PAssertFuncInline(bool b, const char * file, int line, const char * 
   return b;
 }
 
-/** This macro is used to assert that a condition must be TRUE.
-If the condition is FALSE then an assert function is called with the source
+/** This macro is used to assert that a condition must be true.
+If the condition is false then an assert function is called with the source
 file and line number the macro was instantiated on, plus the message described
-by the #msg# parameter. This parameter may be either a standard value
-from the #PStandardAssertMessage# enum or a literal string.
+by the <code>msg</code> parameter. This parameter may be either a standard value
+from the <code>PStandardAssertMessage</code> enum or a literal string.
 */
-#define PAssert(b, m) PAssertFuncInline((b), __FILE__,__LINE__,__CLASS__,(m))
+#define PAssert(b, msg) PAssertFuncInline((b), __FILE__,__LINE__,__CLASS__,(msg))
 
-/** This macro is used to assert that a condition must be TRUE.
-If the condition is FALSE then an assert function is called with the source
+/** This macro is used to assert that a condition must be true.
+If the condition is false then an assert function is called with the source
 file and line number the macro was instantiated on, plus the message described
-by the #msg# parameter. This parameter may be either a standard value
-from the #PStandardAssertMessage# enum or a literal string.
-The #c# parameter specifies the class name that the error occurred in
+by the <code>msg</code> parameter. This parameter may be either a standard value
+from the <code>PStandardAssertMessage</code> enum or a literal string.
+The <code>cls</code> parameter specifies the class name that the error occurred in
 */
-#define PAssert2(b, c, m) PAssertFuncInline((b), __FILE__,__LINE__,(c),(m))
+#define PAssert2(b, cls, msg) PAssertFuncInline((b), __FILE__,__LINE__,(cls),(msg))
 
 /** This macro is used to assert that an operating system call succeeds.
-If the condition is FALSE then an assert function is called with the source
+If the condition is false then an assert function is called with the source
 file and line number the macro was instantiated on, plus the message
-described by the #POperatingSystemError# value in the #PStandardAssertMessage#
+described by the <code>POperatingSystemError</code> value in the <code>PStandardAssertMessage</code>
 enum.
  */
 #define PAssertOS(b) PAssertFuncInline((b), __FILE__,__LINE__,__CLASS__,POperatingSystemError)
@@ -593,30 +211,30 @@ enum.
 /** This macro is used to assert that a pointer must be non-null.
 If the pointer is NULL then an assert function is called with the source file
 and line number the macro was instantiated on, plus the message described by
-the PNullPointerReference value in the #PStandardAssertMessage# enum.
+the PNullPointerReference value in the <code>PStandardAssertMessage</code> enum.
 
-Note that this evaluates the expression defined by #ptr# twice. To
+Note that this evaluates the expression defined by <code>ptr</code> twice. To
 prevent incorrect behaviour with this, the macro will assume that the
-#ptr# parameter is an L-Value.
+<code>ptr</code> parameter is an L-Value.
  */
-#define PAssertNULL(p) ((&(p)&&(p)!=NULL)?(p): \
-                     (PAssertFunc(__FILE__,__LINE__, __CLASS__, PNullPointerReference),(p)))
+#define PAssertNULL(ptr) (((ptr)!=NULL)?(ptr): \
+                     (PAssertFunc(__FILE__,__LINE__, __CLASS__, PNullPointerReference),(ptr)))
 
 /** This macro is used to assert immediately.
 The assert function is called with the source file and line number the macro
-was instantiated on, plus the message described by the #msg# parameter. This
-parameter may be either a standard value from the #PStandardAssertMessage#
+was instantiated on, plus the message described by the <code>msg</code> parameter. This
+parameter may be either a standard value from the <code>PStandardAssertMessage</code>
 enum or a literal string.
 */
-#define PAssertAlways(m) PAssertFunc(__FILE__,__LINE__,__CLASS__,(m))
+#define PAssertAlways(msg) PAssertFunc(__FILE__,__LINE__,__CLASS__,(msg))
 
 /** This macro is used to assert immediately.
 The assert function is called with the source file and line number the macro
-was instantiated on, plus the message described by the #msg# parameter. This
-parameter may be either a standard value from the #PStandardAssertMessage#
+was instantiated on, plus the message described by the <code>msg</code> parameter. This
+parameter may be either a standard value from the <code>PStandardAssertMessage</code>
 enum or a literal string.
 */
-#define PAssertAlways2(c, m) PAssertFunc(__FILE__,__LINE__,(c),(m))
+#define PAssertAlways2(cls, msg) PAssertFunc(__FILE__,__LINE__,(cls),(msg))
 
 #endif // P_USE_ASSERTS
 
@@ -628,23 +246,23 @@ and macros.
 ostream & PGetErrorStream();
 
 /** Set the stream to be used for error output.
-This stream is used for all error output using the #PError# macro.
+This stream is used for all error output using the <code>PError</code> macro.
 */
 void PSetErrorStream(ostream * strm /** New stream for error output */ );
 
 /** This macro is used to access the platform specific error output stream.
-This is to be used in preference to assuming #cerr# is always available. On
-Unix platforms this {\bfis} #cerr# but for MS-Windows this is another stream
+This is to be used in preference to assuming <code>cerr</code> is always available. On
+Unix platforms this {\b is} <code>cerr</code> but for MS-Windows this is another stream
 that uses the OutputDebugString() Windows API function. Note that a MS-DOS or
-Windows NT console application would still use #cerr#.
+Windows NT console application would still use <code>cerr</code>.
 
-The #PError# stream would normally only be used for debugging information as
+The <code>PError</code> stream would normally only be used for debugging information as
 a suitable display is not always available in windowed environments.
    
-The macro is a wrapper for a global variable #PErrorStream# which is a pointer
-to an #ostream#. The variable is initialised to #cerr# for all but MS-Windows
-and NT GUI applications. An application could change this pointer to a
-#ofstream# variable of #PError# output is wished to be redirected to a file.
+The macro is a wrapper for a global variable error stream. The internal variable
+is initialised to <i>std::cerr</i> for all but MS-Windows and NT GUI applications.
+An application could change this pointer to a <i>std::ofstream</i> variable of
+#PError output is wished to be redirected to a file.
 */
 #define PError (PGetErrorStream())
 
@@ -654,16 +272,22 @@ and NT GUI applications. An application could change this pointer to a
 // Debug and tracing
 
 #ifndef PTRACING
-#ifndef _DEBUG
-#define PTRACING 0
-#else
 #define PTRACING 1
 #endif
-#endif
+
+#if PTRACING
 
 /**Class to encapsulate tracing functions.
    This class does not require any instances and is only being used as a
    method of grouping functions together in a name space.
+
+   There are a number of macros for supporting tracing. These will all
+   evaluate as empty in a "No Trace" build of the system:
+     - PTRACE()
+     - PTRACE_IF()
+     - PTRACE_PARAM()
+     - PTRACE_BLOCK()
+     - PTRACE_LINE()
   */
 class PTrace
 {
@@ -690,94 +314,134 @@ public:
     ThreadAddress = 64,
     /// Append to log file rather than resetting every time
     AppendToFile = 128,
-    /** Output timestamps in GMT time rather than local time
-      */
+    /// Output timestamps in GMT time rather than local time
     GMTTime = 256,
-    /** If set, log file will be rotated daily
-      */
+    /// If set, log file will be rotated daily
     RotateDaily = 512,
+    /// If set, log file will be rotated hourly
+    RotateHourly = 1024,
+    /// If set, log file will be rotated every minute
+    RotateMinutely = 2048,
+    /// Mask for all the rotate bits
+    RotateLogMask = RotateDaily + RotateHourly + RotateMinutely,
     /** SystemLog flag for tracing within a PServiceProcess application. Must
-        be set in conjection with SetStream(new PSystemLog).
+        be set in conjection with <code>#SetStream(new PSystemLog)</code>.
       */
     SystemLogStream = 32768
   };
 
+
   /**Set the most common trace options.
-     If filename is not NULL then a PTextFile is created and attached the
+     If \p filename is not NULL then a PTextFile is created and attached the
      trace output stream. This object is never closed or deleted until the
      termination of the program.
+
+     There are several special values for \p filename:
+       <dl>
+       <dt>"stderr"      <dd>Output to standard error
+       <dt>"stdout"      <dd>Output to standard output
+       <dt>"DEBUGSTREAM" <dd>Output to debugger (Windows only)
+       </dl>
+     A trace output of the program name version and OS is written as well.
+    */
+  static void Initialise(
+    unsigned level,                               ///< Level for tracing
+    const char * filename = NULL,                 ///< Filename for log output
+    unsigned options = Timestamp | Thread | Blocks ///< #Options for tracing
+  );
+
+  /**Set the most common trace options.
+     If \p filename is not NULL then a PTextFile is created and attached the
+     trace output stream. This object is never closed or deleted until the
+     termination of the program.
+
+     If \p rolloverPatterm is not NULL it is used as the time format patterm
+     appended to filename if the #RotateDaily is set. Default is "yyyy_MM_dd".
 
      A trace output of the program name version and OS is written as well.
     */
   static void Initialise(
-    unsigned level,
-    const char * filename = NULL,
-    unsigned options = Timestamp | Thread | Blocks
+    unsigned level,                                 ///< Level for tracing
+    const char * filename,                          ///< Filename for log output
+    const char * rolloverPattern,                   ///< Pattern for rolling over trace files
+    unsigned options = Timestamp | Thread | Blocks  ///< #Options for tracing
   );
 
   /** Set the trace options.
   The PTRACE(), PTRACE_BLOCK() and PTRACE_LINE() macros output trace text that
-  may contain assorted values. These are defined by the Options enum.
+  may contain assorted values. These are defined by the #Options enum.
 
   Note this function OR's the bits included in the options parameter.
   */
-  static void SetOptions(unsigned options /** New level for trace */ );
+  static void SetOptions(
+    unsigned options ///< New option bits for tracing
+  );
 
   /** Clear the trace options.
-  The PTRACE(), PTRACE_BLOCK() and PTRACE_LINE() macros output trace text that
-  may contain assorted values. These are defined by the Options enum.
+  The <code>PTRACE()</code>, <code>PTRACE_BLOCK()</code> and
+  <code>PTRACE_LINE()</code> macros output trace text that
+  may contain assorted values. These are defined by the #Options enum.
 
   Note this function AND's the complement of the bits included in the options
   parameter.
   */
-  static void ClearOptions(unsigned options /** New level for trace */ );
+  static void ClearOptions(
+    unsigned options ///< Option bits to turn off
+  );
 
   /** Get the current trace options.
-  The PTRACE(), PTRACE_BLOCK() and PTRACE_LINE() macros output trace text that
-  may contain assorted values. These are defined by the Options enum.
+  The <code>PTRACE()</code>, <code>PTRACE_BLOCK()</code> and
+  <code>PTRACE_LINE()</code> macros output trace text that
+  may contain assorted values. These are defined by the #Options enum.
   */
   static unsigned GetOptions();
 
   /** Set the trace level.
-  The PTRACE() macro checks to see if its level is equal to or lower then the
+  The <code>PTRACE()</code> macro checks to see if its level is equal to or lower then the
   level set by this function. If so then the trace text is output to the trace
   stream.
   */
-  static void SetLevel(unsigned level /** New level for trace */ );
+  static void SetLevel(
+    unsigned level ///< New level for tracing
+  );
 
   /** Get the trace level.
-  The PTRACE() macro checks to see if its level is equal to or lower then the
+  The <code>PTRACE()</code> macro checks to see if its level is equal to or lower then the
   level set by this function. If so then the trace text is output to the trace
   stream.
   */
   static unsigned GetLevel();
 
   /** Determine if the level may cause trace output.
-  This checks against the current global trace level set by #PSetTraceLevel#
-  for if the trace output may be emitted. This is used by the PTRACE macro.
+  This checks against the current global trace level set by SetLevel()
+  for if the trace output may be emitted. This is used by the PTRACE() macro.
   */
-  static BOOL CanTrace(unsigned level /** Trace level to check */);
+  static PBoolean CanTrace(
+    unsigned level ///< Trace level to check
+  );
 
   /** Set the stream to be used for trace output.
   This stream is used for all trace output using the various trace functions
   and macros.
   */
-  static void SetStream(ostream * out /** New output stream from trace. */ );
+  static void SetStream(
+    ostream * out ///< New output stream from trace.
+  );
 
   /** Begin a trace output.
   If the trace stream output is used outside of the provided macros, it
-  should be noted that a mutex is obtained on the call to #PBeginTrace# which
+  should be noted that a mutex is obtained on the call to Begin() which
   will prevent any other threads from using the trace stream until the
-  #PEndTrace# function is called.
+  End() function is called.
 
   So a typical usage would be:
-  \begin{verbatim}
+  <pre><code>
     ostream & s = PTrace::Begin(3, __FILE__, __LINE__);
     s << "hello";
     if (want_there)
       s << " there";
-    s << '!' << PTrace::End();
-  \end{verbatim}
+    s << '!' << PTrace::End;
+  </code></pre>
   */
   static ostream & Begin(
     unsigned level,         ///< Log level for output
@@ -787,27 +451,34 @@ public:
 
   /** End a trace output.
   If the trace stream output is used outside of the provided macros, the
-  #PEndTrace# function must be used at the end of the section of trace
-  output. A mutex is obtained on the call to #PBeginTrace# which will prevent
-  any other threads from using the trace stream until the PEndTrace. The
-  #PEndTrace# is used in a similar manner to #::endl# or #::flush#.
+  End() function must be used at the end of the section of trace
+  output. A mutex is obtained on the call to Begin() which will prevent
+  any other threads from using the trace stream until the End(). The
+  End() is used in a similar manner to <code>std::endl</code> or
+  <code>std::flush</code>.
 
   So a typical usage would be:
-  \begin{verbatim}
+  <pre><code>
     ostream & s = PTrace::Begin();
     s << "hello";
     if (want_there)
       s << " there";
-    s << '!' << PTrace::End();
-  \end{verbatim}
+    s << '!' << PTrace::End;
+  </code></pre>
   */
-  static ostream & End(ostream & strm /** Trace output stream being completed */);
+  static ostream & End(
+    ostream & strm ///< Trace output stream being completed
+  );
 
+  /** Cleanup the trace system for a specific thread
+      When using thread local storage, this will delete the per-thread trace context
+    */
+  static void Cleanup();
 
   /** Class to trace Execution blocks.
   This class is used for tracing the entry and exit of program blocks. Upon
   construction it outputs an entry trace message and on destruction outputs an
-  exit trace message. This is normally only used from in the PTRACE_BLOCK macro.
+  exit trace message. This is normally only used from in the <code>PTRACE_BLOCK()</code> macro.
   */
   class Block {
     public:
@@ -831,24 +502,14 @@ public:
   };
 };
 
-#if !PTRACING
-
-#define PTRACE_PARAM(param)
-#define PTRACE_BLOCK(n)
-#define PTRACE_LINE()
-#define PTRACE(level, arg)
-#define PTRACE_IF(level, cond, args)
-
-#else
-
 /* Macro to conditionally declare a parameter to a function to avoid compiler
-   warning due that parameter only being used in a PTRACE */
+   warning due that parameter only being used in a <code>PTRACE()</code> */
 #define PTRACE_PARAM(param) param
 
 /** Trace an execution block.
 This macro creates a trace variable for tracking the entry and exit of program
 blocks. It creates an instance of the PTraceBlock class that will output a
-trace message at the line PTRACE_BLOCK is called and then on exit from the
+trace message at the line <code>PTRACE_BLOCK()</code> is called and then on exit from the
 scope it is defined in.
 */
 #define PTRACE_BLOCK(name) PTrace::Block __trace_block_instance(__FILE__, __LINE__, name)
@@ -857,32 +518,47 @@ scope it is defined in.
 This macro outputs a trace of a source file line execution.
 */
 #define PTRACE_LINE() \
-    if (!PTrace::CanTrace(1)) ; else \
-      PTrace::Begin(1, __FILE__, __LINE__) << __FILE__ << '(' << __LINE__ << ')' << PTrace::End
+    if (PTrace::CanTrace(1)) \
+      PTrace::Begin(1, __FILE__, __LINE__) << __FILE__ << '(' << __LINE__ << ')' << PTrace::End; \
+    else (void)0
 
 /** Output trace.
 This macro outputs a trace of any information needed, using standard stream
 output operators. The output is only made if the trace level set by the
-#PSetTraceLevel# function is greater than or equal to the #level# argument.
+SetLevel() function is greater than or equal to the \p level argument.
 */
 #define PTRACE(level, args) \
-    if (!PTrace::CanTrace(level)) ; else \
-      PTrace::Begin(level, __FILE__, __LINE__) << args << PTrace::End
+    if (PTrace::CanTrace(level)) \
+      PTrace::Begin(level, __FILE__, __LINE__) << args << PTrace::End; \
+    else (void)0
 
 /** Output trace on condition.
 This macro outputs a trace of any information needed, using standard stream
 output operators. The output is only made if the trace level set by the
-#PSetTraceLevel# function is greater than or equal to the #level# argument
-and the conditional is TRUE. Note the conditional is only evaluated if the
+SetLevel() function is greater than or equal to the <code>level</code> argument
+and the conditional is true. Note the conditional is only evaluated if the
 trace level is sufficient.
 */
 #define PTRACE_IF(level, cond, args) \
-    if (!(PTrace::CanTrace(level)  && (cond))) ; else \
-      PTrace::Begin(level, __FILE__, __LINE__) << args << PTrace::End
+    if ((PTrace::CanTrace(level) && (cond))) \
+      PTrace::Begin(level, __FILE__, __LINE__) << args << PTrace::End; \
+    else (void)0
 
-#endif
+#else // PTRACING
 
-#if PMEMORY_CHECK
+#define PTRACE_PARAM(param)
+#define PTRACE_BLOCK(n)
+#define PTRACE_LINE()
+#define PTRACE(level, arg)
+#define PTRACE_IF(level, cond, args)
+
+#endif // PTRACING
+
+
+
+#if PMEMORY_CHECK || (defined(_MSC_VER) && defined(_DEBUG) && !defined(_WIN32_WCE)) 
+
+#define PMEMORY_HEAP 1
 
 /** Memory heap checking class.
 This class implements the memory heap checking and validation functions. It
@@ -891,17 +567,16 @@ also initialises memory on allocation and deallocation to help catch errors
 involving the use of dangling pointers.
 */
 class PMemoryHeap {
-  protected:
+  public:
     /// Initialise the memory checking subsystem.
     PMemoryHeap();
 
-  public:
     // Clear up the memory checking subsystem, dumping memory leaks.
     ~PMemoryHeap();
 
     /** Allocate a memory block.
        This allocates a new memory block and keeps track of it. The memory
-       block is filled with the value in the #allocFillChar# member variable
+       block is filled with the value in the <code>allocFillChar</code> member variable
        to help detect uninitialised structures.
        @return pointer to newly allocated memory block.
      */
@@ -913,7 +588,7 @@ class PMemoryHeap {
     );
     /** Allocate a memory block.
        This allocates a new memory block and keeps track of it. The memory
-       block is filled with the value in the #allocFillChar# member variable
+       block is filled with the value in the <code>allocFillChar</code> member variable
        to help detect uninitialised structures.
        @return pointer to newly allocated memory block.
      */
@@ -926,7 +601,7 @@ class PMemoryHeap {
 
     /** Change the size of an allocated memory block.
        This allocates a new memory block and keeps track of it. The memory
-       block is filled with the value in the #allocFillChar# member variable
+       block is filled with the value in the <code>allocFillChar</code> member variable
        to help detect uninitialised structures.
       @return pointer to reallocated memory block. Note this may
       {\em not} be the same as the pointer passed into the function.
@@ -941,7 +616,7 @@ class PMemoryHeap {
     /** Free a memory block.
       The memory is deallocated, a warning is displayed if it was never
       allocated. The block of memory is filled with the value in the
-      #freeFillChar# member variable.
+      <code>freeFillChar</code> member variable.
      */
     static void Deallocate(
       void * ptr,             ///< Pointer to memory block to deallocate.
@@ -954,23 +629,23 @@ class PMemoryHeap {
       Ok, Bad, Trashed
     };
     /** Validate the memory pointer.
-        The #ptr# parameter is validated as a currently allocated heap
+        The <code>ptr</code> parameter is validated as a currently allocated heap
         variable.
         @return Ok for pointer is in heap, Bad for pointer is not in the heap
         or Trashed if the pointer is in the heap but has overwritten the guard
         bytes before or after the actual data part of the memory block.
      */
     static Validation Validate(
-      void * ptr,             ///< Pointer to memory block to check
+      const void * ptr,       ///< Pointer to memory block to check
       const char * className, ///< Class name it should be.
       ostream * error         ///< Stream to receive error message (may be NULL)
     );
 
     /** Validate all objects in memory.
        This effectively calls Validate() on every object in the heap.
-        @return TRUE if every object in heap is Ok.
+        @return true if every object in heap is Ok.
      */
-    static BOOL ValidateHeap(
+    static PBoolean ValidateHeap(
       ostream * error = NULL  ///< Stream to output, use default if NULL
     );
 
@@ -979,8 +654,8 @@ class PMemoryHeap {
        leak check on program termination.
        Returns the previous state.
      */
-    static BOOL SetIgnoreAllocations(
-      BOOL ignore  ///< New flag for allocation ignoring.
+    static PBoolean SetIgnoreAllocations(
+      PBoolean ignore  ///< New flag for allocation ignoring.
     );
 
     /** Get memory check system statistics.
@@ -992,31 +667,40 @@ class PMemoryHeap {
      */
     static void DumpStatistics(ostream & strm /** Stream to output to */);
 
-    /* Get number of allocation.
-      Each allocation is counted and if desired the next allocation request
-      number may be obtained via this function.
-      @return Allocation request number.
+#if PMEMORY_CHECK
+    struct State {
+      DWORD allocationNumber;
+    };
+#else
+	typedef _CrtMemState State;
+#endif
+
+    /* Get memory state.
+      This returns a state that may be used to determine where to start dumping
+      objects from.
      */
-    static DWORD GetAllocationRequest();
+    static void GetState(
+      State & state  ///< Memory state
+    );
 
     /** Dump allocated objects.
        Dump ojects allocated and not deallocated since the specified object
-       number. This would be a value returned by the #GetAllocationRequest()#
+       number. This would be a value returned by the <code>GetAllocationRequest()</code>
        function.
 
        Output is to the default stream.
      */
     static void DumpObjectsSince(
-      DWORD objectNumber    ///< Memory object to begin dump from.
+      const State & when    ///< Memory state to begin dump from.
     );
 
     /** Dump allocated objects.
        Dump ojects allocated and not deallocated since the specified object
-       number. This would be a value returned by the #GetAllocationRequest()#
+       number. This would be a value returned by the <code>GetAllocationRequest()</code>
        function.
      */
     static void DumpObjectsSince(
-      DWORD objectNumber,   ///< Memory object to begin dump from.
+      const State & when,   ///< Memory state to begin dump from.
       ostream & strm        ///< Stream to output dump
     );
 
@@ -1029,6 +713,8 @@ class PMemoryHeap {
       DWORD point   ///< Allocation number to stop at.
     );
 
+#if PMEMORY_CHECK
+
   protected:
     void * InternalAllocate(
       size_t nSize,           // Number of bytes to allocate.
@@ -1037,7 +723,7 @@ class PMemoryHeap {
       const char * className  // Class name for allocating function.
     );
     Validation InternalValidate(
-      void * ptr,             // Pointer to memory block to check
+      const void * ptr,       // Pointer to memory block to check
       const char * className, // Class name it should be.
       ostream * error         // Stream to receive error message (may be NULL)
     );
@@ -1069,7 +755,11 @@ class PMemoryHeap {
                               sizeof(size_t) +
                               sizeof(DWORD) +
                               sizeof(WORD) +
-                              sizeof(BYTE))%8
+                              sizeof(BYTE)
+#if P_PTHREADS
+                              + sizeof(pthread_t)
+#endif
+                              )%8
       };
 
       Header     * prev;
@@ -1080,13 +770,16 @@ class PMemoryHeap {
       DWORD        request;
       WORD         line;
       BYTE         flags;
+#if P_PTHREADS
+      pthread_t    thread;
+#endif
       char         guard[NumGuardBytes];
 
       static char GuardBytes[NumGuardBytes];
     };
 #pragma pack()
 
-    BOOL isDestroyed;
+    PBoolean isDestroyed;
 
     Header * listHead;
     Header * listTail;
@@ -1114,6 +807,13 @@ class PMemoryHeap {
 #elif defined(P_VXWORKS)
     void * mutex;
 #endif
+
+#else
+
+#define P_CLIENT_BLOCK (_CLIENT_BLOCK|(0x61<<16)) // This identifies a PObject derived class
+    _CrtMemState initialState;
+
+#endif // PMEMORY_CHECK
 };
 
 
@@ -1132,7 +832,7 @@ inline void runtime_free(void * ptr /** Memory block to free */ ) { free(ptr); }
 
 /** Override of system call for memory check system.
 This macro is used to allocate memory via the memory check system selected
-with the #PMEMORY_CHECK# compile time option. It will include the source file
+with the <code>PMEMORY_CHECK</code> compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 */
@@ -1140,7 +840,7 @@ track of the memory block.
 
 /** Override of system call for memory check system.
 This macro is used to allocate memory via the memory check system selected
-with the #PMEMORY_CHECK# compile time option. It will include the source file
+with the <code>PMEMORY_CHECK</code> compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 */
@@ -1148,7 +848,7 @@ track of the memory block.
 
 /** Override of system call for memory check system.
 This macro is used to allocate memory via the memory check system selected
-with the #PMEMORY_CHECK# compile time option. It will include the source file
+with the <code>PMEMORY_CHECK</code> compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 */
@@ -1157,7 +857,7 @@ track of the memory block.
 
 /** Override of system call for memory check system.
 This macro is used to deallocate memory via the memory check system selected
-with the #PMEMORY_CHECK# compile time option. It will include the source file
+with the <code>PMEMORY_CHECK</code> compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 */
@@ -1166,26 +866,26 @@ track of the memory block.
 
 /** Override of system call for memory check system.
 This macro is used to deallocate memory via the memory check system selected
-with the #PMEMORY_CHECK# compile time option. It will include the source file
+with the <code>PMEMORY_CHECK</code> compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 */
 #define cfree(p) PMemoryHeap::Deallocate(p, NULL)
 
 
-/** Macro for overriding system default #new# operator.
+/** Macro for overriding system default <code>new</code> operator.
 This macro is used to allocate memory via the memory check system selected
 with the PMEMORY_CHECK compile time option. It will include the source file
 and line into the memory allocation to allow the PMemoryHeap class to keep
 track of the memory block.
 
-This macro could be used instead of the system #new# operator. Or you can place
+This macro could be used instead of the system <code>new</code> operator. Or you can place
 the line
-\begin{verbatim}
+<pre><code>
   #define new PNEW
-\end{verbatim}
+</code></pre>
 at the begining of the source file, after all declarations that use the
-PCLASSINFO macro.
+<code>#PCLASSINFO</code> macro.
 */
 #define PNEW  new (__FILE__, __LINE__)
 
@@ -1206,6 +906,10 @@ PCLASSINFO macro.
       { return PMemoryHeap::Allocate(nSize, NULL, 0, Class()); } \
     void operator delete(void * ptr) \
       { PMemoryHeap::Deallocate(ptr, Class()); } \
+    void * operator new(size_t, void * placement) \
+      { return placement; } \
+    void operator delete(void *, void *) \
+      { } \
     void * operator new[](size_t nSize, const char * file, int line) \
       { return PMemoryHeap::Allocate(nSize, file, line, Class()); } \
     void * operator new[](size_t nSize) \
@@ -1238,67 +942,122 @@ inline void operator delete[](void * ptr, const char *, int)
 #endif
 
 
-#else // PMEMORY_CHECK
+class PMemoryHeapIgnoreAllocationsForScope {
+public:
+  PMemoryHeapIgnoreAllocationsForScope() : previousIgnoreAllocations(PMemoryHeap::SetIgnoreAllocations(true)) { }
+  ~PMemoryHeapIgnoreAllocationsForScope() { PMemoryHeap::SetIgnoreAllocations(previousIgnoreAllocations); }
+private:
+  PBoolean previousIgnoreAllocations;
+};
+
+#define PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE PMemoryHeapIgnoreAllocationsForScope instance_PMemoryHeapIgnoreAllocationsForScope
+
+class PMemoryAllocationBreakpoint {
+public:
+  PMemoryAllocationBreakpoint(DWORD point)
+  {
+    PMemoryHeap::SetAllocationBreakpoint(point);
+  }
+};
+
+#define PMEMORY_ALLOCATION_BREAKPOINT(point) PMemoryAllocationBreakpoint PMemoryAllocationBreakpointInstance(point)
+
+
+#else // PMEMORY_CHECK || (defined(_MSC_VER) && defined(_DEBUG))
+
+#define PMEMORY_HEAP 0
 
 #define PNEW new
 
-#if defined(__GNUC__) || (defined(_WIN32_WCE) && defined(_X86_))
-
 #define PNEW_AND_DELETE_FUNCTIONS
-
-#else
-
-#define PNEW_AND_DELETE_FUNCTIONS \
-    void * operator new(size_t nSize) \
-      { return malloc(nSize); } \
-    void operator delete(void * ptr) \
-      { free(ptr); } \
-    void * operator new[](size_t nSize) \
-      { return malloc(nSize); } \
-    void operator delete[](void * ptr) \
-      { free(ptr); }
-
-void * operator new(size_t nSize);
-void * operator new[](size_t nSize);
-
-void operator delete(void * ptr);
-void operator delete[](void * ptr);
-
-#endif
 
 #define runtime_malloc(s) malloc(s)
 #define runtime_free(p) free(p)
 
-#endif // PMEMORY_CHECK
+#define PMEMORY_IGNORE_ALLOCATIONS_FOR_SCOPE
+#define PMEMORY_ALLOCATION_BREAKPOINT(point)
+
+#endif // PMEMORY_CHECK || (defined(_MSC_VER) && defined(_DEBUG))
 
 
-/** Declare all the standard PWlib class information.
+
+/*
+ *  Implement "construct on first use" paradigm
+ */
+
+template <class GnuAllocator, class Type>
+struct PAllocatorTemplate
+{
+  Type * allocate(size_t v)  
+  {
+    return GetAllocator().allocate(v);
+  }
+
+  void deallocate(Type * p, size_t v)  
+  {
+    GetAllocator().deallocate(p, v);
+  }
+
+  private:
+    static GnuAllocator & GetAllocator()
+    {
+      static GnuAllocator instance;
+      return instance;
+    }
+};
+
+#define GCC_VERSION (__GNUC__ * 10000 \
+                   + __GNUC_MINOR__ * 100 \
+                   + __GNUC_PATCHLEVEL__)
+
+// Memory pooling allocators
+#if defined(__GNUC__) && (GCC_VERSION > 40000) && !defined(P_MINGW) && !defined(P_MACOSX) 
+#include <ext/mt_allocator.h>
+template <class Type> struct PFixedPoolAllocator    : public PAllocatorTemplate<__gnu_cxx::__mt_alloc<Type>, Type> { };
+template <class Type> struct PVariablePoolAllocator : public PAllocatorTemplate<__gnu_cxx::__mt_alloc<Type>, Type> { };
+
+#else
+
+template <class Type> struct PFixedPoolAllocator    : public PAllocatorTemplate<std::allocator<Type>, Type> { };
+template <class Type> struct PVariablePoolAllocator : public PAllocatorTemplate<std::allocator<Type>, Type> { };
+#endif
+
+#define PDECLARE_POOL_ALLOCATOR() \
+    void * operator new(size_t nSize); \
+    void * operator new(size_t nSize, const char * file, int line); \
+    void operator delete(void * ptr); \
+    void operator delete(void * ptr, const char *, int)
+
+#define PDEFINE_POOL_ALLOCATOR(cls) \
+  static PFixedPoolAllocator<cls> cls##_allocator; \
+  void * cls::operator new(size_t)                           { return cls##_allocator.allocate(1);               } \
+  void * cls::operator new(size_t, const char *, int)        { return cls##_allocator.allocate(1);               } \
+  void   cls::operator delete(void * ptr)                    {        cls##_allocator.deallocate((cls *)ptr, 1); } \
+  void   cls::operator delete(void * ptr, const char *, int) {        cls##_allocator.deallocate((cls *)ptr, 1); }
+
+
+/** Declare all the standard PTLib class information.
 This macro is used to provide the basic run-time typing capability needed
-by the library. All descendent classes from the #PObject# class require
+by the library. All descendent classes from the <code>PObject</code> class require
 these functions for correct operation. Either use this macro or the
-#PDECLARE_CLASS# macro.
+<code>#PDECLARE_CLASS</code> macro.
 
-The use of the #PDECLARE_CLASS# macro is no longer recommended for reasons
+The use of the <code>#PDECLARE_CLASS</code> macro is no longer recommended for reasons
 of compatibility with documentation systems.
 */
 
-/*
-
-  ORIGINAL
-
 #define PCLASSINFO(cls, par) \
   public: \
-    static const char * Class() \
+    typedef cls P_thisClass; \
+    static inline const char * Class() \
       { return #cls; } \
+    virtual PBoolean InternalIsDescendant(const char * clsName) const \
+      { return strcmp(clsName, cls::Class()) == 0 || par::InternalIsDescendant(clsName); } \
     virtual const char * GetClass(unsigned ancestor = 0) const \
       { return ancestor > 0 ? par::GetClass(ancestor-1) : cls::Class(); } \
-    virtual BOOL IsClass(const char * clsName) const \
-      { return strcmp(clsName, cls::Class()) == 0; } \
-    virtual BOOL IsDescendant(const char * clsName) const \
-      { return strcmp(clsName, cls::Class()) == 0 || par::IsDescendant(clsName); } \
-    virtual Comparison CompareObjectMemoryDirect(const PObject & obj) const \
-      { return (Comparison)memcmp(this, &obj, sizeof(cls)); } 
-*/
+    virtual PObject::Comparison CompareObjectMemoryDirect(const PObject & obj) const \
+      { return PObject::InternalCompareObjectMemoryDirect(this, dynamic_cast<const cls *>(&obj), sizeof(cls)); } \
+    PNEW_AND_DELETE_FUNCTIONS
 
 
 #if P_HAS_TYPEINFO
@@ -1318,15 +1077,6 @@ template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const 
 
 #include <typeinfo>
 
-#define   PCLASSNAME(cls) (#cls)
-
-#define PBASECLASSINFO(cls, par) \
-  public: \
-    static inline const char * Class() \
-      { return PCLASSNAME(cls); } \
-    virtual BOOL InternalIsDescendant(const char * clsName) const \
-      { return strcmp(clsName, PCLASSNAME(cls)) == 0 || par::InternalIsDescendant(clsName); } \
-
 #else // P_HAS_TYPEINFO
 
 #define PIsDescendant(ptr, cls)    ((ptr)->InternalIsDescendant(cls::Class()))
@@ -1336,32 +1086,18 @@ template<class BaseClass> inline BaseClass * PAssertCast(BaseClass * obj, const 
 
 #if P_USE_ASSERTS
 template<class BaseClass> inline BaseClass * PAssertCast(PObject * obj, const char * file, int line) 
-  { if (obj->InternalIsDescendant(BaseClass::Class()) return (BaseClass *)obj; PAssertFunc(file, line, BaseClass::Class(), PInvalidCast); return NULL; }
+  { if (obj->InternalIsDescendant(BaseClass::Class())) return (BaseClass *)obj; PAssertFunc(file, line, BaseClass::Class(), PInvalidCast); return NULL; }
 #define PDownCast(cls, ptr) PAssertCast<cls>((ptr),__FILE__,__LINE__)
 #else
 #define PDownCast(cls, ptr) ((cls*)(ptr))
 #endif
 
-#define PBASECLASSINFO(cls, par) \
-  public: \
-    static const char * Class() \
-      { return #cls; } \
-    virtual BOOL InternalIsDescendant(const char * clsName) const \
-      { return strcmp(clsName, cls::Class()) == 0 || par::InternalIsDescendant(clsName); } \
-
 #endif // P_HAS_TYPEINFO
 
 
-#define PCLASSINFO(cls, par) \
-    PBASECLASSINFO(cls, par) \
-    virtual const char * GetClass(unsigned ancestor = 0) const \
-      { return ancestor > 0 ? par::GetClass(ancestor-1) : cls::Class(); } \
-    virtual Comparison CompareObjectMemoryDirect(const PObject & obj) const \
-      { return (Comparison)memcmp(this, &obj, sizeof(cls)); } \
-
 /** Declare a class with PWLib class information.
 This macro is used to declare a new class with a single public ancestor. It
-starts the class declaration and then uses the #PCLASSINFO# macro to
+starts the class declaration and then uses the <code>#PCLASSINFO</code> macro to
 get all the run-time type functions.
 
 The use of this macro is no longer recommended for reasons of compatibility
@@ -1382,7 +1118,7 @@ default comparison operations, simple stream I/O and serialisation support.
 class PObject {
 
   protected:
-    /** Constructor for PObject, make protected so cannot ever create one on
+    /** Constructor for PObject, made protected so cannot ever create one on
        its own.
      */
     PObject() { }
@@ -1398,42 +1134,42 @@ class PObject {
     /** Get the name of the class as a C string. This is a static function which
        returns the type of a specific class. 
        
-       When comparing class names, always use the #strcmp()#
+       When comparing class names, always use the <code>strcmp()</code>
        function rather than comparing pointers. The pointers are not
        necessarily the same over compilation units depending on the compiler,
        platform etc.
 
        @return pointer to C string literal.
      */      
-    static inline const char * Class()    { return PCLASSNAME(PObject); }
+    static inline const char * Class()    { return "PObject"; }
 
     /** Get the current dynamic type of the object instance.
 
-       When comparing class names, always use the #strcmp()#
+       When comparing class names, always use the <code>strcmp()</code>
        function rather than comparing pointers. The pointers are not
        necessarily the same over compilation units depending on the compiler,
        platform etc.
 
-       The #PCLASSINFO# macro declares an override of this function for
+       The <code>#PCLASSINFO</code> macro declares an override of this function for
        the particular class. The user need not implement it.
 
        @return pointer to C string literal.
      */
-    virtual const char * GetClass(unsigned /*ancestor*/ = 0) const { return Class(); }
+    virtual const char * GetClass(unsigned ancestor = 0) const { return ancestor > 0 ? "" : Class(); }
 
-    BOOL IsClass(const char * cls) const 
+    PBoolean IsClass(const char * cls) const 
     { return strcmp(cls, GetClass()) == 0; }
 
     /** Determine if the dynamic type of the current instance is a descendent of
        the specified class. The class name is usually provided by the
-       #Class()# static function of the desired class.
+       <code>Class()</code> static function of the desired class.
     
-       The #PCLASSINFO# macro declares an override of this function for
+       The <code>#PCLASSINFO</code> macro declares an override of this function for
        the particular class. The user need not implement it.
 
-       @return TRUE if object is descended from the class.
+       @return true if object is descended from the class.
      */
-    virtual BOOL InternalIsDescendant(
+    virtual PBoolean InternalIsDescendant(
       const char * clsName    // Ancestor class name to compare against.
     ) const
     { return IsClass(clsName); }
@@ -1442,7 +1178,7 @@ class PObject {
 
   /**@name Comparison functions */
   //@{
-    /** Result of the comparison operation performed by the #Compare()#
+    /** Result of the comparison operation performed by the <code>Compare()</code>
        function.
       */
     enum Comparison {
@@ -1455,11 +1191,11 @@ class PObject {
        usually overridden by descendent classes to yield the ranking according
        to the semantics of the object.
        
-       The default function is to use the #CompareObjectMemoryDirect()#
+       The default function is to use the <code>CompareObjectMemoryDirect()</code>
        function to do a byte wise memory comparison of the two objects.
 
        @return
-       #LessThan#, #EqualTo# or #GreaterThan#
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
        according to the relative rank of the objects.
      */
     virtual Comparison Compare(
@@ -1468,23 +1204,30 @@ class PObject {
     
     /** Determine the byte wise comparison of two objects. This is the default
        comparison operation for objects that do not explicitly override the
-       #Compare()# function.
+       <code>Compare()</code> function.
     
-       The #PCLASSINFO# macro declares an override of this function for
+       The <code>#PCLASSINFO</code> macro declares an override of this function for
        the particular class. The user need not implement it.
 
        @return
-       #LessThan#, #EqualTo# or #GreaterThan#
-       according to the result #memcpy()# function.
+       <code>LessThan</code>, <code>EqualTo</code> or <code>GreaterThan</code>
+       according to the result <code>memcpy()</code> function.
      */
     virtual Comparison CompareObjectMemoryDirect(
       const PObject & obj   // Object to compare against.
     ) const;
 
+    /// Internal function caled from CompareObjectMemoryDirect()
+    static Comparison InternalCompareObjectMemoryDirect(
+      const PObject * obj1,
+      const PObject * obj2,
+      PINDEX size
+    );
+
     /** Compare the two objects.
     
        @return
-       TRUE if objects are equal.
+       true if objects are equal.
      */
     bool operator==(
       const PObject & obj   // Object to compare against.
@@ -1493,7 +1236,7 @@ class PObject {
     /** Compare the two objects.
     
        @return
-       TRUE if objects are not equal.
+       true if objects are not equal.
      */
     bool operator!=(
       const PObject & obj   // Object to compare against.
@@ -1502,7 +1245,7 @@ class PObject {
     /** Compare the two objects.
     
        @return
-       TRUE if objects are less than.
+       true if objects are less than.
      */
     bool operator<(
       const PObject & obj   // Object to compare against.
@@ -1511,7 +1254,7 @@ class PObject {
     /** Compare the two objects.
     
        @return
-       TRUE if objects are greater than.
+       true if objects are greater than.
      */
     bool operator>(
       const PObject & obj   // Object to compare against.
@@ -1520,7 +1263,7 @@ class PObject {
     /** Compare the two objects.
     
        @return
-       TRUE if objects are less than or equal.
+       true if objects are less than or equal.
      */
     bool operator<=(
       const PObject & obj   // Object to compare against.
@@ -1529,7 +1272,7 @@ class PObject {
     /** Compare the two objects.
     
        @return
-       TRUE if objects are greater than or equal.
+       true if objects are greater than or equal.
      */
     bool operator>=(
       const PObject & obj   // Object to compare against.
@@ -1540,7 +1283,7 @@ class PObject {
   //@{
     /** Output the contents of the object to the stream. The exact output is
        dependent on the exact semantics of the descendent class. This is
-       primarily used by the standard #operator<<# function.
+       primarily used by the standard <code>#operator<<</code> function.
 
        The default behaviour is to print the class name.
      */
@@ -1550,7 +1293,7 @@ class PObject {
 
     /** Input the contents of the object from the stream. The exact input is
        dependent on the exact semantics of the descendent class. This is
-       primarily used by the standard #operator>># function.
+       primarily used by the standard <code>#operator>></code> function.
 
        The default behaviour is to do nothing.
      */
@@ -1560,23 +1303,23 @@ class PObject {
 
 
     /** Global function for using the standard << operator on objects descended
-       from PObject. This simply calls the objects #PrintOn()# function.
+       from PObject. This simply calls the objects <code>PrintOn()</code> function.
        
-       @return the #strm# parameter.
+       @return the \p strm parameter.
      */
     inline friend ostream & operator<<(
-      ostream &strm,       // Stream to print the object into.
-      const PObject & obj  // Object to print to the stream.
+      ostream &strm,       ///< Stream to print the object into.
+      const PObject & obj  ///< Object to print to the stream.
     ) { obj.PrintOn(strm); return strm; }
 
     /** Global function for using the standard >> operator on objects descended
-       from PObject. This simply calls the objects #ReadFrom()# function.
+       from PObject. This simply calls the objects <code>ReadFrom()</code> function.
 
-       @return the #strm# parameter.
+       @return the \p strm parameter.
      */
     inline friend istream & operator>>(
-      istream &strm,   // Stream to read the objects contents from.
-      PObject & obj    // Object to read inormation into.
+      istream &strm,   ///< Stream to read the objects contents from.
+      PObject & obj    ///< Object to read inormation into.
     ) { obj.ReadFrom(strm); return strm; }
 
 
@@ -1584,9 +1327,9 @@ class PObject {
   //@{
     /** Create a copy of the class on the heap. The exact semantics of the
        descendent class determine what is required to make a duplicate of the
-       instance. Not all classes can even {\bf do} a clone operation.
+       instance. Not all classes can even \b do a clone operation.
        
-       The main user of the clone function is the #PDictionary# class as
+       The main user of the clone function is the <code>PDictionary</code> class as
        it requires copies of the dictionary keys.
 
        The default behaviour is for this function to assert.
@@ -1596,10 +1339,10 @@ class PObject {
      */
     virtual PObject * Clone() const;
 
-    /** This function yields a hash value required by the #PDictionary#
+    /** This function yields a hash value required by the <code>PDictionary</code>
        class. A descendent class that is required to be the key of a dictionary
        should override this function. The precise values returned is dependent
-       on the semantics of the class. For example, the #PString# class
+       on the semantics of the class. For example, the <code>PString</code> class
        overrides it to provide a hash function for distinguishing text strings.
 
        The default behaviour is to return the value zero.
@@ -1624,208 +1367,165 @@ class PObject {
 #define PBIG_ENDIAN 3
 
 
-#if 0
-class PStandardType
-/* Encapsulate a standard 8 bit character into a portable format. This would
-   rarely need to do translation, only if the target platform uses EBCDIC
-   would it do anything.
-
-   The platform independent form here is always 8 bit ANSI.
- */
-{
-  public:
-    PStandardType(
-      type newVal   // Value to initialise data in platform dependent form.
-    ) { data = newVal; }
-    /* Create a new instance of the platform independent type using platform
-       dependent data, or platform independent streams.
-     */
-
-    operator type() { return data; }
-    /* Get the platform dependent value for the type.
-
-       @return
-       data for instance.
-     */
-
-    friend ostream & operator<<(ostream & strm, const PStandardType & val)
-      { return strm << (type)val; }
-    /* Output the platform dependent value for the type to the stream.
-
-       @return
-       the stream output was made to.
-     */
-
-    friend istream & operator>>(istream & strm, PStandardType & val)
-      { type data; strm >> data; val = PStandardType(data); return strm; }
-    /* Input the platform dependent value for the type from the stream.
-
-       @return
-       the stream input was made from.
-     */
-
+template <typename type>
+struct PIntSameOrder {
+  __inline PIntSameOrder()                            : data(0)              { }
+  __inline PIntSameOrder(type value)                  : data(value)          { }
+  __inline PIntSameOrder(const PIntSameOrder & value) : data(value.data)     { }
+  __inline PIntSameOrder & operator=(type value)                             { data = value; return *this; }
+  __inline PIntSameOrder & operator=(const PIntSameOrder & value)            { data = value.data; return *this; }
+  __inline operator type() const                                             { return data; }
+  __inline friend ostream & operator<<(ostream & s, const PIntSameOrder & v) { return s << v.data; }
+  __inline friend istream & operator>>(istream & s, PIntSameOrder & v)       { return s >> v.data; }
 
   private:
     type data;
 };
-#endif
 
 
-#define PI_SAME(name, type) \
-  struct name { \
-    name() : data(0) { } \
-    name(type value) : data(value) { } \
-    name(const name & value) : data(value.data) { } \
-    name & operator =(type value) { data = value; return *this; } \
-    name & operator =(const name & value) { data = value.data; return *this; } \
-    operator type() const { return data; } \
-    friend ostream & operator<<(ostream & s, const name & v) { return s << v.data; } \
-    friend istream & operator>>(istream & s, name & v) { return s >> v.data; } \
-    private: type data; \
+template <typename type>
+struct PIntReversedOrder {
+  __inline PIntReversedOrder()                                : data(0)              { }
+  __inline PIntReversedOrder(type value)                                             { ReverseBytes(value, data); }
+  __inline PIntReversedOrder(const PIntReversedOrder & value) : data(value.data)     { }
+  __inline PIntReversedOrder & operator=(type value)                                 { ReverseBytes(value, data); return *this; }
+  __inline PIntReversedOrder & operator=(const PIntReversedOrder & value)            { data = value.data; return *this; }
+  __inline operator type() const                                                     { type value; ReverseBytes(data, value); return value; }
+  __inline friend ostream & operator<<(ostream & s, const PIntReversedOrder & value) { return s << (type)value; }
+  __inline friend istream & operator>>(istream & s, PIntReversedOrder & v)           { type val; s >> val; v = val; return s; }
+
+  private:
+    type data;
+
+  static __inline void ReverseBytes(const type & src, type & dst)
+  {
+    size_t s = sizeof(type)-1;
+    for (size_t d = 0; d < sizeof(type); ++d,--s)
+      ((BYTE *)&dst)[d] = ((const BYTE *)&src)[s];
   }
-
-#define PI_LOOP(src, dst) \
-    BYTE *s = ((BYTE *)&src)+sizeof(src); BYTE *d = (BYTE *)&dst; \
-    while (s != (BYTE *)&src) *d++ = *--s;
-
-#define PI_DIFF(name, type) \
-  struct name { \
-    name() : data(0) { } \
-    name(type value) : data(0) { operator=(value); } \
-    name(const name & value) : data(value.data) { } \
-    name & operator =(type value) { PI_LOOP(value, data); return *this; } \
-    name & operator =(const name & value) { data = value.data; return *this; } \
-    operator type() const { type value; PI_LOOP(data, value); return value; } \
-    friend ostream & operator<<(ostream & s, const name & value) { return s << (type)value; } \
-    friend istream & operator>>(istream & s, name & v) { type val; s >> val; v = val; return s; } \
-    private: type data; \
-  }
+};
 
 #ifndef PCHAR8
 #define PCHAR8 PANSI_CHAR
 #endif
 
 #if PCHAR8==PANSI_CHAR
-PI_SAME(PChar8, char);
+typedef PIntSameOrder<char> PChar8;
 #endif
 
-PI_SAME(PInt8, signed char);
+typedef PIntSameOrder<char> PInt8;
 
-PI_SAME(PUInt8, unsigned char);
-
-#if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PInt16l, PInt16);
-#elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PInt16l, PInt16);
-#endif
+typedef PIntSameOrder<unsigned char> PUInt8;
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PInt16b, PInt16);
+typedef PIntSameOrder<PInt16> PInt16l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PInt16b, PInt16);
+typedef PIntReversedOrder<PInt16> PInt16l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PUInt16l, WORD);
+typedef PIntReversedOrder<PInt16> PInt16b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PUInt16l, WORD);
+typedef PIntSameOrder<PInt16> PInt16b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PUInt16b, WORD);
+typedef PIntSameOrder<WORD> PUInt16l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PUInt16b, WORD);
+typedef PIntReversedOrder<WORD> PUInt16l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PInt32l, PInt32);
+typedef PIntReversedOrder<WORD> PUInt16b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PInt32l, PInt32);
+typedef PIntSameOrder<WORD> PUInt16b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PInt32b, PInt32);
+typedef PIntSameOrder<PInt32> PInt32l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PInt32b, PInt32);
+typedef PIntReversedOrder<PInt32> PInt32l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PUInt32l, DWORD);
+typedef PIntReversedOrder<PInt32> PInt32b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PUInt32l, DWORD);
+typedef PIntSameOrder<PInt32> PInt32b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PUInt32b, DWORD);
+typedef PIntSameOrder<DWORD> PUInt32l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PUInt32b, DWORD);
+typedef PIntReversedOrder<DWORD> PUInt32l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PInt64l, PInt64);
+typedef PIntReversedOrder<DWORD> PUInt32b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PInt64l, PInt64);
+typedef PIntSameOrder<DWORD> PUInt32b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PInt64b, PInt64);
+typedef PIntSameOrder<PInt64> PInt64l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PInt64b, PInt64);
+typedef PIntReversedOrder<PInt64> PInt64l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PUInt64l, PUInt64);
+typedef PIntReversedOrder<PInt64> PInt64b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PUInt64l, PUInt64);
+typedef PIntSameOrder<PInt64> PInt64b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PUInt64b, PUInt64);
+typedef PIntSameOrder<PUInt64> PUInt64l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PUInt64b, PUInt64);
+typedef PIntReversedOrder<PUInt64> PUInt64l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PFloat32l, float);
+typedef PIntReversedOrder<PUInt64> PUInt64b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PFloat32l, float);
+typedef PIntSameOrder<PUInt64> PUInt64b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PFloat32b, float);
+typedef PIntSameOrder<float> PFloat32l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PFloat32b, float);
+typedef PIntReversedOrder<float> PFloat32l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PFloat64l, double);
+typedef PIntReversedOrder<float> PFloat32b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PFloat64l, double);
+typedef PIntSameOrder<float> PFloat32b;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PFloat64b, double);
+typedef PIntSameOrder<double> PFloat64l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PFloat64b, double);
+typedef PIntReversedOrder<double> PFloat64l;
+#endif
+
+#if PBYTE_ORDER==PLITTLE_ENDIAN
+typedef PIntReversedOrder<double> PFloat64b;
+#elif PBYTE_ORDER==PBIG_ENDIAN
+typedef PIntSameOrder<double> PFloat64b;
 #endif
 
 #ifndef NO_LONG_DOUBLE // stupid OSX compiler
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_SAME(PFloat80l, long double);
+typedef PIntSameOrder<long double> PFloat80l;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_DIFF(PFloat80l, long double);
+typedef PIntReversedOrder<long double> PFloat80l;
 #endif
 
 #if PBYTE_ORDER==PLITTLE_ENDIAN
-PI_DIFF(PFloat80b, long double);
+typedef PIntReversedOrder<long double> PFloat80b;
 #elif PBYTE_ORDER==PBIG_ENDIAN
-PI_SAME(PFloat80b, long double);
+typedef PIntSameOrder<long double> PFloat80b;
 #endif
 #endif
-
-#undef PI_LOOP
-#undef PI_SAME
-#undef PI_DIFF
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1839,25 +1539,27 @@ PI_SAME(PFloat80b, long double);
 
 /*$MACRO PMIN(v1, v2)
    This macro is used to calculate the minimum of two values. As this is a
-   macro the expression in #v1# or #v2# is executed
+   macro the expression in <code>v1</code> or <code>v2</code> is executed
    twice so extreme care should be made in its use.
  */
 #define PMIN(v1, v2) ((v1) < (v2) ? (v1) : (v2))
 
 /*$MACRO PMAX(v1, v2)
    This macro is used to calculate the maximum of two values. As this is a
-   macro the expression in #v1# or #v2# is executed
+   macro the expression in <code>v1</code> or <code>v2</code> is executed
    twice so extreme care should be made in its use.
  */
 #define PMAX(v1, v2) ((v1) > (v2) ? (v1) : (v2))
 
 /*$MACRO PABS(val)
    This macro is used to calculate an absolute value. As this is a macro the
-   expression in #val# is executed twice so extreme care should be
+   expression in <code>val</code> is executed twice so extreme care should be
    made in its use.
  */
 #define PABS(v) ((v) < 0 ? -(v) : (v))
 
-#endif // _POBJECT_H
+
+#endif // PTLIB_OBJECT_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

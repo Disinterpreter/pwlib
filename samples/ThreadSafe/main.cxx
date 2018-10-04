@@ -7,35 +7,9 @@
  *
  * Copyright 2002 Equivalence
  *
- * $Log: main.cxx,v $
- * Revision 1.9  2005/11/30 12:47:39  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.8  2004/10/14 12:31:46  rjongbloed
- * Added synchronous mode for safe collection RemoveAll() to wait until all objects
- *   have actually been deleted before returning.
- *
- * Revision 1.7  2004/09/07 11:32:02  rjongbloed
- * Changed function name in PSafeCollection to something more standard for collections
- *
- * Revision 1.6  2004/04/04 13:24:19  rjongbloed
- * Changes to support native C++ Run Time Type Information
- *
- * Revision 1.5  2003/10/27 22:12:56  dereksmithies
- * Add more good changes to get Compare method work. Thanks to Gene Small
- *
- * Revision 1.4  2003/10/13 23:38:31  dereksmithies
- * Add debugging statements, usage(), Fixed Compare method. Thanks Gene Small.
- *
- * Revision 1.3  2002/12/11 03:38:45  robertj
- * Added more tests
- *
- * Revision 1.2  2002/05/02 00:30:26  robertj
- * Added dump of thread times during start up.
- *
- * Revision 1.1  2002/05/01 04:16:44  robertj
- * Added thread safe collection classes.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
@@ -101,9 +75,9 @@ ThreadSafe::ThreadSafe()
 
 ThreadSafe::~ThreadSafe()
 {
-  unsorted.RemoveAll(TRUE);
-  sorted.RemoveAll(TRUE);
-  sparse.RemoveAll(TRUE);
+  unsorted.RemoveAll(PTrue);
+  sorted.RemoveAll(PTrue);
+  sparse.RemoveAll(PTrue);
 }
 
 void ThreadSafe::Usage()
@@ -126,15 +100,19 @@ void ThreadSafe::Main()
   PArgList & args = GetArguments();
 
   args.Parse(
+#if PTRACING
              "t-trace."       "-no-trace."
              "o-output:"      "-no-output."
+#endif
              "1-test1."       "-no-test1."
              "2-test2."       "-no-test2."
              "3-test3."       "-no-test3.");
 
+#if PTRACING
   PTrace::Initialise(args.GetOptionCount('t'),
                      args.HasOption('o') ? (const char *)args.GetOptionString('o') : NULL,
                      PTrace::Blocks | PTrace::Timestamp | PTrace::Thread | PTrace::FileAndLine);
+#endif
 
   if (args.HasOption('1'))
     Test1(args);
@@ -156,8 +134,9 @@ void ThreadSafe::Test1(PArgList & args)
 
   cout << "Starting " << threadCount << " threads." << endl;
 
+  PRandom random;
   for (PINDEX i = 0; i < threadCount; i++) {
-    PTimeInterval duration = PRandom::Number()%540000 + 60000;
+    PTimeInterval duration = random.Generate(600000, 60000);
     cout << setw(4) << (i + 1) << '=' << duration;
     if (i%5 == 4)
       cout << '\n';

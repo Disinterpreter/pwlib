@@ -26,71 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: uicmp.cxx,v $
- * Revision 1.16  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.15  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.14  2001/09/10 03:03:36  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.13  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.12  2001/03/07 07:00:17  yurik
- * #ifdef'd setsockopt IPPROTO_IP for BeOS
- *
- * Revision 1.11  2001/03/06 22:20:21  craigs
- * Fixed TTL and other stuff so that traceroute is almost possible!
- *
- * Revision 1.10  1999/08/09 04:06:39  robertj
- * Change to avoid name space problem with X windows library
- *
- * Revision 1.9  1999/02/22 13:26:54  robertj
- * BeOS port changes.
- *
- * Revision 1.8  1998/11/30 21:52:06  robertj
- * New directory structure.
- *
- * Revision 1.7  1998/09/24 04:12:29  robertj
- * Added open software license.
- *
- * Revision 1.6  1998/08/26 01:45:56  craigs
- * Fixed error in IPHdr
- *
- * Revision 1.5  1998/01/26 07:27:09  robertj
- * Added part support for extra ping info. Still needs TTL for traceroute.
- *
- * Revision 1.4  1996/11/16 11:12:56  craigs
- * Fixed problem with work misaligns under SOlaris
- *
- * Revision 1.3  1996/10/31 10:20:07  craigs
- * Moved ICMP implementation into here, as it is now platform dependent
- *
- * Revision 1.6  1996/09/14 13:09:34  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.5  1996/08/11 06:52:14  robertj
- * Oops
- *
- * Revision 1.4  1996/08/07 13:40:57  robertj
- * Fixed sparc memory alignment problem from int 64
- *
- * Revision 1.3  1996/06/03 10:03:10  robertj
- * Changed ping to return more parameters.
- *
- * Revision 1.2  1996/05/30 10:08:51  robertj
- * Fixed bug in ping (checksum incorrect).
- *
- * Revision 1.1  1996/05/15 21:11:35  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #pragma implementation "icmpsock.h"
@@ -162,23 +100,23 @@ PICMPSocket::PICMPSocket()
 }
 
 
-BOOL PICMPSocket::Ping(const PString & host)
+PBoolean PICMPSocket::Ping(const PString & host)
 {
   PingInfo info;
   return Ping(host, info);
 }
 
 
-BOOL PICMPSocket::Ping(const PString & host, PingInfo & info)
+PBoolean PICMPSocket::Ping(const PString & host, PingInfo & info)
 {
   if (!WritePing(host, info))
-    return FALSE;
+    return PFalse;
 
   return ReadPing(info);
 }
 
 
-BOOL PICMPSocket::WritePing(const PString & host, PingInfo & info)
+PBoolean PICMPSocket::WritePing(const PString & host, PingInfo & info)
 {
   // find address of the host
   PIPSocket::Address addr;
@@ -199,7 +137,7 @@ BOOL PICMPSocket::WritePing(const PString & host, PingInfo & info)
   if (info.ttl != 0) {
     char ttl = (char)info.ttl;
     if (::setsockopt(os_handle, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) != 0)
-      return FALSE;
+      return PFalse;
   }
 #endif
 
@@ -214,7 +152,7 @@ BOOL PICMPSocket::WritePing(const PString & host, PingInfo & info)
 }
 
 
-BOOL PICMPSocket::ReadPing(PingInfo & info)
+PBoolean PICMPSocket::ReadPing(PingInfo & info)
 {
   // receive a packet
   BYTE packet[RX_BUFFER_SIZE];
@@ -228,7 +166,7 @@ BOOL PICMPSocket::ReadPing(PingInfo & info)
     memset(&packet, 0, sizeof(packet));
 
     if (!ReadFrom(packet, sizeof(packet), info.remoteAddr, port))
-      return FALSE;
+      return PFalse;
 
     now  = PTimer::Tick().GetMilliSeconds();
     ipHdr      = (IPHdr *)packet;
@@ -246,7 +184,7 @@ BOOL PICMPSocket::ReadPing(PingInfo & info)
     }
 
     if (!timeout.IsRunning())
-      return FALSE;
+      return PFalse;
   }
 
   info.remoteAddr = Address(ipHdr->sourceAddr[0], ipHdr->sourceAddr[1],
@@ -268,11 +206,11 @@ BOOL PICMPSocket::ReadPing(PingInfo & info)
 
   info.sequenceNum = icmpPacket->sequence;
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PICMPSocket::OpenSocket()
+PBoolean PICMPSocket::OpenSocket()
 {
 #if !defined BE_BONELESS && !defined(P_VXWORKS)
   struct protoent * p = ::getprotobyname(GetProtocolName());

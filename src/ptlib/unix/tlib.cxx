@@ -26,227 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: tlib.cxx,v $
- * Revision 1.76  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.75  2005/11/08 10:35:53  csoutheren
- * Added missing pragma
- *
- * Revision 1.74  2005/08/04 18:54:10  csoutheren
- * Applied fix for bug Bugs item #1244310
- * Fix problem wioth --disable-openh323 option
- * Thanks to Michael Manousos
- *
- * Revision 1.73  2005/02/22 03:25:43  dereksmithies
- * Add fix from huangzb@a-star.com.cn to correct a typo. Many thanks.
- *
- * Revision 1.72  2005/01/26 05:38:05  csoutheren
- * Added ability to remove config file support
- *
- * Revision 1.71  2005/01/04 08:09:43  csoutheren
- * Fixed Linux configure problems
- *
- * Revision 1.70  2004/07/11 07:56:36  csoutheren
- * Applied jumbo VxWorks patch, thanks to Eize Slange
- *
- * Revision 1.69  2003/09/18 23:52:08  dereksmithies
- * Fix checks on NULL pointers. Many thanks to Chris Rankin.
- *
- * Revision 1.68  2003/09/17 01:18:04  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.67  2003/01/24 10:21:06  robertj
- * Fixed issues in RTEMS support, thanks Vladimir Nesic
- *
- * Revision 1.66  2002/12/11 23:02:39  robertj
- * Added ability to set user identity temporarily and permanently.
- * Added ability to have username exclusively digits which corresponds to a uid.
- * Added get and set users group functions.
- *
- * Revision 1.65  2002/12/02 03:57:18  robertj
- * More RTEMS support patches, thank you Vladimir Nesic.
- *
- * Revision 1.64  2002/11/22 10:14:07  robertj
- * QNX port, thanks Xiaodan Tang
- *
- * Revision 1.63  2002/11/02 00:32:21  robertj
- * Further fixes to VxWorks (Tornado) port, thanks Andreas Sikkema.
- *
- * Revision 1.62  2002/10/17 13:44:27  robertj
- * Port to RTEMS, thanks Vladimir Nesic.
- *
- * Revision 1.61  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.60  2002/06/27 08:09:06  robertj
- * GNU GCC 3.1 compatibility under Solaris
- *
- * Revision 1.59  2001/11/25 23:30:31  robertj
- * Added PProcess::SetUserName() function to set euid
- *
- * Revision 1.58  2001/10/11 02:20:54  robertj
- * Added IRIX support (no audio/video), thanks Andre Schulze.
- *
- * Revision 1.57  2001/09/18 05:56:03  robertj
- * Fixed numerous problems with thread suspend/resume and signals handling.
- *
- * Revision 1.56  2001/08/11 15:38:43  rogerh
- * Add Mac OS Carbon changes from John Woods <jfw@jfwhome.funhouse.com>
- *
- * Revision 1.55  2001/06/30 06:59:07  yurik
- * Jac Goudsmit from Be submit these changes 6/28. Implemented by Yuri Kiryanov
- *
- * Revision 1.54  2001/03/29 03:24:31  robertj
- * Removed capture of SIGQUIT so can still dro a core on demand.
- *
- * Revision 1.53  2001/03/14 01:16:11  robertj
- * Fixed signals processing, now uses housekeeping thread to handle signals
- *   synchronously. This also fixes issues with stopping PServiceProcess.
- *
- * Revision 1.52  2001/03/07 07:31:25  yurik
- * refined BeOS constants
- *
- * Revision 1.51  2000/06/21 01:01:22  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.50  2000/04/09 18:19:23  rogerh
- * Add my changes for NetBSD support.
- *
- * Revision 1.49  2000/04/06 12:19:49  rogerh
- * Add Mac OS X support submitted by Kevin Packard
- *
- * Revision 1.48  2000/03/08 12:17:09  rogerh
- * Add OpenBSD support
- *
- * Revision 1.47  1999/09/03 02:26:25  robertj
- * Changes to aid in breaking I/O locks on thread termination. Still needs more work esp in BSD!
- *
- * Revision 1.46  1999/07/19 01:32:24  craigs
- * Changed signals used in pthreads code, is used by linux version.
- *
- * Revision 1.45  1999/07/11 13:42:13  craigs
- * pthreads support for Linux
- *
- * Revision 1.44  1999/06/28 09:28:02  robertj
- * Portability issues, especially n BeOS (thanks Yuri!)
- *
- * Revision 1.43  1999/05/13 04:44:18  robertj
- * Added SIGHUP and SIGWINCH handlers to increase and decrease the log levels.
- *
- * Revision 1.42  1999/03/02 05:41:59  robertj
- * More BeOS changes
- *
- * Revision 1.41  1999/02/26 04:10:39  robertj
- * More BeOS port changes
- *
- * Revision 1.40  1999/02/19 11:34:15  robertj
- * Added platform dependent function for "system configuration" directory.
- *
- * Revision 1.39  1999/02/06 05:49:44  robertj
- * BeOS port effort by Yuri Kiryanov <openh323@kiryanov.com>
- *
- * Revision 1.38  1999/01/11 12:10:39  robertj
- * Improved operating system version display.
- *
- * Revision 1.37  1999/01/08 01:31:01  robertj
- * Support for pthreads under FreeBSD
- *
- * Revision 1.36  1998/11/24 11:24:40  robertj
- * Added FreeBSD OSName
- *
- * Revision 1.35  1998/11/24 09:39:16  robertj
- * FreeBSD port.
- *
- * Revision 1.34  1998/10/31 14:14:21  robertj
- * Changed syncptack.h to syncthrd.h for more thread synchronisation objects.
- *
- * Revision 1.33  1998/10/19 00:29:57  robertj
- * Moved error stream to common.
- *
- * Revision 1.32  1998/09/24 04:12:22  robertj
- * Added open software license.
- *
- * Revision 1.31  1998/05/30 14:58:56  robertj
- * Fixed shutdown deadlock (and other failure modes) in cooperative threads.
- *
- * Revision 1.30  1998/04/17 15:13:08  craigs
- * Added lazy writes to Config cache
- *
- * Revision 1.29  1998/03/29 10:42:16  craigs
- * Changed for new initialisation scheme
- *
- * Revision 1.28  1998/03/26 05:01:12  robertj
- * Added PMutex and PSyncPoint classes.
- *
- * Revision 1.27  1998/01/04 08:09:23  craigs
- * Added support for PThreads through use of reentrant system calls
- *
- * Revision 1.26  1998/01/03 22:46:44  craigs
- * Added PThread support
- *
- * Revision 1.25  1997/05/10 08:04:15  craigs
- * Added new routines for access to PErrorStream
- *
- * Revision 1.24  1997/04/22 10:57:53  craigs
- * Removed DLL functions and added call the FreeStack
- *
- * Revision 1.23  1997/02/23 03:06:00  craigs
- * Changed for PProcess::Current reference
- *
- * Revision 1.22  1997/02/14 09:18:36  craigs
- * Changed for PProcess::Current being a reference rather that a ptr
- *
- * Revision 1.21  1996/12/30 03:21:46  robertj
- * Added timer to block on wait for child process.
- *
- * Revision 1.20  1996/12/29 13:25:02  robertj
- * Fixed GCC warnings.
- *
- * Revision 1.19  1996/11/16 11:11:46  craigs
- * Fixed problem with timeout on blocked IO channels
- *
- * Revision 1.18  1996/11/03 04:35:58  craigs
- * Added hack to avoid log timeouts, which shouldn't happen!
- *
- * Revision 1.17  1996/09/21 05:40:10  craigs
- * Changed signal hcnalding
- *
- * Revision 1.16  1996/09/03 11:55:19  craigs
- * Removed some potential problems with return values from system calls
- *
- * Revision 1.15  1996/06/29 01:43:11  craigs
- * Moved AllocateStack to switch.cxx to keep platform dependent routines in one place
- *
- * Revision 1.14  1996/06/10 12:46:53  craigs
- * Changed process.h include
- *
- * Revision 1.13  1996/05/25 06:06:33  craigs
- * Sun4 fixes and updated for gcc 2.7.2
- *
- * Revision 1.12  1996/05/09 10:55:59  craigs
- * More SunOS fixes
- *
- * Revision 1.11  1996/05/03 13:15:27  craigs
- * More Sun4 & Solaris fixes
- *
- * Revision 1.10  1996/05/03 13:11:35  craigs
- * More Sun4 fixes
- *
- * Revision 1.9  1996/05/02 12:11:54  craigs
- * Sun4 fixes
- *
- * Revision 1.8  1996/04/18 11:43:38  craigs
- * Changed GetHomeDir to use effective UID for uid, and changed to
- * look at passwd file info *before* $HOME variable
- *
- * Revision 1.7  1996/04/15 10:49:11  craigs
- * Last build prior to release of MibMaster v1.0
- *
- * Revision 1.6  1996/01/26 11:09:42  craigs
- * Added signal handlers
- *
+ * $Revision: 28201 $
+ * $Author: rjongbloed $
+ * $Date: 2012-08-14 21:30:31 -0500 (Tue, 14 Aug 2012) $
  */
 
 #define _OSUTIL_CXX
@@ -258,11 +40,13 @@
 #pragma implementation "thread.h"
 #pragma implementation "semaphor.h"
 #pragma implementation "mutex.h"
+#pragma implementation "critsec.h"
 #pragma implementation "psync.h"
 #pragma implementation "syncpoint.h"
 #pragma implementation "syncthrd.h"
 
 #include "ptlib.h"
+#include <ptlib/pprocess.h>
 
 #ifdef P_VXWORKS
 #include <sys/times.h>
@@ -280,13 +64,13 @@
 #include <sys/wait.h>
 #include <errno.h>
 
-#if defined(P_LINUX)
+#if defined(P_LINUX) || defined(P_GNU_HURD)
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <sys/mman.h>
 #endif
 
-#if defined(P_LINUX) || defined(P_SUN4) || defined(P_SOLARIS) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS) || defined (P_AIX) || defined(__BEOS__) || defined(P_IRIX) || defined(P_QNX)
+#if defined(P_LINUX) || defined(P_SUN4) || defined(P_SOLARIS) || defined(P_FREEBSD) || defined(P_OPENBSD) || defined(P_NETBSD) || defined(P_MACOSX) || defined(P_MACOS) || defined (P_AIX) || defined(P_BEOS) || defined(P_IRIX) || defined(P_QNX) || defined(P_GNU_HURD)
 #include <sys/utsname.h>
 #define  HAS_UNAME
 #elif defined(P_RTEMS)
@@ -313,16 +97,14 @@ extern "C" int select(int width,
       struct timeval *timeout);
 #endif
 
-#ifdef __BEOS__
+#ifdef P_BEOS
 #include "OS.h"
 #endif
-
-#include "../common/pglobalstatic.cxx"
 
 
 PString PProcess::GetOSClass()
 {
-#ifndef __BEOS__
+#ifndef P_BEOS
   return PString("Unix");
 #elif defined P_VXWORKS
   return PString("VxWorks");
@@ -381,6 +163,38 @@ PString PProcess::GetOSVersion()
 #endif
 }
 
+bool PProcess::IsOSVersion(unsigned major, unsigned minor, unsigned build)
+{
+#if defined(HAS_UNAME)
+  struct utsname info;
+  uname(&info);
+  unsigned maj, min, bld;
+  sscanf(
+#ifdef P_SOLARIS
+         info.version
+#else
+         info.release
+#endif
+         , "%u.%u.%u", &maj, &min, &bld);
+  if (maj < major)
+    return false;
+  if (maj > major)
+    return true;
+
+  if (min < minor)
+    return false;
+  if (min > minor)
+    return true;
+
+  return bld >= build;
+#elif defined(P_VXWORKS)
+  return sysBspRev() >= major;
+#else
+  return true;
+#endif
+}
+
+
 PDirectory PProcess::GetOSConfigDir()
 {
 #ifdef P_VXWORKS
@@ -403,7 +217,7 @@ PDirectory PProcess::PXGetHomeDir ()
 #if defined(P_PTHREADS) && !defined(P_THREAD_SAFE_CLIB)
   struct passwd pwd;
   char buffer[1024];
-#if defined (P_LINUX) || defined(P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS)
+#if defined (P_LINUX) || defined(P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS) || defined(P_GNU_HURD)
   ::getpwuid_r(geteuid(), &pwd,
                buffer, 1024,
                &pw);
@@ -454,7 +268,7 @@ PString PProcess::GetUserName() const
   struct passwd pwd;
   char buffer[1024];
   struct passwd * pw = NULL;
-#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS)
+#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS) || defined(P_GNU_HURD)
   ::getpwuid_r(geteuid(), &pwd, buffer, 1024, &pw);
 #else
   pw = ::getpwuid_r(geteuid(), &pwd, buffer, 1024);
@@ -474,11 +288,11 @@ PString PProcess::GetUserName() const
 }
 
 
-BOOL PProcess::SetUserName(const PString & username, BOOL permanent)
+PBoolean PProcess::SetUserName(const PString & username, PBoolean permanent)
 {
 #ifdef P_VXWORKS
   PAssertAlways("PProcess::SetUserName - not implemented for VxWorks");
-  return FALSE;
+  return PFalse;
 #else
   if (username.IsEmpty())
     return seteuid(getuid()) != -1;
@@ -487,7 +301,7 @@ BOOL PProcess::SetUserName(const PString & username, BOOL permanent)
 
   if (username[0] == '#') {
     PString s = username.Mid(1);
-    if (strspn(s, "1234567890") == strlen(s))
+    if (s.FindSpan("1234567890") == P_MAX_INDEX)
       uid = s.AsInteger();
   }
   else {
@@ -495,7 +309,7 @@ BOOL PProcess::SetUserName(const PString & username, BOOL permanent)
     struct passwd pwd;
     char buffer[1024];
     struct passwd * pw = NULL;
-#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS)
+#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS) || defined(P_GNU_HURD)
     ::getpwnam_r(username, &pwd, buffer, 1024, &pw);
 #else
     pw = ::getpwnam_r(username, &pwd, buffer, 1024);
@@ -507,13 +321,13 @@ BOOL PProcess::SetUserName(const PString & username, BOOL permanent)
     if (pw != NULL && pw->pw_name != NULL)
       uid = pw->pw_uid;
     else {
-      if (strspn(username, "1234567890") == strlen(username))
+      if (username.FindSpan("1234567890") == P_MAX_INDEX)
        uid = username.AsInteger();
     }
   }
 
   if (uid < 0)
-    return FALSE;
+    return PFalse;
 
   if (permanent)
     return setuid(uid) != -1;
@@ -542,7 +356,7 @@ PString PProcess::GetGroupName() const
   struct group grp;
   char buffer[1024];
   struct group * gr = NULL;
-#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS)
+#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS) || defined(P_GNU_HURD)
   ::getgrgid_r(getegid(), &grp, buffer, 1024, &gr);
 #else
   gr = ::getgrgid_r(getegid(), &grp, buffer, 1024);
@@ -562,11 +376,11 @@ PString PProcess::GetGroupName() const
 }
 
 
-BOOL PProcess::SetGroupName(const PString & groupname, BOOL permanent)
+PBoolean PProcess::SetGroupName(const PString & groupname, PBoolean permanent)
 {
 #ifdef P_VXWORKS
   PAssertAlways("PProcess::SetGroupName - not implemented for VxWorks");
-  return FALSE;
+  return PFalse;
 #else
   if (groupname.IsEmpty())
     return setegid(getgid()) != -1;
@@ -575,7 +389,7 @@ BOOL PProcess::SetGroupName(const PString & groupname, BOOL permanent)
 
   if (groupname[0] == '#') {
     PString s = groupname.Mid(1);
-    if (strspn(s, "1234567890") == strlen(s))
+    if (s.FindSpan("1234567890") == P_MAX_INDEX)
       gid = s.AsInteger();
   }
   else {
@@ -583,7 +397,7 @@ BOOL PProcess::SetGroupName(const PString & groupname, BOOL permanent)
     struct group grp;
     char buffer[1024];
     struct group * gr = NULL;
-#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS)
+#if defined (P_LINUX) || defined (P_AIX) || defined(P_IRIX) || (__GNUC__>=3 && defined(P_SOLARIS)) || defined(P_RTEMS) || defined(P_GNU_HURD)
     ::getgrnam_r(groupname, &grp, buffer, 1024, &gr);
 #else
     gr = ::getgrnam_r(groupname, &grp, buffer, 1024);
@@ -595,13 +409,13 @@ BOOL PProcess::SetGroupName(const PString & groupname, BOOL permanent)
     if (gr != NULL && gr->gr_name != NULL)
       gid = gr->gr_gid;
     else {
-      if (strspn(groupname, "1234567890") == strlen(groupname))
+      if (groupname.FindSpan("1234567890") == P_MAX_INDEX)
        gid = groupname.AsInteger();
     }
   }
 
   if (gid < 0)
-    return FALSE;
+    return PFalse;
 
   if (permanent)
     return setgid(gid) != -1;
@@ -610,6 +424,17 @@ BOOL PProcess::SetGroupName(const PString & groupname, BOOL permanent)
 #endif // P_VXWORKS
 }
 
+extern PProcess * PProcessInstance;;
+
+PString PX_GetThreadName(pthread_t id)
+{
+  if (PProcessInstance != NULL) {
+    PWaitAndSignal m(PProcessInstance->m_activeThreadMutex);
+    PThread * thread = PProcessInstance->m_activeThreads[id];
+    return thread->GetThreadName();
+  }
+  return psprintf("%08x", id);
+}
 
 void PProcess::PXShowSystemWarning(PINDEX num)
 {
@@ -639,8 +464,7 @@ void PXSignalHandler(int sig)
   process.SignalTimerChange();
 #elif defined(P_PTHREADS)
   // Inform house keeping thread we have a signal to be processed
-  BYTE ch;
-  write(process.timerChangePipe[1], &ch, 1);
+  process.SignalTimerChange();
 #endif
   signal(sig, PXSignalHandler);
 }
@@ -709,6 +533,10 @@ void PProcess::PXOnAsyncSignal(int sig)
   switch (sig) {
     case SIGINT:
     case SIGTERM:
+      if (OnInterrupt(sig == SIGTERM))
+        break;
+      // Do next case
+
     case SIGHUP:
       raise(SIGKILL);
       break;
@@ -719,8 +547,34 @@ void PProcess::PXOnAsyncSignal(int sig)
 
 void PProcess::PXOnSignal(int sig)
 {
+#ifdef _DEBUG
 #ifdef SIGNALS_DEBUG
   fprintf(stderr,"\nSYNCSIG<%u>\n",sig);
+#endif
+  if (sig == 28) {
+#if PMEMORY_CHECK
+    PBoolean oldIgnore = PMemoryHeap::SetIgnoreAllocations(PTrue);
+    static PMemoryHeap::State state;
+    PMemoryHeap::GetState(state);
+#endif
+    PStringStream strm;
+    m_activeThreadMutex.Wait();
+    strm << "===============\n"
+         << m_activeThreads.size() << " active threads\n";
+    for (ThreadMap::iterator it = m_activeThreads.begin(); it != m_activeThreads.end(); ++it)
+      strm << "  " << *it->second << "\n";
+#if PMEMORY_CHECK
+    strm << "---------------\n";
+    PMemoryHeap::DumpObjectsSince(state, strm);
+    PMemoryHeap::GetState(state);
+#endif
+    strm << "===============\n";
+    m_activeThreadMutex.Signal();
+    fprintf(stderr, "%s", strm.GetPointer());
+#if PMEMORY_CHECK
+    PMemoryHeap::SetIgnoreAllocations(oldIgnore);
+#endif
+  }
 #endif
 }
 
@@ -729,7 +583,8 @@ void PProcess::CommonConstruct()
   // Setup signal handlers
   pxSignals = 0;
 
-  SetSignals(&PXSignalHandler);
+  if (!m_library)
+    SetSignals(&PXSignalHandler);
 
 #if !defined(P_VXWORKS) && !defined(P_RTEMS)
   // initialise the timezone information
@@ -747,7 +602,9 @@ void PProcess::CommonDestruct()
   delete configFiles;
 #endif
   configFiles = NULL;
-  SetSignals(NULL);
+
+  if (!m_library)
+    SetSignals(NULL);
 }
 
 // rtems fixes

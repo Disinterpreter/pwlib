@@ -21,10 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2005/12/22 03:55:52  csoutheren
- * Added initial version of socket aggregation classes
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _Emailtest_MAIN_H

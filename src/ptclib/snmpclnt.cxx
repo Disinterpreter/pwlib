@@ -23,40 +23,16 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: snmpclnt.cxx,v $
- * Revision 1.10  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.9  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.8  1998/11/30 04:52:07  robertj
- * New directory structure
- *
- * Revision 1.7  1998/10/13 14:06:34  robertj
- * Complete rewrite of memory leak detection code.
- *
- * Revision 1.6  1998/09/23 06:22:40  robertj
- * Added open source copyright license.
- *
- * Revision 1.5  1996/11/10 21:06:17  robertj
- * Fixed endless retry bug in SNMP get.
- *
- * Revision 1.4  1996/11/04 04:00:00  robertj
- * Added support for UDP packet truncation is reading SNMP reply.
- *
- * Revision 1.3  1996/10/08 13:06:24  robertj
- * Fixed SNMP timeout (GNU compatibility).
- *
- * Revision 1.2  1996/09/20 12:20:19  robertj
- * Used read timeout instead of member variable.
- *
- * Revision 1.1  1996/09/14 13:14:59  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
+#include <ptbuildopts.h>
+
+#ifdef P_SNMP
+
 #include <ptclib/psnmp.h>
 
 #define new PNEW
@@ -137,21 +113,21 @@ PASNInt PSNMPClient::GetRequestID() const
 }
 
 
-BOOL PSNMPClient::WriteGetRequest(PSNMPVarBindingList & varsIn,
+PBoolean PSNMPClient::WriteGetRequest(PSNMPVarBindingList & varsIn,
                                   PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(GetRequest, varsIn, varsOut);
 }
 
 
-BOOL PSNMPClient::WriteGetNextRequest(PSNMPVarBindingList & varsIn,
+PBoolean PSNMPClient::WriteGetNextRequest(PSNMPVarBindingList & varsIn,
                                       PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(GetNextRequest, varsIn, varsOut);
 }
 
 
-BOOL PSNMPClient::WriteSetRequest(PSNMPVarBindingList & varsIn,
+PBoolean PSNMPClient::WriteSetRequest(PSNMPVarBindingList & varsIn,
                                   PSNMPVarBindingList & varsOut)
 {
   return WriteRequest(SetRequest, varsIn, varsOut);
@@ -175,7 +151,7 @@ PString PSNMPClient::GetLastErrorText() const
   return PSNMP::GetErrorText(lastErrorCode);
 }
 
-BOOL PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
+PBoolean PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
 {
   readBuffer.SetSize(maxRxSize);
   PINDEX rxSize = 0;
@@ -190,7 +166,7 @@ BOOL PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
         lastErrorCode = RxBufferTooSmall;
       else
         lastErrorCode = NoResponse;
-      return FALSE;
+      return PFalse;
 
     } else if ((rxSize + GetLastReadCount()) >= 10)
       break;
@@ -208,18 +184,18 @@ BOOL PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
   if ((readBuffer[0] != 0x30) ||
       !PASNObject::DecodeASNLength(readBuffer, hdrLen, len)) {
     lastErrorCode = MalformedResponse;
-    return FALSE;
+    return PFalse;
   }
 
   // length of packet is length of header + length of data
   len = (WORD)(len + hdrLen);
 
-  // return TRUE if we have the packet, else return FALSE
+  // return PTrue if we have the packet, else return PFalse
   if (len <= maxRxSize) 
-    return TRUE;
+    return PTrue;
 
   lastErrorCode = RxBufferTooSmall;
-  return FALSE;
+  return PFalse;
 
 #if 0
   // and get a new data ptr
@@ -230,15 +206,15 @@ BOOL PSNMPClient::ReadRequest(PBYTEArray & readBuffer)
   while (rxSize < len) {
     if (!Read(readBuffer.GetPointer()+rxSize, len - rxSize)) {
       lastErrorCode = NoResponse;
-      return FALSE;
+      return PFalse;
     }
     rxSize += GetLastReadCount();
   }
-  return TRUE;
+  return PTrue;
 #endif
 }
 
-BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
+PBoolean PSNMPClient::WriteRequest(PASNInt requestCode,
                                PSNMPVarBindingList & vars,
                                PSNMPVarBindingList & varsOut)
 {
@@ -276,7 +252,7 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
 
   if (sendBuffer.GetSize() > maxTxSize) {
     lastErrorCode = TxDataTooBig;
-    return FALSE;
+    return PFalse;
   }
 
   varsOut.RemoveAll();
@@ -288,14 +264,14 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
     // send the packet
     if (!Write(sendBuffer, sendBuffer.GetSize())) {
       lastErrorCode = SendFailed;
-      return FALSE;
+      return PFalse;
     }
 
     // receive a packet
     if (ReadRequest(readBuffer))
       break;
     else if ((lastErrorCode != NoResponse) || (retry == 0))
-      return FALSE;
+      return PFalse;
     else
       retry--;
   }
@@ -310,7 +286,7 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
       response[1].GetType() != PASNObject::String ||
       response[2].GetType() != PASNObject::Choice) {
     lastErrorCode = MalformedResponse;
-    return FALSE;
+    return PFalse;
   }
 
   // check the PDU data
@@ -323,14 +299,14 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
       rPduData[2].GetType() != PASNObject::Integer ||
       rPduData[3].GetType() != PASNObject::Sequence) {
     lastErrorCode = MalformedResponse;
-    return FALSE;
+    return PFalse;
   }
 
   // check the request ID
   PASNInt returnedRequestId = rPduData[0].GetInteger();
   if (returnedRequestId != thisRequestId) {
     lastErrorCode = MalformedResponse;
-    return FALSE;
+    return PFalse;
   }
   
   // check the error status and return if non-zero
@@ -338,7 +314,7 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
   if (errorStatus != 0) {
     lastErrorIndex = rPduData[2].GetInteger(); 
     lastErrorCode = (ErrorType)errorStatus;
-    return FALSE;
+    return PFalse;
   }
 
   // check the variable bindings
@@ -350,20 +326,20 @@ BOOL PSNMPClient::WriteRequest(PASNInt requestCode,
     if (rBindings[i].GetType() != PASNObject::Sequence) {
       lastErrorIndex = i+1;
       lastErrorCode  = MalformedResponse;
-      return FALSE;
+      return PFalse;
     }
     const PASNSequence & rVar = rBindings[i].GetSequence();
     if (rVar.GetSize() != 2 ||
         rVar[0].GetType() != PASNObject::ObjectID) {
       lastErrorIndex = i+1;
       lastErrorCode = MalformedResponse;
-      return FALSE;
+      return PFalse;
     }
     varsOut.Append(rVar[0].GetString(), (PASNObject *)rVar[1].Clone());
   }
 
   lastErrorCode = NoError;
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -496,5 +472,6 @@ void PSNMP::WriteTrap(                 PChannel & channel,
   channel.Write(sendBuffer, sendBuffer.GetSize());
 }
 
+#endif // P_SNMP
 
 // End Of File ///////////////////////////////////////////////////////////////

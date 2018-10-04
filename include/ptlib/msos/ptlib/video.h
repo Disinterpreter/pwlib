@@ -26,27 +26,9 @@
  *
  * Contributor(s): Derek Smithies (derek@indranet.co.nz)
  *
- * $Log: video.h,v $
- * Revision 1.6  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.5  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.4  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.3  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.2  2000/12/19 22:20:26  dereks
- * Add video channel classes to connect to the PwLib PVideoInputDevice class.
- * Add PFakeVideoInput class to generate test images for video.
- *
- * Revision 1.1  2000/11/09 00:33:23  dereks
- * Initial release. Required for PVideoChannel class.
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -55,7 +37,7 @@
   public:
     // Overrides from class PChannel
       
-    virtual BOOL Close();
+    virtual PBoolean Close();
       // Close the channel.
 
     virtual PString GetName() const;

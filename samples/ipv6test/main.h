@@ -21,15 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2004/12/14 06:50:59  csoutheren
- * Initial version
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _IPV6Test_MAIN_H
 #define _IPV6Test_MAIN_H
+
+#include <ptlib/pprocess.h>
 
 class IPV6Test : public PProcess
 {

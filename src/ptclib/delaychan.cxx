@@ -23,24 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: delaychan.cxx,v $
- * Revision 1.5  2003/02/20 08:43:44  rogerh
- * On Mac OS X, the thread sleep() (which uses select) is not as fine grained
- * as usleep. So use usleep(). Tested by Shawn.
- *
- * Revision 1.4  2002/02/26 00:42:13  robertj
- * Fixed MSVC warning.
- *
- * Revision 1.3  2002/02/25 11:05:02  rogerh
- * New Delay code which solves the accumulated error problem. Based on ideas
- * by Tomasz Motylewski <T.Motylewski@bfad.de>, Roger and Craig.
- *
- * Revision 1.2  2002/01/15 03:56:03  craigs
- * Added PAdaptiveDelay class
- *
- * Revision 1.1  2001/07/10 03:07:07  robertj
- * Added queue channel and delay channel classes to ptclib.
- *
+ * $Revision: 26933 $
+ * $Author: rjongbloed $
+ * $Date: 2012-02-02 21:17:20 -0600 (Thu, 02 Feb 2012) $
  */
 
 #ifdef __GNUC__
@@ -52,23 +37,27 @@
 
 /////////////////////////////////////////////////////////
 
-PAdaptiveDelay::PAdaptiveDelay()
+PAdaptiveDelay::PAdaptiveDelay(unsigned _maximumSlip, unsigned _minimumDelay)
+  : jitterLimit(_maximumSlip), minimumDelay(_minimumDelay)
 {
-  firstTime = TRUE;
+  firstTime = PTrue;
 }
 
 void PAdaptiveDelay::Restart()
 {
-  firstTime = TRUE;
+  firstTime = PTrue;
 }
 
-BOOL PAdaptiveDelay::Delay(int frameTime)
+PBoolean PAdaptiveDelay::Delay(int frameTime)
 {
   if (firstTime) {
-    firstTime = FALSE;
+    firstTime = PFalse;
     targetTime = PTime();   // targetTime is the time we want to delay to
-    return TRUE;
+    return PTrue;
   }
+
+  if (frameTime == 0)
+    return true;
 
   // Set the new target
   targetTime += frameTime;
@@ -77,11 +66,23 @@ BOOL PAdaptiveDelay::Delay(int frameTime)
   PTimeInterval delay = targetTime - PTime();
   int sleep_time = (int)delay.GetMilliSeconds();
 
-  if (sleep_time > 0)
+  // Catch up if we are too late and the featue is enabled
+  if (jitterLimit > 0 && sleep_time < -jitterLimit.GetMilliSeconds()) {
+    unsigned i = 0;
+    while (sleep_time < -jitterLimit.GetMilliSeconds()) { 
+      targetTime += frameTime;
+      sleep_time += frameTime;
+      i++;
+    }
+    PTRACE (4, "AdaptiveDelay\tSkipped " << i << " frames");
+  }
+
+  // Else sleep only if necessary
+  if (sleep_time > minimumDelay.GetMilliSeconds())
 #if defined(P_LINUX) || defined(P_MACOSX)
     usleep(sleep_time * 1000);
 #else
-    PThread::Current()->Sleep(sleep_time);
+    PThread::Sleep(sleep_time);
 #endif
 
   return sleep_time <= -frameTime;
@@ -102,20 +103,45 @@ PDelayChannel::PDelayChannel(Mode m,
   minimumDelay = min;
 }
 
-
-BOOL PDelayChannel::Read(void * buf, PINDEX count)
+PDelayChannel::PDelayChannel(PChannel &channel,
+                             Mode m,
+                             unsigned delay,
+                             PINDEX size,
+                             unsigned max,
+                             unsigned min) :
+   mode(m), 
+   frameDelay(delay),
+   frameSize(size),
+   minimumDelay(min)
 {
+  maximumSlip = -PTimeInterval(max);
+  if(Open(channel) == PFalse){
+    PTRACE(1,"Delay\tPDelayChannel cannot open channel");
+  }
+  PTRACE(5,"Delay\tdelay = " << frameDelay << ", size = " << frameSize);
+}
+
+PBoolean PDelayChannel::Read(void * buf, PINDEX count)
+{
+  if (!PIndirectChannel::Read(buf, count))
+    return false;
+
   if (mode != DelayWritesOnly)
-    Wait(count, nextReadTick);
-  return PIndirectChannel::Read(buf, count);
+    Wait(lastReadCount, nextReadTick);
+
+  return true;
 }
 
 
-BOOL PDelayChannel::Write(const void * buf, PINDEX count)
+PBoolean PDelayChannel::Write(const void * buf, PINDEX count)
 {
+  if (!PIndirectChannel::Write(buf, count))
+    return false;
+
   if (mode != DelayReadsOnly)
-    Wait(count, nextWriteTick);
-  return PIndirectChannel::Write(buf, count);
+    Wait(lastWriteCount, nextWriteTick);
+
+  return true;
 }
 
 
@@ -141,7 +167,7 @@ void PDelayChannel::Wait(PINDEX count, PTimeInterval & nextTick)
     nextTick += frameDelay;
 
   if (delay > minimumDelay)
-    PThread::Current()->Sleep(delay);
+    PThread::Sleep(delay);
 }
 
 

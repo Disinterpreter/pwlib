@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
+#include <inttypes.h>
 #include <errno.h>
 
 #include "tinyjpeg.h"
@@ -47,25 +47,20 @@ enum std_markers {
    DHT  = 0xC4, /* Huffman Table */
    SOI  = 0xD8, /* Start of Image */
    SOS  = 0xDA, /* Start of Scan */
+   RST  = 0xD0, /* Reset Marker d0 -> .. */
+   RST7 = 0xD7, /* Reset Marker .. -> d7 */
    EOI  = 0xD9, /* End of Image */
+   DRI  = 0xDD, /* Define Restart Interval */
    APP0 = 0xE0,
 };
 
-#define cY	1
-#define cCb	2
-#define cCr	3
+#define cY	0
+#define cCb	1
+#define cCr	2
 
 #define BLACK_Y 0
 #define BLACK_U 127
 #define BLACK_V 127
-
-#define SANITY_CHECK 1
-
-#ifndef DEBUG
-#define DEBUG 0
-#define DUMP_TABLE 0
-#define LOG2FILE 0
-#endif
 
 #if DEBUG
 #if LOG2FILE
@@ -288,8 +283,15 @@ static const unsigned char val_ac_chrominance[] =
    result = ((reservoir)>>(nbits_in_reservoir-(nbits_wanted))); \
 }  while(0);
 
+/* To speed up the decoding, we assume that the reservoir have enough bit 
+ * slow version:
+ * #define skip_nbits(reservoir,nbits_in_reservoir,stream,nbits_wanted) do { \
+ *   fill_nbits(reservoir,nbits_in_reservoir,stream,(nbits_wanted)); \
+ *   nbits_in_reservoir -= (nbits_wanted); \
+ *   reservoir &= ((1U<<nbits_in_reservoir)-1); \
+ * }  while(0);
+ */
 #define skip_nbits(reservoir,nbits_in_reservoir,stream,nbits_wanted) do { \
-   fill_nbits(reservoir,nbits_in_reservoir,stream,(nbits_wanted)); \
    nbits_in_reservoir -= (nbits_wanted); \
    reservoir &= ((1U<<nbits_in_reservoir)-1); \
 }  while(0);
@@ -297,6 +299,7 @@ static const unsigned char val_ac_chrominance[] =
 
 #define be16_to_cpu(x) (((x)[0]<<8)|(x)[1])
 
+static void resync(struct jdec_private *priv);
 
 /**
  * Get the next (valid) huffman code in the stream.
@@ -374,6 +377,7 @@ static void process_Huffman_data_unit(struct jdec_private *priv, int component)
      DCT[0] = c->previous_DC;
   }
 
+
   /* AC coefficient decoding */
   j = 1;
   while (j<64)
@@ -399,8 +403,15 @@ static void process_Huffman_data_unit(struct jdec_private *priv, int component)
    }
 
   for (j = 0; j < 64; j++)
+#ifndef P_MEDIALIB
     c->DCT[j] = DCT[zigzag[j]];
-
+#else
+  {
+    c->DCT[j] = DCT[zigzag[j]] * c->Q_table[j];
+    if (j == 0)
+      c->DCT[j] += 1024;
+  }
+#endif    
 }
 
 /*
@@ -415,7 +426,7 @@ static void build_huffman_table(const unsigned char *bits, const unsigned char *
   unsigned int i, j, code, code_size, val, nbits;
   unsigned char huffsize[257], *hz;
   unsigned int huffcode[257], *hc;
-  int next_free_entry;
+  //int next_free_entry;
 
   /*
    * Build a temp array 
@@ -453,7 +464,7 @@ static void build_huffman_table(const unsigned char *bits, const unsigned char *
   /*
    * Build the lookup table, and the slowtable if needed.
    */
-  next_free_entry = -1;
+  //next_free_entry = -1;
   for (i=0; huffsize[i]; i++)
    {
      val = vals[i];
@@ -586,7 +597,7 @@ static void YCrCB_to_YUV420P_2x1(struct jdec_private *priv)
 {
   unsigned char *p;
   const unsigned char *s, *y1;
-  int i,j;
+  unsigned int i;
 
   p = priv->plane[0];
   y1 = priv->Y;
@@ -601,20 +612,18 @@ static void YCrCB_to_YUV420P_2x1(struct jdec_private *priv)
   s = priv->Cb;
   for (i=0; i<8; i+=2)
    {
-     for (j=0; j<8; j+=1, s+=1)
-       *p++ = *s;
-     s += 8; /* Skip one line */
-     p += priv->width/2 - 8;
+     memcpy(p, s, 8);
+     s += 16; /* Skip one line */
+     p += priv->width/2;
    }
 
   p = priv->plane[2];
   s = priv->Cr;
   for (i=0; i<8; i+=2)
    {
-     for (j=0; j<8; j+=1, s+=1)
-       *p++ = *s;
-     s += 8; /* Skip one line */
-     p += priv->width/2 - 8;
+     memcpy(p, s, 8);
+     s += 16; /* Skip one line */
+     p += priv->width/2;
    }
 }
 
@@ -727,7 +736,7 @@ static void YCrCB_to_RGB24_1x1(struct jdec_private *priv)
   offset_to_next_row = priv->width*3 - 8*3;
   for (i=0; i<8; i++) {
 
-    for (j=0;j<8;j++) {
+    for (j=0; j<8; j++) {
 
        int y, cb, cr;
        int add_r, add_g, add_b;
@@ -782,7 +791,7 @@ static void YCrCB_to_BGR24_1x1(struct jdec_private *priv)
   offset_to_next_row = priv->width*3 - 8*3;
   for (i=0; i<8; i++) {
 
-    for (j=0;j<8;j++) {
+    for (j=0; j<8; j++) {
 
        int y, cb, cr;
        int add_r, add_g, add_b;
@@ -1102,7 +1111,7 @@ static void YCrCB_to_RGB24_2x2(struct jdec_private *priv)
   offset_to_next_row = (priv->width*3*2) - 16*3;
   for (i=0; i<8; i++) {
 
-    for (j=0;j<8;j++) {
+    for (j=0; j<8; j++) {
 
        int y, cb, cr;
        int add_r, add_g, add_b;
@@ -1185,7 +1194,7 @@ static void YCrCB_to_BGR24_2x2(struct jdec_private *priv)
   offset_to_next_row = (priv->width*3*2) - 16*3;
   for (i=0; i<8; i++) {
 
-    for (j=0;j<8;j++) {
+    for (j=0; j<8; j++) {
 
        int y, cb, cr;
        int add_r, add_g, add_b;
@@ -1257,7 +1266,7 @@ static void YCrCB_to_Grey_1x1(struct jdec_private *priv)
 
   p = priv->plane[0];
   y = priv->Y;
-  offset_to_next_row = priv->width-8;
+  offset_to_next_row = priv->width;
 
   for (i=0; i<8; i++) {
      memcpy(p, y, 8);
@@ -1526,8 +1535,8 @@ static void decode_MCU_1x2_1plane(struct jdec_private *priv)
 
 static void print_SOF(const unsigned char *stream)
 {
-  int width, height, nr_components, precision;
 #if DEBUG
+  int width, height, nr_components, precision;
   const char *nr_components_to_string[] = {
      "????",
      "Grayscale",
@@ -1535,7 +1544,6 @@ static void print_SOF(const unsigned char *stream)
      "YCbCr",
      "CYMK"
   };
-#endif
 
   precision = stream[2];
   height = be16_to_cpu(stream+3);
@@ -1547,6 +1555,7 @@ static void print_SOF(const unsigned char *stream)
       width, height,
       nr_components, nr_components_to_string[nr_components],
       precision);
+#endif
 }
 
 /*******************************************************************************
@@ -1558,7 +1567,11 @@ static void print_SOF(const unsigned char *stream)
  *
  ******************************************************************************/
 
+#ifndef P_MEDIALIB
 static void build_quantization_table(float *qtable, const unsigned char *ref_table)
+#else
+static void build_quantization_table(uint16_t *qtable, const unsigned char *ref_table)
+#endif
 {
   /* Taken from libjpeg. Copyright Independent JPEG Group's LLM idct.
    * For float AA&N IDCT method, divisors are equal to quantization
@@ -1578,7 +1591,11 @@ static void build_quantization_table(float *qtable, const unsigned char *ref_tab
 
   for (i=0; i<8; i++) {
      for (j=0; j<8; j++) {
+#ifndef P_MEDIALIB
        *qtable++ = ref_table[*zz++] * aanscalefactor[i] * aanscalefactor[j];
+#else
+       *qtable++ = ref_table[*zz++];
+#endif       
      }
    }
 
@@ -1586,14 +1603,19 @@ static void build_quantization_table(float *qtable, const unsigned char *ref_tab
 
 static int parse_DQT(struct jdec_private *priv, const unsigned char *stream)
 {
-  int length, qi;
+  int qi;
+#ifndef P_MEDIALIB
   float *table;
+#else
+  uint16_t *table;
+#endif
+  const unsigned char *dqt_block_end;
 
   trace("> DQT marker\n");
-  length = be16_to_cpu(stream) - 2;
+  dqt_block_end = stream + be16_to_cpu(stream);
   stream += 2;	/* Skip length */
 
-  while (length>0)
+  while (stream < dqt_block_end)
    {
      qi = *stream++;
 #if SANITY_CHECK
@@ -1605,8 +1627,8 @@ static int parse_DQT(struct jdec_private *priv, const unsigned char *stream)
      table = priv->Q_tables[qi];
      build_quantization_table(table, stream);
      stream += 64;
-     length -= 65;
    }
+  trace("< DQT marker\n");
   return 0;
 }
 
@@ -1616,6 +1638,7 @@ static int parse_SOF(struct jdec_private *priv, const unsigned char *stream)
   int Q_table;
   struct component *c;
 
+  trace("> SOF marker\n");
   print_SOF(stream);
 
   height = be16_to_cpu(stream+3);
@@ -1624,7 +1647,7 @@ static int parse_SOF(struct jdec_private *priv, const unsigned char *stream)
 #if SANITY_CHECK
   if (stream[2] != 8)
     error("Precision other than 8 is not supported\n");
-  if (width>2048 || height>2048)
+  if (width>JPEG_MAX_WIDTH || height>JPEG_MAX_HEIGHT)
     error("Width and Height (%dx%d) seems suspicious\n", width, height);
   if (nr_components != 3)
     error("We only support YUV images\n");
@@ -1638,7 +1661,10 @@ static int parse_SOF(struct jdec_private *priv, const unsigned char *stream)
      cid = *stream++;
      sampling_factor = *stream++;
      Q_table = *stream++;
-     c = &priv->component_infos[cid];
+     c = &priv->component_infos[i];
+#if SANITY_CHECK
+     c->cid = cid;
+#endif
      c->Vfactor = sampling_factor&0xf;
      c->Hfactor = sampling_factor>>4;
      c->Q_table = priv->Q_tables[Q_table];
@@ -1648,6 +1674,8 @@ static int parse_SOF(struct jdec_private *priv, const unsigned char *stream)
   }
   priv->width = width;
   priv->height = height;
+
+  trace("< SOF marker\n");
 
   return 0;
 }
@@ -1661,7 +1689,7 @@ static int parse_SOS(struct jdec_private *priv, const unsigned char *stream)
 
 #if SANITY_CHECK
   if (nr_components != 3)
-    error("We only support YUV image\n");
+    error("We only support YCbCr image\n");
 #endif
 
   stream += 3;
@@ -1673,12 +1701,21 @@ static int parse_SOS(struct jdec_private *priv, const unsigned char *stream)
 	error("We do not support more than 2 AC Huffman table\n");
      if ((table>>4)>=4)
 	error("We do not support more than 2 DC Huffman table\n");
+     if (cid != priv->component_infos[i].cid)
+        error("SOS cid order (%d:%d) isn't compatible with the SOF marker (%d:%d)\n",
+	      i, cid, i, priv->component_infos[i].cid);
      trace("ComponentId:%d  tableAC:%d tableDC:%d\n", cid, table&0xf, table>>4);
 #endif
-     priv->component_infos[cid].AC_table = &priv->HTAC[table&0xf];
-     priv->component_infos[cid].DC_table = &priv->HTDC[table>>4];
+     priv->component_infos[i].AC_table = &priv->HTAC[table&0xf];
+     priv->component_infos[i].DC_table = &priv->HTDC[table>>4];
   }
   priv->stream = stream+3;
+
+  /* ITU-T T.81 (9/92) chapter E.1.3 clearly states that RSTm is to be set to 0 at the beginning of each scan */
+  priv->last_rst_marker_seen = 0;
+
+  trace("< SOS marker\n");
+
   return 0;
 }
 
@@ -1726,6 +1763,32 @@ static int parse_DHT(struct jdec_private *priv, const unsigned char *stream)
   return 0;
 }
 
+static int parse_DRI(struct jdec_private *priv, const unsigned char *stream)
+{
+  unsigned int length;
+
+  trace("> DRI marker\n");
+
+  length = be16_to_cpu(stream);
+
+#if SANITY_CHECK
+  if (length != 4)
+    error("Length of DRI marker need to be 4\n");
+#endif
+
+  priv->restart_interval = be16_to_cpu(stream+2);
+
+#if DEBUG
+  trace("Restart interval = %d\n", priv->restart_interval);
+#endif
+
+  trace("< DRI marker\n");
+
+  return 0;
+}
+
+
+
 static void resync(struct jdec_private *priv)
 {
   int i;
@@ -1736,9 +1799,45 @@ static void resync(struct jdec_private *priv)
 
   priv->reservoir = 0;
   priv->nbits_in_reservoir = 0;
-
+  if (priv->restart_interval > 0)
+    priv->restarts_to_go = priv->restart_interval;
+  else
+    priv->restarts_to_go = -1;
 }
 
+static int find_next_rst_marker(struct jdec_private *priv)
+{
+  int rst_marker_found = 0;
+  int marker;
+  const unsigned char *stream = priv->stream;
+
+  /* Parse marker */
+  while (!rst_marker_found)
+   {
+     while (*stream++ != 0xff)
+      {
+	if (stream >= priv->stream_end)
+	  error("EOF while search for a RST marker.");
+      }
+     /* Skip any padding ff byte (this is normal) */
+     while (*stream == 0xff)
+       stream++;
+
+     marker = *stream++;
+     if ((RST+priv->last_rst_marker_seen) == marker)
+       rst_marker_found = 1;
+     else if (marker >= RST && marker <= RST7)
+       error("Wrong Reset marker found, abording");
+     else if (marker == EOI)
+       return 0;
+   }
+
+  priv->stream = stream;
+  priv->last_rst_marker_seen++;
+  priv->last_rst_marker_seen &= 7;
+
+  return 0;
+}
 
 static int parse_JFIF(struct jdec_private *priv, const unsigned char *stream)
 {
@@ -1780,6 +1879,10 @@ static int parse_JFIF(struct jdec_private *priv, const unsigned char *stream)
 	   return -1;
 	 dht_marker_found = 1;
 	 break;
+       case DRI:
+	 if (parse_DRI(priv, stream) < 0)
+	   return -1;
+	 break;
        default:
 	 trace("> Unknown marker %2.2x\n", marker);
 	 break;
@@ -1812,12 +1915,6 @@ bogus_jpeg_format:
   trace("Bogus jpeg format\n");
   return -1;
 }
-
-/*
- *
- * Export functions
- *
- */
 
 /*******************************************************************************
  *
@@ -2045,6 +2142,17 @@ int tinyjpeg_decode(struct jdec_private *priv, int pixfmt)
 	priv->plane[0] += bytes_per_mcu[0];
 	priv->plane[1] += bytes_per_mcu[1];
 	priv->plane[2] += bytes_per_mcu[2];
+	if (priv->restarts_to_go>0)
+	 {
+	   priv->restarts_to_go--;
+	   if (priv->restarts_to_go == 0)
+	    {
+	      priv->stream -= (priv->nbits_in_reservoir/8);
+	      resync(priv);
+	      if (find_next_rst_marker(priv) < 0)
+		return -1;
+	    }
+	 }
       }
    }
 
@@ -2053,6 +2161,8 @@ int tinyjpeg_decode(struct jdec_private *priv, int pixfmt)
 
 const char *tinyjpeg_get_errorstring(struct jdec_private *priv)
 {
+  /* FIXME: the error string must be store in the context */
+  priv = priv;
   return error_string;
 }
 

@@ -23,40 +23,9 @@
  *                 Mark Cooke (mpc@star.sr.bham.ac.uk)
  *                 Nicola Orru' <nigu@itadinanta.it>
  *
- * $Log: vidinput_v4l2.h,v $
- * Revision 1.6  2006/03/12 11:16:19  dsandras
- * Added multi-buffering support to V4L2 thanks to Luc Saillard. Thanks!
- *
- * Revision 1.5  2006/01/09 18:22:42  dsandras
- * Use memset before some ioctl() to make valgrind happy.
- * Create a common function to set and get control information.
- * Fix range values return by the driver.
- * Fix setting value to be in the range (>>16 is unsigned).
- * Add support for YUY2.
- * Patch from Luc Saillard <luc _AT___ saillard.org>. Many thanks!
- *
- * Revision 1.4  2005/08/09 09:08:10  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.3.4.2  2005/07/24 09:01:49  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.3.4.1  2005/07/17 11:30:42  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.3  2004/11/07 22:48:47  dominance
- * fixed copyright of v4l2 plugin. Last commit's credits go to Nicola Orru' <nigu@itadinanta.it> ...
- *
+ * $Revision: 27739 $
+ * $Author: rjongbloed $
+ * $Date: 2012-05-30 18:49:09 -0500 (Wed, 30 May 2012) $
  */
 #ifndef _PVIDEOIOV4L2
 #define _PVIDEOIOV4L2
@@ -68,8 +37,9 @@
 #include <ptlib.h>
 #include <ptlib/videoio.h>
 #include <ptlib/vconvert.h>
+#include <ptclib/delaychan.h>
 
-#include <linux/videodev.h>
+#include V4L2_HEADER
 
 #ifndef V4L2_PIX_FMT_SBGGR8
 #define V4L2_PIX_FMT_SBGGR8  v4l2_fourcc('B','A','8','1') /*  8  BGBG.. GRGR.. */
@@ -79,88 +49,103 @@ class PVideoInputDevice_V4L2: public PVideoInputDevice
 {
 
   PCLASSINFO(PVideoInputDevice_V4L2, PVideoInputDevice);
-      
-
+private:
+  PVideoInputDevice_V4L2(const PVideoInputDevice_V4L2& ){};
+  PVideoInputDevice_V4L2& operator=(const PVideoInputDevice_V4L2& ){ return *this; };
 public:
   PVideoInputDevice_V4L2();
-  ~PVideoInputDevice_V4L2();
+  virtual ~PVideoInputDevice_V4L2();
   
   void ReadDeviceDirectory (PDirectory, POrdinalToString &);
 
   static PStringList GetInputDeviceNames();
 
-  PStringList GetDeviceNames() const
+  PStringArray GetDeviceNames() const
   { return GetInputDeviceNames(); }
 
-  BOOL Open(const PString &deviceName, BOOL startImmediate);
+  PBoolean Open(const PString &deviceName, PBoolean startImmediate);
 
-  BOOL IsOpen();
+  PBoolean IsOpen();
 
-  BOOL Close();
+  PBoolean Close();
 
-  BOOL Start();
-  BOOL Stop();
+  PBoolean Start();
+  PBoolean Stop();
 
-  BOOL IsCapturing();
+  PBoolean IsCapturing();
 
   PINDEX GetMaxFrameBytes();
 
-  BOOL GetFrameData(BYTE*, PINDEX*);
-  BOOL GetFrameDataNoDelay(BYTE*, PINDEX*);
+  PBoolean GetFrameData(BYTE*, PINDEX*);
+  PBoolean GetFrameDataNoDelay(BYTE*, PINDEX*);
 
-  BOOL GetFrameSizeLimits(unsigned int&, unsigned int&,
+  PBoolean GetFrameSizeLimits(unsigned int&, unsigned int&,
 			  unsigned int&, unsigned int&);
 
-  BOOL TestAllFormats();
+  PBoolean TestAllFormats();
 
-  BOOL SetFrameSize(unsigned int, unsigned int);
-  BOOL SetFrameRate(unsigned int);
-  BOOL VerifyHardwareFrameSize(unsigned int, unsigned int);
+  PBoolean SetFrameSize(unsigned int, unsigned int);
+  PBoolean SetNearestFrameSize(unsigned int, unsigned int);
+  PBoolean SetFrameRate(unsigned int);
 
-  BOOL GetParameters(int*, int*, int*, int*, int*);
+  PBoolean GetParameters(int*, int*, int*, int*, int*);
 
-  BOOL SetColourFormat(const PString&);
+  PBoolean SetColourFormat(const PString&);
 
   int GetControlCommon(unsigned int control, int *value);
-  BOOL SetControlCommon(unsigned int control, int newValue);
+  PBoolean SetControlCommon(unsigned int control, int newValue);
 
   int GetContrast();
-  BOOL SetContrast(unsigned int);
+  PBoolean SetContrast(unsigned int);
   int GetBrightness();
-  BOOL SetBrightness(unsigned int);
+  PBoolean SetBrightness(unsigned int);
   int GetWhiteness();
-  BOOL SetWhiteness(unsigned int);
+  PBoolean SetWhiteness(unsigned int);
   int GetColour();
-  BOOL SetColour(unsigned int);
+  PBoolean SetColour(unsigned int);
   int GetHue();
-  BOOL SetHue(unsigned int);
+  PBoolean SetHue(unsigned int);
 
-  BOOL SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
-  BOOL SetVideoFormat(PVideoDevice::VideoFormat);
+  PBoolean SetVideoChannelFormat(int, PVideoDevice::VideoFormat);
+  PBoolean SetVideoFormat(PVideoDevice::VideoFormat);
   int GetNumChannels();
-  BOOL SetChannel(int);
+  PBoolean SetChannel(int);
 
-  BOOL NormalReadProcess(BYTE*, PINDEX*);
+  PBoolean NormalReadProcess(BYTE*, PINDEX*);
 
+private:
   void ClearMapping();
 
-  BOOL SetMapping();
+  PBoolean SetMapping();
+
+  PBoolean VerifyHardwareFrameSize(unsigned int & width, unsigned int & height);
+
+  PBoolean QueueBuffers();
+
+  PBoolean StartStreaming();
+  void StopStreaming();
 
   struct v4l2_capability videoCapability;
   struct v4l2_streamparm videoStreamParm;
-  BOOL   canRead;
-  BOOL   canStream;
-  BOOL   canSelect;
-  BOOL   canSetFrameRate;
-  BOOL   isMapped;
+  PBoolean   canRead;
+  PBoolean   canStream;
+  PBoolean   canSelect;
+  PBoolean   canSetFrameRate;
+  PBoolean   isMapped;
 #define NUM_VIDBUF 4
   BYTE * videoBuffer[NUM_VIDBUF];
   uint   videoBufferCount;
   uint   currentvideoBuffer;
 
+  PMutex mmapMutex;                             /** Has MMAP frame buffers in use? */
+  PBoolean isOpen;				/** Has the Video Input Device successfully been openend? */
+  PBoolean areBuffersQueued;
+  PBoolean isStreaming;
+
   int    videoFd;
   int    frameBytes;
-  BOOL   started;
+  PBoolean   started;
+  PAdaptiveDelay m_pacing;
 };
 
 #endif

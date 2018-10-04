@@ -23,23 +23,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psasl.h,v $
- * Revision 1.3  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.2  2004/04/28 11:26:42  csoutheren
- * Hopefully fixed SASL and SASL2 problems
- *
- * Revision 1.1  2004/04/18 12:02:31  csoutheren
- * Added classes for SASL authentication
- * Thanks to Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 24875 $
+ * $Author: rjongbloed $
+ * $Date: 2010-11-12 02:03:15 -0600 (Fri, 12 Nov 2010) $
  */
 
-#if P_SASL2
-#ifndef _PSASL
-#define _PSASL
+#ifndef PTLIB_PSASL_H
+#define PTLIB_PSASL_H
+
+#if P_SASL
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -69,7 +61,7 @@ protected:
     const PString   m_AuthID;
     const PString   m_Password;
 
-    BOOL            Start(const PString& mechanism, const char ** output, unsigned& len);
+    PBoolean            Start(const PString& mechanism, const char ** output, unsigned& len);
     PSASLResult     Negotiate(const char * input, const char ** output);
 
 public:
@@ -87,13 +79,15 @@ public:
     const PString&  GetAuthID() const   { return m_AuthID; }
     const PString&  GetPassword() const { return m_Password; }
 
-    BOOL            Init(const PString& fqdn, PStringSet& supportedMechanisms);
-    BOOL            Start(const PString& mechanism, PString& output);
+    PBoolean            Init(const PString& fqdn, PStringSet& supportedMechanisms);
+    PBoolean            Start(const PString& mechanism, PString& output);
     PSASLResult     Negotiate(const PString& input, PString& output);
-    BOOL            End();
+    PBoolean            End();
 };
 
-#endif  // _PSASL
-#endif  // P_SASL2
+#endif  // P_SASL
+
+#endif  // PTLIB_PSASL_H
+
 
 // End of File ///////////////////////////////////////////////////////////////

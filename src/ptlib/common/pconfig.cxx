@@ -26,16 +26,14 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pconfig.cxx,v $
- * Revision 1.2  2000/06/26 11:17:21  robertj
- * Nucleus++ port (incomplete).
- *
- * Revision 1.1  1998/11/30 12:46:17  robertj
- * Initial revision
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include <ptlib.h>
+
+#if P_CONFIG_FILE
 
 #include <ctype.h>
 
@@ -47,7 +45,7 @@ PStringToString PConfig::GetAllKeyValues(const PString & section) const
 {
   PStringToString dict;
 
-  PStringList keys = GetKeys(section);
+  PStringArray keys = GetKeys(section);
   for (PINDEX i = 0; i < keys.GetSize(); i++)
     dict.SetAt(keys[i], GetString(section, keys[i], ""));
 
@@ -57,14 +55,14 @@ PStringToString PConfig::GetAllKeyValues(const PString & section) const
 
 #if !defined(_WIN32) || defined (__NUCLEUS_MNT__)
 
-BOOL PConfig::GetBoolean(const PString & section, const PString & key, BOOL dflt) const
+PBoolean PConfig::GetBoolean(const PString & section, const PString & key, PBoolean dflt) const
 {
   PString str = GetString(section, key, dflt ? "T" : "F").ToUpper();
   return str[0] == 'T' || str[0] == 'Y' || str.AsInteger() != 0;
 }
 
 
-void PConfig::SetBoolean(const PString & section, const PString & key, BOOL value)
+void PConfig::SetBoolean(const PString & section, const PString & key, PBoolean value)
 {
   SetString(section, key, value ? "True" : "False");
 }
@@ -133,6 +131,8 @@ void PConfig::SetTime(const PString & section, const PString & key, const PTime 
 {
   SetString(section, key, value.AsString());
 }
+
+#endif // P_CONFIG_FILE
 
 
 // End Of File ///////////////////////////////////////////////////////////////

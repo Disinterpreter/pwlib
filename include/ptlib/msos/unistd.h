@@ -26,10 +26,9 @@
  *
  * Contributor(s):
  *
- * $Log: unistd.h,v $
- * Revision 1.1  2001/01/17 00:54:34  robertj
- * Added dummy file so that flex generated code can be compiled.
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 

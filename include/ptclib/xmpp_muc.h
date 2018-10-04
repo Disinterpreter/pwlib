@@ -24,22 +24,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: xmpp_muc.h,v $
- * Revision 1.3  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.2  2005/08/04 03:19:07  dereksmithies
- * Add xmpp_muc (XMPP multi user conference) to the compile process for unix.
- * Correct compile errors under unix.
- *
- * Revision 1.1  2004/05/09 07:23:46  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 25387 $
+ * $Author: rjongbloed $
+ * $Date: 2011-03-22 22:51:09 -0500 (Tue, 22 Mar 2011) $
  */
 
-#ifndef _XMPP_MUC
-#define _XMPP_MUC
+#ifndef PTLIB_XMPP_MUC_H
+#define PTLIB_XMPP_MUC_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -55,7 +46,7 @@ namespace XMPP
 {
   namespace MUC
   {
-    extern PString Namespace;
+    extern const PCaselessString & NamespaceTag();
 
     class User : public PObject
     {
@@ -64,7 +55,7 @@ namespace XMPP
       User();
       ~User();
 
-      static PString Namespace;
+      static const PCaselessString & NamespaceTag();
 
       enum Role {
         None,
@@ -103,10 +94,10 @@ namespace XMPP
       const User&   GetUser() const         { return m_User; }
       const Users&  GetOtherUsers() const   { return m_OtherUsers; }
 
-      virtual BOOL  Enter();
-      virtual BOOL  Leave();
-      virtual BOOL  SendMessage(const PString& msg);
-      virtual BOOL  SendMessage(Message& msg);
+      virtual PBoolean  Enter();
+      virtual PBoolean  Leave();
+      virtual PBoolean  SendMessage(const PString& msg);
+      virtual PBoolean  SendMessage(Message& msg);
 
       // Event methods
       virtual void  OnMessage(Message& msg);
@@ -140,9 +131,6 @@ namespace XMPP
 
 #endif  // P_EXPAT
 
-#endif  // _XMPP_MUC
+#endif  // PTLIB_XMPP_MUC_H
 
 // End of File ///////////////////////////////////////////////////////////////
-
-
-

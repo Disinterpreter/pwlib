@@ -26,130 +26,10 @@
  * Portions bsed upon the file crypto/buffer/bss_sock.c 
  * Original copyright notice appears below
  *
- * $Id: pssl.cxx,v 1.42 2006/05/26 22:05:42 hfriederich Exp $
- * $Log: pssl.cxx,v $
- * Revision 1.42  2006/05/26 22:05:42  hfriederich
- * Fixing compilation under Mac OS X
- *
- * Revision 1.41  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.40  2005/10/17 01:25:05  csoutheren
- * Added check for ssl with const argumetns
- *
- * Revision 1.39  2004/04/09 06:52:17  rjongbloed
- * Removed #pargma linker command for /delayload of DLL as documentations sais that
- *   you cannot do this.
- *
- * Revision 1.38  2004/02/23 23:52:20  csoutheren
- * Added pragmas to avoid every Windows application needing to include libs explicitly
- *
- * Revision 1.37  2004/02/22 01:57:37  ykiryanov
- * Put a fix for a compiler choke on BeOS when calling macro d2i_DHparams_bio in PSSLDiffieHellman::Load. Fast on Monday.
- *
- * Revision 1.36  2003/04/16 08:00:19  robertj
- * Windoes psuedo autoconf support
- *
- * Revision 1.35  2002/11/06 22:47:25  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.34  2002/06/07 02:55:23  robertj
- * Fixed GNU warning
- *
- * Revision 1.33  2002/04/02 16:59:35  robertj
- * Fixed GNU warning
- *
- * Revision 1.32  2002/04/02 16:17:28  robertj
- * Fixed bug where returned TRUE when read count 0 or write count not len
- *   which is not according to Read()/Write() semantics. Could cause high CPU
- *   loops when sockets shutdown.
- *
- * Revision 1.31  2002/03/28 07:26:25  robertj
- * Added Diffie-Hellman parameters wrapper class.
- *
- * Revision 1.30  2001/12/13 09:15:41  robertj
- * Added function to get private key as ray DER binary data or as base64 string.
- *
- * Revision 1.29  2001/12/06 04:06:03  robertj
- * Removed "Win32 SSL xxx" build configurations in favour of system
- *   environment variables to select optional libraries.
- *
- * Revision 1.28  2001/12/04 02:59:18  robertj
- * Fixed problem on platforms where a pointer is not the same size as an int.
- *
- * Revision 1.27  2001/10/31 01:31:26  robertj
- * Added enhancements for saving/loading/creating certificates and keys.
- *
- * Revision 1.26  2001/09/28 08:50:48  robertj
- * Fixed bug where last count not set to zero if have error on read/write.
- *
- * Revision 1.25  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.24  2001/06/01 00:53:59  robertj
- * Added certificate constructor that takes a PBYTEArray
- *
- * Revision 1.23  2001/05/31 07:04:11  craigs
- * Changed random seed function
- *
- * Revision 1.22  2001/05/29 03:33:54  craigs
- * Added options to be compatible with OpenSSL 0.9.6
- *
- * Revision 1.21  2001/05/16 06:31:37  robertj
- * Fixed GNU C++ compatibility
- *
- * Revision 1.20  2001/05/16 06:02:37  craigs
- * Changed to allow detection of non-SSL connection to SecureHTTPServiceProcess
- *
- * Revision 1.19  2001/05/09 07:00:22  robertj
- * Removed clearing of lock callbacks in context destructor, should not!
- *
- * Revision 1.18  2001/02/16 07:13:41  robertj
- * Fixed bug in PSSLChannel error detection, thinks a zero byte write is error.
- *
- * Revision 1.17  2000/11/27 06:46:16  robertj
- * Added asserts with SSL error message text.
- *
- * Revision 1.16  2000/11/14 08:33:16  robertj
- * Added certificate and private key classes.
- *
- * Revision 1.15  2000/11/03 10:00:43  robertj
- * Fixed initialisation of SSL, needed random number seed for some modes.
- *
- * Revision 1.14  2000/09/01 03:32:46  robertj
- * Fixed assert on setting directories for CAs.
- *
- * Revision 1.13  2000/09/01 02:06:00  craigs
- * Changed to OpenSSL_add_ssl_algorthms to fix link problem on some machines
- *
- * Revision 1.12  2000/08/25 13:56:46  robertj
- * Fixed some GNU warnings
- *
- * Revision 1.11  2000/08/25 08:11:02  robertj
- * Fixed OpenSSL support so can operate as a server channel.
- *
- * Revision 1.10  2000/08/04 12:52:18  robertj
- * SSL changes, added error functions, removed need to have openssl include directory in app.
- *
- * Revision 1.9  2000/01/10 02:24:09  craigs
- * Updated for new OpenSSL
- *
- * Revision 1.8  1998/12/04 13:04:18  craigs
- * Changed for SSLeay 0.9
- *
- * Revision 1.7  1998/09/23 06:22:35  robertj
- * Added open source copyright license.
- *
- * Revision 1.6  1998/01/26 02:50:17  robertj
- * GNU Support
- *
- * Revision 1.5  1997/05/04 02:50:54  craigs
- * Added support for client and server sertificates
- *
- * Revision 1.1  1996/11/15 07:38:34  craigs
- * Initial revision
- *
+ * $Id: pssl.cxx 19752 2008-03-15 15:30:24Z hfriederich $
+ * $Revision: 26520 $
+ * $Author: rjongbloed $
+ * $Date: 2011-10-04 23:54:38 -0500 (Tue, 04 Oct 2011) $
  */
 
 /* crypto/buffer/bss_sock.c */
@@ -208,6 +88,8 @@
 #include <ptclib/pssl.h>
 #include <ptclib/mime.h>
 
+#include <ptbuildopts.h>
+
 #if P_SSL
 
 #define USE_SOCKETS
@@ -222,23 +104,38 @@ extern "C" {
 
 
 #ifdef _MSC_VER
-
-#pragma comment(lib, P_SSL_LIB1)
-#pragma comment(lib, P_SSL_LIB2)
-
+  #pragma comment(lib, P_SSL_LIB1)
+  #pragma comment(lib, P_SSL_LIB2)
+  #pragma message("SSL support (via OpenSSL) enabled")
 #endif
 
 
-///////////////////////////////////////////////////////////////////////////////
+// On Windows, use a define from the header to guess the API type
+#ifdef _WIN32
+#ifdef SSL_OP_NO_QUERY_MTU
+#define P_SSL_USE_CONST 1
+#endif
+#endif
 
-PARRAY(PSSLMutexArrayBase, PMutex);
-class PSSLMutexArray : public PSSLMutexArrayBase
+
+class PSSLInitialiser : public PProcessStartup
 {
-    PCLASSINFO(PSSLMutexArray, PSSLMutexArrayBase);
+  PCLASSINFO(PSSLInitialiser, PProcessStartup)
   public:
-    PSSLMutexArray();
+    virtual void OnStartup();
+    virtual void OnShutdown();
+    void LockingCallback(int mode, int n);
+
+    PFACTORY_GET_SINGLETON(PProcessStartupFactory, PSSLInitialiser);
+
+  private:
+    vector<PMutex> mutexes;
 };
 
+PFACTORY_CREATE_SINGLETON(PProcessStartupFactory, PSSLInitialiser);
+
+
+///////////////////////////////////////////////////////////////////////////////
 
 class PSSL_BIO
 {
@@ -267,17 +164,6 @@ class PSSL_BIO
 
 
 #define new PNEW
-
-
-///////////////////////////////////////////////////////////////////////////////
-
-PSSLMutexArray::PSSLMutexArray()
-{
-  // Initialise all of the mutexes for multithreaded operation.
-  SetSize(CRYPTO_num_locks());
-  for (PINDEX i = 0; i < GetSize(); i++)
-    SetAt(i, new PMutex);
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -349,7 +235,7 @@ PSSLPrivateKey::~PSSLPrivateKey()
 }
 
 
-BOOL PSSLPrivateKey::Create(unsigned modulus,
+PBoolean PSSLPrivateKey::Create(unsigned modulus,
                             void (*callback)(int,int,void *),
                             void *cb_arg)
 {
@@ -359,19 +245,19 @@ BOOL PSSLPrivateKey::Create(unsigned modulus,
   }
 
   if (modulus < 384) {
-    return FALSE;
+    return PFalse;
   }
 
   key = EVP_PKEY_new();
   if (key == NULL)
-    return FALSE;
+    return PFalse;
 
   if (EVP_PKEY_assign_RSA(key, RSA_generate_key(modulus, 0x10001, callback, cb_arg)))
-    return TRUE;
+    return PTrue;
 
   EVP_PKEY_free(key);
   key = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -394,7 +280,7 @@ PString PSSLPrivateKey::AsString() const
 }
 
 
-BOOL PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
+PBoolean PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
 {
   if (key != NULL) {
     EVP_PKEY_free(key);
@@ -404,7 +290,7 @@ BOOL PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
   PSSL_BIO in;
   if (!in.OpenRead(keyFile)) {
     SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE,ERR_R_SYS_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   if (fileType == PSSLFileTypeDEFAULT)
@@ -414,7 +300,7 @@ BOOL PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
     case PSSLFileTypeASN1 :
       key = d2i_PrivateKey_bio(in, NULL);
       if (key != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE, ERR_R_ASN1_LIB);
       break;
@@ -422,7 +308,7 @@ BOOL PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
     case PSSLFileTypePEM :
       key = PEM_read_bio_PrivateKey(in, NULL, NULL, NULL);
       if (key != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE, ERR_R_PEM_LIB);
       break;
@@ -431,19 +317,19 @@ BOOL PSSLPrivateKey::Load(const PFilePath & keyFile, PSSLFileTypes fileType)
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE,SSL_R_BAD_SSL_FILETYPE);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLPrivateKey::Save(const PFilePath & keyFile, BOOL append, PSSLFileTypes fileType)
+PBoolean PSSLPrivateKey::Save(const PFilePath & keyFile, PBoolean append, PSSLFileTypes fileType)
 {
   if (key == NULL)
-    return FALSE;
+    return PFalse;
 
   PSSL_BIO out;
   if (!(append ? out.OpenAppend(keyFile) : out.OpenWrite(keyFile))) {
     SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE,ERR_R_SYS_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   if (fileType == PSSLFileTypeDEFAULT)
@@ -452,14 +338,14 @@ BOOL PSSLPrivateKey::Save(const PFilePath & keyFile, BOOL append, PSSLFileTypes 
   switch (fileType) {
     case PSSLFileTypeASN1 :
       if (i2d_PrivateKey_bio(out, key))
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE, ERR_R_ASN1_LIB);
       break;
 
     case PSSLFileTypePEM :
       if (PEM_write_bio_PrivateKey(out, key, NULL, NULL, 0, 0, NULL))
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE, ERR_R_PEM_LIB);
       break;
@@ -468,7 +354,7 @@ BOOL PSSLPrivateKey::Save(const PFilePath & keyFile, BOOL append, PSSLFileTypes 
       SSLerr(SSL_F_SSL_USE_PRIVATEKEY_FILE,SSL_R_BAD_SSL_FILETYPE);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -554,7 +440,7 @@ PSSLCertificate::~PSSLCertificate()
 }
 
 
-BOOL PSSLCertificate::CreateRoot(const PString & subject,
+PBoolean PSSLCertificate::CreateRoot(const PString & subject,
                                  const PSSLPrivateKey & privateKey)
 {
   if (certificate != NULL) {
@@ -563,10 +449,10 @@ BOOL PSSLCertificate::CreateRoot(const PString & subject,
   }
 
   if (privateKey == NULL)
-    return FALSE;
+    return PFalse;
 
   POrdinalToString info;
-  PStringArray fields = subject.Tokenise('/', FALSE);
+  PStringArray fields = subject.Tokenise('/', PFalse);
   PINDEX i;
   for (i = 0; i < fields.GetSize(); i++) {
     PString field = fields[i];
@@ -578,11 +464,11 @@ BOOL PSSLCertificate::CreateRoot(const PString & subject,
     }
   }
   if (info.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   certificate = X509_new();
   if (certificate == NULL)
-    return FALSE;
+    return PFalse;
 
   if (X509_set_version(certificate, 2)) {
     /* Set version to V3 */
@@ -611,13 +497,13 @@ BOOL PSSLCertificate::CreateRoot(const PString & subject,
       X509_PUBKEY_free(pubkey);
 
       if (X509_sign(certificate, privateKey, EVP_md5()) > 0)
-        return TRUE;
+        return PTrue;
     }
   }
 
   X509_free(certificate);
   certificate = NULL;
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -640,7 +526,7 @@ PString PSSLCertificate::AsString() const
 }
 
 
-BOOL PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
+PBoolean PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
 {
   if (certificate != NULL) {
     X509_free(certificate);
@@ -650,7 +536,7 @@ BOOL PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
   PSSL_BIO in;
   if (!in.OpenRead(certFile)) {
     SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE,ERR_R_SYS_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   if (fileType == PSSLFileTypeDEFAULT)
@@ -660,7 +546,7 @@ BOOL PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
     case PSSLFileTypeASN1 :
       certificate = d2i_X509_bio(in, NULL);
       if (certificate != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE, ERR_R_ASN1_LIB);
       break;
@@ -668,7 +554,7 @@ BOOL PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
     case PSSLFileTypePEM :
       certificate = PEM_read_bio_X509(in, NULL, NULL, NULL);
       if (certificate != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE, ERR_R_PEM_LIB);
       break;
@@ -677,19 +563,19 @@ BOOL PSSLCertificate::Load(const PFilePath & certFile, PSSLFileTypes fileType)
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE,SSL_R_BAD_SSL_FILETYPE);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLCertificate::Save(const PFilePath & certFile, BOOL append, PSSLFileTypes fileType)
+PBoolean PSSLCertificate::Save(const PFilePath & certFile, PBoolean append, PSSLFileTypes fileType)
 {
   if (certificate == NULL)
-    return FALSE;
+    return PFalse;
 
   PSSL_BIO out;
   if (!(append ? out.OpenAppend(certFile) : out.OpenWrite(certFile))) {
     SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE,ERR_R_SYS_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   if (fileType == PSSLFileTypeDEFAULT)
@@ -698,14 +584,14 @@ BOOL PSSLCertificate::Save(const PFilePath & certFile, BOOL append, PSSLFileType
   switch (fileType) {
     case PSSLFileTypeASN1 :
       if (i2d_X509_bio(out, certificate))
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE, ERR_R_ASN1_LIB);
       break;
 
     case PSSLFileTypePEM :
       if (PEM_write_bio_X509(out, certificate))
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE, ERR_R_PEM_LIB);
       break;
@@ -714,7 +600,7 @@ BOOL PSSLCertificate::Save(const PFilePath & certFile, BOOL append, PSSLFileType
       SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_FILE,SSL_R_BAD_SSL_FILETYPE);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -772,10 +658,11 @@ PSSLDiffieHellman::~PSSLDiffieHellman()
     DH_free(dh);
 }
 
-#if defined(__BEOS__) || defined(__APPLE__)
+#ifdef P_d2i_DHparams_bio_OLD
 // 2/21/04 Yuri Kiryanov - fix for compiler choke on BeOS for usage of
 // SSL function d2i_DHparams_bio below in PSSLDiffieHellman::Load
 // 5/26/06 Hannes Friederich - Mac OS X seems to need that fix too...
+// 3/15/08 Hannes Friederich - Mac OS X 10.5 (Darwin 9.X) no longer needs this
 #undef  d2i_DHparams_bio
 #define d2i_DHparams_bio(bp,x) \
  (DH *)ASN1_d2i_bio( \
@@ -786,7 +673,7 @@ PSSLDiffieHellman::~PSSLDiffieHellman()
 )
 #endif
 
-BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
+PBoolean PSSLDiffieHellman::Load(const PFilePath & dhFile,
                              PSSLFileTypes fileType)
 {
   if (dh != NULL) {
@@ -797,7 +684,7 @@ BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
   PSSL_BIO in;
   if (!in.OpenRead(dhFile)) {
     SSLerr(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE,ERR_R_SYS_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   if (fileType == PSSLFileTypeDEFAULT)
@@ -807,7 +694,7 @@ BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
     case PSSLFileTypeASN1 :
       dh = d2i_DHparams_bio(in, NULL);
       if (dh != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE, ERR_R_ASN1_LIB);
       break;
@@ -815,7 +702,7 @@ BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
     case PSSLFileTypePEM :
       dh = PEM_read_bio_DHparams(in, NULL, NULL, NULL);
       if (dh != NULL)
-        return TRUE;
+        return PTrue;
 
       SSLerr(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE, ERR_R_PEM_LIB);
       break;
@@ -824,7 +711,7 @@ BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
       SSLerr(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE,SSL_R_BAD_SSL_FILETYPE);
   }
 
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -832,7 +719,36 @@ BOOL PSSLDiffieHellman::Load(const PFilePath & dhFile,
 
 static void LockingCallback(int mode, int n, const char * /*file*/, int /*line*/)
 {
-  static PSSLMutexArray mutexes;
+  PSSLInitialiser::GetInstance().LockingCallback(mode, n);
+}
+
+
+void PSSLInitialiser::OnStartup()
+{
+  SSL_library_init();
+  SSL_load_error_strings();
+
+  // Seed the random number generator
+  BYTE seed[128];
+  for (size_t i = 0; i < sizeof(seed); i++)
+    seed[i] = (BYTE)rand();
+  RAND_seed(seed, sizeof(seed));
+
+  // set up multithread stuff
+  mutexes.resize(CRYPTO_num_locks());
+  CRYPTO_set_locking_callback(::LockingCallback);
+}
+
+
+void PSSLInitialiser::OnShutdown()
+{
+  CRYPTO_set_locking_callback(NULL);
+  ERR_free_strings();
+}
+
+
+void PSSLInitialiser::LockingCallback(int mode, int n)
+{
   if ((mode & CRYPTO_LOCK) != 0)
     mutexes[n].Wait();
   else
@@ -849,7 +765,7 @@ static int VerifyCallBack(int ok, X509_STORE_CTX * ctx)
   char buf[256];
   X509_NAME_oneline(X509_get_subject_name(err_cert), buf, 256);
 
-  PTRACE(1, "SSL\tVerify callback depth "
+  PTRACE(3, "SSL\tVerify callback depth "
          << X509_STORE_CTX_get_error_depth(ctx)
          << " : cert name = " << buf);
 
@@ -867,32 +783,40 @@ static void PSSLAssert(const char * msg)
 }
 
 
+///////////////////////////////////////////////////////////////////////////////
+
+PSSLContext::PSSLContext(Method method, const void * sessionId, PINDEX idSize)
+{
+  Construct(method, sessionId, idSize);
+}
+
+
 PSSLContext::PSSLContext(const void * sessionId, PINDEX idSize)
 {
-  static PMutex InitialisationMutex;
-  InitialisationMutex.Wait();
+  Construct(SSLv23, sessionId, idSize);
+}
 
-  static BOOL needInitialisation = TRUE;
-  if (needInitialisation) {
-    SSL_load_error_strings();
-    OpenSSL_add_ssl_algorithms();
+void PSSLContext::Construct(Method method, const void * sessionId, PINDEX idSize)
+{
+  // create the new SSL context
+#if OPENSSL_VERSION_NUMBER >= 0x00909000L
+  const
+#endif
+  SSL_METHOD * meth;
 
-    // Seed the random number generator
-    BYTE seed[128];
-    for (size_t i = 0; i < sizeof(seed); i++)
-      seed[i] = (BYTE)rand();
-    RAND_seed(seed, sizeof(seed));
-
-    // set up multithread stuff
-    CRYPTO_set_locking_callback(LockingCallback);
-
-    needInitialisation = FALSE;
+  switch (method) {
+    case SSLv3:
+      meth = SSLv3_method();
+      break;
+    case TLSv1:
+      meth = TLSv1_method(); 
+      break;
+    case SSLv23:
+    default:
+      meth = SSLv23_method();
+      break;
   }
 
-  InitialisationMutex.Signal();
-
-  // create the new SSL context
-  const SSL_METHOD * meth = SSLv23_method();
   context  = SSL_CTX_new(meth);
   if (context == NULL)
     PSSLAssert("Error creating context: ");
@@ -923,50 +847,50 @@ PSSLContext::~PSSLContext()
 }
 
 
-BOOL PSSLContext::SetCAPath(const PDirectory & caPath)
+PBoolean PSSLContext::SetCAPath(const PDirectory & caPath)
 {
   PString path = caPath.Left(caPath.GetLength()-1);
   if (!SSL_CTX_load_verify_locations(context, NULL, path))
-    return FALSE;
+    return PFalse;
 
   return SSL_CTX_set_default_verify_paths(context);
 }
 
 
-BOOL PSSLContext::SetCAFile(const PFilePath & caFile)
+PBoolean PSSLContext::SetCAFile(const PFilePath & caFile)
 {
   if (!SSL_CTX_load_verify_locations(context, caFile, NULL))
-    return FALSE;
+    return PFalse;
 
   return SSL_CTX_set_default_verify_paths(context);
 }
 
 
-BOOL PSSLContext::UseCertificate(const PSSLCertificate & certificate)
+PBoolean PSSLContext::UseCertificate(const PSSLCertificate & certificate)
 {
   return SSL_CTX_use_certificate(context, certificate) > 0;
 }
 
 
-BOOL PSSLContext::UsePrivateKey(const PSSLPrivateKey & key)
+PBoolean PSSLContext::UsePrivateKey(const PSSLPrivateKey & key)
 {
   if (SSL_CTX_use_PrivateKey(context, key) <= 0)
-    return FALSE;
+    return PFalse;
 
   return SSL_CTX_check_private_key(context);
 }
 
 
-BOOL PSSLContext::UseDiffieHellman(const PSSLDiffieHellman & dh)
+PBoolean PSSLContext::UseDiffieHellman(const PSSLDiffieHellman & dh)
 {
   return SSL_CTX_set_tmp_dh(context, (dh_st *)dh) > 0;
 }
 
 
-BOOL PSSLContext::SetCipherList(const PString & ciphers)
+PBoolean PSSLContext::SetCipherList(const PString & ciphers)
 {
   if (ciphers.IsEmpty())
-    return FALSE;
+    return PFalse;
 
   return SSL_CTX_set_cipher_list(context, (char *)(const char *)ciphers);
 }
@@ -977,7 +901,7 @@ BOOL PSSLContext::SetCipherList(const PString & ciphers)
 //  SSLChannel
 //
 
-PSSLChannel::PSSLChannel(PSSLContext * ctx, BOOL autoDel)
+PSSLChannel::PSSLChannel(PSSLContext * ctx, PBoolean autoDel)
 {
   if (ctx != NULL) {
     context = ctx;
@@ -985,7 +909,7 @@ PSSLChannel::PSSLChannel(PSSLContext * ctx, BOOL autoDel)
   }
   else {
     context = new PSSLContext;
-    autoDeleteContext = TRUE;
+    autoDeleteContext = PTrue;
   }
 
   ssl = SSL_new(*context);
@@ -997,7 +921,7 @@ PSSLChannel::PSSLChannel(PSSLContext * ctx, BOOL autoDel)
 PSSLChannel::PSSLChannel(PSSLContext & ctx)
 {
   context = &ctx;
-  autoDeleteContext = FALSE;
+  autoDeleteContext = PFalse;
 
   ssl = SSL_new(*context);
 }
@@ -1014,7 +938,7 @@ PSSLChannel::~PSSLChannel()
 }
 
 
-BOOL PSSLChannel::Read(void * buf, PINDEX len)
+PBoolean PSSLChannel::Read(void * buf, PINDEX len)
 {
   flush();
 
@@ -1022,7 +946,7 @@ BOOL PSSLChannel::Read(void * buf, PINDEX len)
 
   lastReadCount = 0;
 
-  BOOL returnValue = FALSE;
+  PBoolean returnValue = PFalse;
   if (readChannel == NULL)
     SetErrorValues(NotOpen, EBADF, LastReadError);
   else if (readTimeout == 0 && SSL_pending(ssl) == 0)
@@ -1042,7 +966,7 @@ BOOL PSSLChannel::Read(void * buf, PINDEX len)
   return returnValue;
 }
 
-BOOL PSSLChannel::Write(const void * buf, PINDEX len)
+PBoolean PSSLChannel::Write(const void * buf, PINDEX len)
 {
   flush();
 
@@ -1050,10 +974,10 @@ BOOL PSSLChannel::Write(const void * buf, PINDEX len)
 
   lastWriteCount = 0;
 
-  BOOL returnValue;
+  PBoolean returnValue;
   if (writeChannel == NULL) {
     SetErrorValues(NotOpen, EBADF, LastWriteError);
-    returnValue = FALSE;
+    returnValue = PFalse;
   }
   else {
     writeChannel->SetWriteTimeout(writeTimeout);
@@ -1071,14 +995,14 @@ BOOL PSSLChannel::Write(const void * buf, PINDEX len)
 }
 
 
-BOOL PSSLChannel::Close()
+PBoolean PSSLChannel::Close()
 {
-  BOOL ok = SSL_shutdown(ssl);
+  PBoolean ok = SSL_shutdown(ssl);
   return PIndirectChannel::Close() && ok;
 }
 
 
-BOOL PSSLChannel::ConvertOSError(int error, ErrorGroup group)
+PBoolean PSSLChannel::ConvertOSError(int error, ErrorGroup group)
 {
   Errors lastError = NoError;
   DWORD osError = 0;
@@ -1101,55 +1025,55 @@ PString PSSLChannel::GetErrorText(ErrorGroup group) const
 }
 
 
-BOOL PSSLChannel::Accept()
+PBoolean PSSLChannel::Accept()
 {
   if (IsOpen())
     return ConvertOSError(SSL_accept(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::Accept(PChannel & channel)
+PBoolean PSSLChannel::Accept(PChannel & channel)
 {
   if (Open(channel))
     return ConvertOSError(SSL_accept(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::Accept(PChannel * channel, BOOL autoDelete)
+PBoolean PSSLChannel::Accept(PChannel * channel, PBoolean autoDelete)
 {
   if (Open(channel, autoDelete))
     return ConvertOSError(SSL_accept(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::Connect()
+PBoolean PSSLChannel::Connect()
 {
   if (IsOpen())
     return ConvertOSError(SSL_connect(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::Connect(PChannel & channel)
+PBoolean PSSLChannel::Connect(PChannel & channel)
 {
   if (Open(channel))
     return ConvertOSError(SSL_connect(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::Connect(PChannel * channel, BOOL autoDelete)
+PBoolean PSSLChannel::Connect(PChannel * channel, PBoolean autoDelete)
 {
   if (Open(channel, autoDelete))
     return ConvertOSError(SSL_connect(ssl));
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSSLChannel::UseCertificate(const PSSLCertificate & certificate)
+PBoolean PSSLChannel::UseCertificate(const PSSLCertificate & certificate)
 {
   return SSL_use_certificate(ssl, certificate);
 }
@@ -1177,13 +1101,13 @@ void PSSLChannel::SetVerifyMode(VerifyMode mode)
 }
 
 
-BOOL PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
+PBoolean PSSLChannel::RawSSLRead(void * buf, PINDEX & len)
 {
   if (!PIndirectChannel::Read(buf, len)) 
-    return FALSE;
+    return PFalse;
 
   len = GetLastReadCount();
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1339,12 +1263,12 @@ static BIO_METHOD methods_Psock =
 };
 
 
-BOOL PSSLChannel::OnOpen()
+PBoolean PSSLChannel::OnOpen()
 {
   BIO * bio = BIO_new(&methods_Psock);
   if (bio == NULL) {
     SSLerr(SSL_F_SSL_SET_FD,ERR_R_BUF_LIB);
-    return FALSE;
+    return PFalse;
   }
 
   // "Open" then bio
@@ -1352,63 +1276,15 @@ BOOL PSSLChannel::OnOpen()
   bio->init = 1;
 
   SSL_set_bio(ssl, bio, bio);
-  return TRUE;
+  return PTrue;
 }
 
 
-//////////////////////////////////////////////////////////////////////////
-//
-//  misc unused code
-//
+#else
 
-#if 0
-
-extern "C" {
-
-static verify_depth = 0;
-static verify_error = VERIFY_OK;
-
-// should be X509 * but we can just have them as char *. 
-int verify_callback(int ok, X509 * xs, X509 * xi, int depth, int error)
-{
-  char *s;
-
-  s = (char *)X509_NAME_oneline(X509_get_subject_name(xs));
-  if (s == NULL) {
-//    ERR_print_errors(bio_err);
-    return(0);
-  }
-  PError << "depth= " << depth << " " << (char *)s << endl;
-  free(s);
-  if (error == VERIFY_ERR_UNABLE_TO_GET_ISSUER) {
-    s=(char *)X509_NAME_oneline(X509_get_issuer_name(xs));
-    if (s == NULL) {
-      PError << "verify error" << endl;
-      //ERR_print_errors(bio_err);
-      return(0);
-    }
-    PError << "issuer = " << s << endl;
-    free(s);
-  }
-
-  if (!ok) {
-    PError << "verify error:num=" << error << " " <<
-    X509_cert_verify_error_string(error) << endl;
-    if (verify_depth <= depth) {
-      ok=1;
-      verify_error=VERIFY_OK;
-    } else {
-      ok=0;
-      verify_error=error;
-    }
-  }
-  PError << "verify return:" << ok << endl;
-  return(ok);
-}
-
-};
-
-#endif
+  #ifdef _MSC_VER
+    #pragma message("SSL support (via OpenSSL) DISABLED")
+  #endif
 
 #endif // P_SSL
 

@@ -26,139 +26,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: assert.cxx,v $
- * Revision 1.41  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.40  2005/09/29 15:58:20  dominance
- * one more step towards having mingw build pwlib cleanly
- *
- * Revision 1.39  2004/07/06 10:12:55  csoutheren
- * Added static integer o factory template to assist in ensuring factories are instantiated
- *
- * Revision 1.38  2004/04/03 06:54:30  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.37  2002/09/25 00:54:50  robertj
- * Fixed memory leak on assertion.
- *
- * Revision 1.36  2002/09/23 07:17:24  robertj
- * Changes to allow winsock2 to be included.
- *
- * Revision 1.35  2002/06/25 02:25:29  robertj
- * Improved assertion system to allow C++ class name to be displayed if
- *   desired, especially relevant to container classes.
- *
- * Revision 1.34  2001/08/17 19:18:15  yurik
- * Fixed compile error in release mode
- *
- * Revision 1.33  2001/08/16 18:38:05  yurik
- * Fixed assert function
- *
- * Revision 1.32  2001/04/26 06:07:34  yurik
- * UI improvements
- *
- * Revision 1.31  2001/03/29 23:33:00  robertj
- * Added missing structure initialisation, thanks Victor H.
- *
- * Revision 1.30  2001/03/02 06:54:04  yurik
- * Rephrased pragma message
- *
- * Revision 1.29  2001/01/24 06:56:03  yurik
- * Correcting a typo in WinCE related code
- *
- * Revision 1.28  2001/01/24 06:34:44  yurik
- * Windows CE port-related changes
- *
- * Revision 1.27  2000/05/23 05:50:43  robertj
- * Attempted to fix stack dump, still refuses to work even though used to work perfectly.
- *
- * Revision 1.26  2000/03/04 08:07:07  robertj
- * Fixed problem with window not appearing when assert on GUI based win32 apps.
- *
- * Revision 1.25  1999/02/16 08:08:06  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.24  1999/02/12 01:01:57  craigs
- * Fixed problem with linking static versions of libraries
- *
- * Revision 1.23  1998/12/04 10:10:45  robertj
- * Added virtual for determining if process is a service. Fixes linkage problem.
- *
- * Revision 1.22  1998/11/30 05:33:08  robertj
- * Fixed duplicate debug stream class, ther can be only one.
- *
- * Revision 1.21  1998/11/30 04:48:38  robertj
- * New directory structure
- *
- * Revision 1.20  1998/09/24 03:30:39  robertj
- * Added open software license.
- *
- * Revision 1.19  1997/03/18 21:22:31  robertj
- * Display error message if assert stack dump fails
- *
- * Revision 1.18  1997/02/09 01:27:18  robertj
- * Added stack dump under NT.
- *
- * Revision 1.17  1997/02/05 11:49:40  robertj
- * Changed current process function to return reference and validate objects descendancy.
- *
- * Revision 1.16  1997/01/04 06:52:04  robertj
- * Removed the press a key to continue under win  '95.
- *
- * Revision 1.15  1996/11/18 11:30:00  robertj
- * Removed int 3 on non-debug versions.
- *
- * Revision 1.14  1996/11/16 10:51:51  robertj
- * Changed assert to display message and break if in debug mode service.
- *
- * Revision 1.13  1996/11/10 21:02:08  robertj
- * Fixed bug in assertion when as a service, string buffer not big enough.
- *
- * Revision 1.12  1996/10/08 13:00:46  robertj
- * Changed default for assert to be ignore, not abort.
- *
- * Revision 1.11  1996/07/27 04:08:13  robertj
- * Changed SystemLog to be stream based rather than printf based.
- *
- * Revision 1.10  1996/05/30 11:48:28  robertj
- * Fixed press a key to continue to only require one key.
- *
- * Revision 1.9  1996/05/23 10:03:20  robertj
- * Windows 95 support.
- *
- * Revision 1.8  1996/03/04 12:39:35  robertj
- * Fixed Win95 support for console tasks.
- *
- * Revision 1.7  1996/01/28 14:13:04  robertj
- * Made PServiceProcess special case global not just WIN32.
- *
- * Revision 1.6  1995/12/10 11:55:09  robertj
- * Numerous fixes for WIN32 service processes.
- *
- * Revision 1.5  1995/04/25 11:32:34  robertj
- * Fixed Borland compiler warnings.
- *
- * Revision 1.4  1995/03/12 05:00:04  robertj
- * Re-organisation of DOS/WIN16 and WIN32 platforms to maximise common code.
- * Used built-in equate for WIN32 API (_WIN32).
- *
- * Revision 1.3  1994/10/30  11:25:09  robertj
- * Added error number to assert.
- *
- * Revision 1.2  1994/06/25  12:13:01  robertj
- * Synchronisation.
- *
- * Revision 1.1  1994/04/01  14:39:35  robertj
- * Initial revision
+ * $Revision: 25456 $
+ * $Author: ededu $
+ * $Date: 2011-03-30 14:15:51 -0500 (Wed, 30 Mar 2011) $
  */
 
 #define P_DISABLE_FACTORY_INSTANCES
 
 #include <ptlib.h>
 #include <ptlib/svcproc.h>
-
-#include <errno.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -173,13 +49,14 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM thisProcess)
   char wndClassName[100];
   GetClassName(hWnd, wndClassName, sizeof(wndClassName));
   if (strcmp(wndClassName, "ConsoleWindowClass") != 0)
-    return TRUE;
+    return PTrue;
 
   DWORD wndProcess;
   GetWindowThreadProcessId(hWnd, &wndProcess);
   if (wndProcess != (DWORD)thisProcess)
-    return TRUE;
+    return PTrue;
 
+  PTRACE(4, "PTLib\tAwaiting key press on exit.");
   cerr << "\nPress a key to continue . . .";
   cerr.flush();
 
@@ -189,17 +66,19 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM thisProcess)
   char dummy;
   DWORD readBytes;
   ReadConsole(in, &dummy, 1, &readBytes, NULL);
-  return FALSE;
+  return PFalse;
 }
 #endif // _WIN32_WCE
 
-void PWaitOnExitConsoleWindow()
+
+void PProcess::WaitOnExitConsoleWindow()
 {
 #ifndef _WIN32_WCE
-  EnumWindows(EnumWindowsProc, GetCurrentProcessId());
-#else
+  if (!m_library)
+    EnumWindows(EnumWindowsProc, GetCurrentProcessId());
 #endif // _WIN32_WCE
 }
+
 
 #ifndef _WIN32_WCE
 class PImageDLL : public PDynaLink
@@ -208,12 +87,12 @@ class PImageDLL : public PDynaLink
   public:
     PImageDLL();
 
-  BOOL (__stdcall *SymInitialize)(
+  PBoolean (__stdcall *SymInitialize)(
     IN HANDLE   hProcess,
     IN LPSTR    UserSearchPath,
-    IN BOOL     fInvadeProcess
+    IN PBoolean     fInvadeProcess
     );
-  BOOL (__stdcall *SymCleanup)(
+  PBoolean (__stdcall *SymCleanup)(
     IN HANDLE hProcess
     );
   DWORD (__stdcall *SymGetOptions)();
@@ -228,7 +107,7 @@ class PImageDLL : public PDynaLink
     DWORD  BaseOfDll,  
     DWORD  SizeOfDll   
     );
-  BOOL (__stdcall *StackWalk)(
+  PBoolean (__stdcall *StackWalk)(
     DWORD                             MachineType,
     HANDLE                            hProcess,
     HANDLE                            hThread,
@@ -239,7 +118,7 @@ class PImageDLL : public PDynaLink
     PGET_MODULE_BASE_ROUTINE          GetModuleBaseRoutine,
     PTRANSLATE_ADDRESS_ROUTINE        TranslateAddress
     );
-  BOOL (__stdcall *SymGetSymFromAddr)(
+  PBoolean (__stdcall *SymGetSymFromAddr)(
     IN  HANDLE              hProcess,
     IN  DWORD               dwAddr,
     OUT PDWORD              pdwDisplacement,
@@ -249,7 +128,7 @@ class PImageDLL : public PDynaLink
   PFUNCTION_TABLE_ACCESS_ROUTINE SymFunctionTableAccess;
   PGET_MODULE_BASE_ROUTINE       SymGetModuleBase;
 
-  BOOL (__stdcall *SymGetModuleInfo)(
+  PBoolean (__stdcall *SymGetModuleInfo)(
     IN  HANDLE              hProcess,
     IN  DWORD               dwAddr,
     OUT PIMAGEHLP_MODULE    ModuleInfo
@@ -279,9 +158,7 @@ PImageDLL::PImageDLL()
 
 void PAssertFunc(const char * msg)
 {
-#ifndef _WIN32_WCE
-
-  ostrstream str;
+  ostringstream str;
   str << msg;
 
 #if defined(_WIN32) && defined(_M_IX86)
@@ -297,7 +174,7 @@ void PAssertFunc(const char * msg)
       hProcess = GetCurrentProcess();
     else
       hProcess = (HANDLE)GetCurrentProcessId();
-    if (imagehlp.SymInitialize(hProcess, NULL, TRUE)) {
+    if (imagehlp.SymInitialize(hProcess, NULL, PTrue)) {
       HANDLE hThread = GetCurrentThread();
       // The thread information.
       CONTEXT threadContext;
@@ -390,25 +267,21 @@ void PAssertFunc(const char * msg)
 #endif
 
   str << ends;
-#ifdef _MSC_VER
-  const char * pstr = str.str();
-  // Unfreeze str so frees memory
-  str.rdbuf()->freeze(0);
-#else
   // Copy to local variable so char ptr does not become invalidated
   std::string sstr = str.str();
-  const char * pstr = sstr.c_str ();
-#endif
-  // Must do nothing to str after this or it invalidates pstr
 
   if (PProcess::Current().IsServiceProcess()) {
-    PSystemLog::Output(PSystemLog::Fatal, pstr);
-#if defined(_MSC_VER) && defined(_DEBUG)
+#ifndef _WIN32_WCE
+    PSYSTEMLOG(Fatal, sstr);
+#if defined(_MSC_VER) && defined(_DEBUG) && !defined(_WIN64)
     if (PServiceProcess::Current().debugMode)
       __asm int 3;
 #endif
+#endif // !_WIN32_WCE
     return;
   }
+
+  PTRACE(0, sstr);
 
 #if defined(_WIN32)
   static HANDLE mutex = CreateSemaphore(NULL, 1, 1, NULL);
@@ -416,11 +289,15 @@ void PAssertFunc(const char * msg)
 #endif
 
   if (PProcess::Current().IsGUIProcess()) {
-    switch (MessageBox(NULL, pstr, "Portable Windows Library",
-                              MB_ABORTRETRYIGNORE|MB_ICONHAND|MB_TASKMODAL)) {
+    PVarString msg = sstr.c_str();
+    PVarString name = PProcess::Current().GetName();
+    switch (MessageBox(NULL, msg, name, MB_ABORTRETRYIGNORE|MB_ICONHAND|MB_TASKMODAL)) {
       case IDABORT :
-        FatalExit(1);  // Never returns
-
+#if !defined(_WIN32_WCE)
+		  FatalExit(1);  // Never returns
+#else
+		  ExitProcess(1);
+#endif // !_WIN32_WCE
       case IDRETRY :
         DebugBreak();
     }
@@ -431,7 +308,7 @@ void PAssertFunc(const char * msg)
   }
 
   for (;;) {
-    cerr << pstr << "\n<A>bort, <B>reak, <I>gnore? ";
+    cerr << sstr << "\n<A>bort, <B>reak, <I>gnore? ";
     cerr.flush();
     switch (cin.get()) {
       case 'A' :
@@ -445,7 +322,7 @@ void PAssertFunc(const char * msg)
 #if defined(_WIN32)
         ReleaseSemaphore(mutex, 1, NULL);
 #endif
-#ifdef _MSC_VER
+#if defined(_MSC_VER) && !defined(_WIN32_WCE) && !defined(_WIN64)
         __asm int 3;
 #endif
 
@@ -459,18 +336,6 @@ void PAssertFunc(const char * msg)
         return;
     }
   }
-
-#else
-
-#ifdef _DEBUG
-    do
-    { 
-      if ( AfxAssertFailedLine(file, line) )
-        AfxDebugBreak(); 
-    } while (0);
-#endif // _DEBUG
-
-#endif // _WIN32_WCE
 }
 
 

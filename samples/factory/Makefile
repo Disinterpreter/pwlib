@@ -2,4 +2,9 @@
 PROG	= factory
 SOURCES	:= main.cxx concrete.cxx solid.cxx
 
-include ~/pwlib/make/ptlib.mak
+ifndef PTLIBDIR
+PTLIBDIR=$(HOME)/ptlib
+endif
+
+include $(PTLIBDIR)/make/ptlib.mak
+

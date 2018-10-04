@@ -28,7 +28,7 @@
 
 #ifdef _WIN32
 #ifdef _MSC_VER
-#pragma warning(disable:4131 4701)
+#pragma warning(disable:4131 4701 4996)
 #endif
 #define STDAPICALLTYPE __stdcall
 #define MSDOS
@@ -106,20 +106,24 @@ struct Variables {
 
 
 #define YYPURE		1
-#define YYLEX_PARAM	VARIABLE->yyInput
+#define YYLEX_PARAM	VARIABLE
 #define YYPARSE_PARAM	parseParam
 
 #define yyparse		PTime_yyparse
 #define yylex		PTime_yylex
 #define yyerror		PTime_yyerror
 
+#define GCC_VERSION (__GNUC__ * 10000 \
+                    + __GNUC_MINOR__ * 100 \
+                    + __GNUC_PATCHLEVEL__)
+
 static int yyparse(void *); 
 static int yylex();
 
 #ifdef __GNUC__
-static int yyerror();
+static int yyerror(char const *msg);
 #else
-static void yyerror();
+static void yyerror(char const *msg);
 #endif
 
 
@@ -136,11 +140,11 @@ static void SetPossibleDate(struct Variables*, time_t, time_t, time_t);
 }
 
 %token	tAGO tDAY tDAYZONE tID tMERIDIAN tMINUTE_UNIT tMONTH tMONTH_UNIT
-%token	tSNUMBER tUNUMBER t4DIGITNUMBER t6DIGITNUMBER
-%token	tSEC_UNIT tZONE tMILZONE tDST
+%token	tSNUMBER tS4DIGITNUMBER tUNUMBER t4DIGITNUMBER t6DIGITNUMBER t8DIGITNUMBER
+%token	tSEC_UNIT tZONE tMILZONE tRFC3339 tDST
 
 %type	<Number>	tDAY tDAYZONE tMINUTE_UNIT tMONTH tMONTH_UNIT
-%type	<Number>	tSNUMBER tUNUMBER t4DIGITNUMBER t6DIGITNUMBER unumber
+%type	<Number>	tSNUMBER tS4DIGITNUMBER tUNUMBER t4DIGITNUMBER t6DIGITNUMBER t8DIGITNUMBER unumber
 %type	<Number>	tSEC_UNIT tZONE tMILZONE
 %type	<Meridian>	tMERIDIAN o_merid
 
@@ -174,7 +178,7 @@ time	: tUNUMBER tMERIDIAN {
 	    VARIABLE->yySeconds = 0;
 	    VARIABLE->yyMeridian = $2;
 	}
-        | t4DIGITNUMBER tSNUMBER {
+        | t4DIGITNUMBER tS4DIGITNUMBER  {
 	    VARIABLE->yyHour = $1/100;
 	    VARIABLE->yyMinutes = $1%100;
 	    VARIABLE->yySeconds = 0;
@@ -182,7 +186,7 @@ time	: tUNUMBER tMERIDIAN {
 	    VARIABLE->yyDSTmode = DSToff;
 	    VARIABLE->yyTimezone = - ($2 % 100 + ($2 / 100) * 60);
         }
-        | t6DIGITNUMBER tSNUMBER {
+        | t6DIGITNUMBER tS4DIGITNUMBER  {
 	    VARIABLE->yyHour = $1/10000;
 	    VARIABLE->yyMinutes = ($1/100)%100;
 	    VARIABLE->yySeconds = $1 % 100;
@@ -196,7 +200,7 @@ time	: tUNUMBER tMERIDIAN {
 	    VARIABLE->yySeconds = 0;
 	    VARIABLE->yyMeridian = $4;
 	}
-	| unumber ':' unumber tSNUMBER {
+	| unumber ':' unumber tS4DIGITNUMBER  {
 	    VARIABLE->yyHour = $1;
 	    VARIABLE->yyMinutes = $3;
 	    VARIABLE->yyMeridian = MER24;
@@ -209,7 +213,7 @@ time	: tUNUMBER tMERIDIAN {
 	    VARIABLE->yySeconds = $5;
 	    VARIABLE->yyMeridian = $6;
 	}
-	| unumber ':' unumber ':' unumber tSNUMBER {
+	| unumber ':' unumber ':' unumber tS4DIGITNUMBER  {
 	    VARIABLE->yyHour = $1;
 	    VARIABLE->yyMinutes = $3;
 	    VARIABLE->yySeconds = $5;
@@ -262,25 +266,25 @@ date	: unumber '/' unumber {
 	| unumber '/' unumber '/' unumber {
 	    SetPossibleDate(VARIABLE, $1, $3, $5);
 	}
-	| unumber tSNUMBER tSNUMBER {
+	| unumber tSNUMBER tSNUMBER tRFC3339 {
 	    /* ISO 8601 format.  yyyy-mm-dd.  */
-	    if ($1 > 31) {
-		VARIABLE->yyYear = $1;
-		VARIABLE->yyMonth = -$2;
-		VARIABLE->yyDay = -$3;
-	    }
-	    else
-		SetPossibleDate(VARIABLE, $1, -$2, -$3);
+	    SetPossibleDate(VARIABLE, $1, -$2, -$3);
+	}
+	| t8DIGITNUMBER {
+	    VARIABLE->yyDay= ($1)%100;
+	    VARIABLE->yyMonth= ($1/100)%100;
+	    VARIABLE->yyYear = $1/10000;
 	}
 	| unumber tMONTH tSNUMBER {
 	    /* e.g. 17-JUN-1992.  */
-	    VARIABLE->yyDay = $1;
-	    VARIABLE->yyMonth = $2;
-	    VARIABLE->yyYear = -$3;
+	    SetPossibleDate(VARIABLE, $1, $2, -$3);
 	}
 	| tMONTH unumber {
 	    VARIABLE->yyMonth = $1;
-	    VARIABLE->yyDay = $2;
+	    if ($2 > 31)
+	      VARIABLE->yyYear = $2;
+	    else
+	      VARIABLE->yyDay = $2;
 	}
 	| tMONTH unumber ',' unumber {
 	    VARIABLE->yyMonth = $1;
@@ -288,13 +292,14 @@ date	: unumber '/' unumber {
 	    VARIABLE->yyYear = $4;
 	}
 	| unumber tMONTH {
+	    if ($1 > 31)
+	      VARIABLE->yyYear = $1;
+	    else
+	      VARIABLE->yyDay = $1;
 	    VARIABLE->yyMonth = $2;
-	    VARIABLE->yyDay = $1;
 	}
 	| unumber tMONTH unumber {
-	    VARIABLE->yyMonth = $2;
-	    VARIABLE->yyDay = $1;
-	    VARIABLE->yyYear = $3;
+	    SetPossibleDate(VARIABLE, $1, $2, $3);
 	}
 	;
 
@@ -593,7 +598,7 @@ static TABLE const MilitaryTable[] = {
     { NULL }
 };
 
-static int LookupWord(char * buff, YYSTYPE * yylval)
+static int LookupWord(char * buff, YYSTYPE * yylval, struct Variables * vars)
 {
     register char	*p;
     register char	*q;
@@ -670,8 +675,12 @@ static int LookupWord(char * buff, YYSTYPE * yylval)
 	    return tp->type;
 	}
 
+    /* Avoid confusion with 'T' in RFC3339 and 't' in Military timezones */
+    if (!vars->yyHaveTime && strcmp(buff, "t") == 0)
+	return tRFC3339;
+ 
     /* Military timezones. */
-    if (buff[1] == '\0' && isalpha(*buff)) {
+   if (buff[1] == '\0' && isalpha(*buff)) {
 	for (tp = MilitaryTable; tp->name; tp++)
 	    if (strcmp(buff, tp->name) == 0) {
 		yylval->Number = tp->value;
@@ -718,22 +727,22 @@ static int LookupWord(char * buff, YYSTYPE * yylval)
 #ifndef __GNUC__
 static
 #endif
-int yylex(YYSTYPE * yylval, void * yyInput)
+int yylex(YYSTYPE * yylval, struct Variables * vars)
 {
     register char	*p;
     char		buff[20];
     int			Count;
     int			sign;
-    register int	c = PTimeGetChar(yyInput);
+    register int	c = PTimeGetChar(vars->yyInput);
 
     while (c != EOF && c != '\0' && c != '\n') {
 	while (isspace(c))
-	    c = PTimeGetChar(yyInput);
+	    c = PTimeGetChar(vars->yyInput);
 
 	if (isdigit(c) || c == '-' || c == '+') {
 	    if (c == '-' || c == '+') {
 		sign = c == '-' ? -1 : 1;
-		if (!isdigit(c = PTimeGetChar(yyInput)))
+		if (!isdigit(c = PTimeGetChar(vars->yyInput)))
 		    /* skip the '-' sign */
 		    continue;
 	    }
@@ -743,29 +752,31 @@ int yylex(YYSTYPE * yylval, void * yyInput)
             Count = 0; /* Count number of digits */
 	    while (isdigit(c)) {
 		yylval->Number = 10 * yylval->Number + c - '0';
-		c = PTimeGetChar(yyInput);
+		c = PTimeGetChar(vars->yyInput);
                 Count++;
 	    }
-	    PTimeUngetChar(yyInput, c);
+	    PTimeUngetChar(vars->yyInput, c);
 	    if (sign < 0)
 		yylval->Number = -yylval->Number;
+            if (Count == 4)
+              return sign ? tS4DIGITNUMBER : t4DIGITNUMBER;
 	    if (sign)
               return tSNUMBER;
-            if (Count == 4)
-              return t4DIGITNUMBER;
             if (Count == 6)
               return t6DIGITNUMBER;
+            if (Count == 8)
+              return t8DIGITNUMBER;
             return tUNUMBER;
 	}
 
 	if (isalpha(c)) {
-	    for (p = buff; isalpha(c) || c == '.'; c = PTimeGetChar(yyInput)) {
+	    for (p = buff; isalpha(c) || c == '.'; c = PTimeGetChar(vars->yyInput)) {
 		if (p < &buff[sizeof(buff)-1])
 		    *p++ = (char)c;
 	    }
 	    *p = '\0';
-	    PTimeUngetChar(yyInput, c);
-	    return LookupWord(buff, yylval);
+	    PTimeUngetChar(vars->yyInput, c);
+	    return LookupWord(buff, yylval, vars);
 	}
 
 	if (c != '(')
@@ -773,7 +784,7 @@ int yylex(YYSTYPE * yylval, void * yyInput)
 
 	Count = 0;
 	do {
-	    c = PTimeGetChar(yyInput);
+	    c = PTimeGetChar(vars->yyInput);
 	    if (c == '\0' || c == EOF)
 		return c;
 	    if (c == '(')
@@ -782,6 +793,9 @@ int yylex(YYSTYPE * yylval, void * yyInput)
 		Count--;
 	} while (Count > 0);
     }
+
+    if (c == '\n')
+        PTimeUngetChar(vars->yyInput, c);
 
     return EOF;
 }
@@ -918,12 +932,8 @@ static void SetPossibleDate(struct Variables * var,
 	date_order = 1;
     else if (possible_month > 12) /* test for mdy */
 	date_order = 0;
-    else {
-	static int default_date_order = -1;
-	if (default_date_order < 0)
-	    default_date_order = PTimeGetDateOrder();
-	date_order = default_date_order;
-    }
+    else
+	date_order = PTimeGetDateOrder();
 
     switch (date_order) {
       case 0 :
@@ -1004,7 +1014,7 @@ time_t STDAPICALLTYPE PTimeParse(void * inputStream, struct tm * now, int timezo
 
 
 #ifdef _MSC_VER
-#pragma warning(disable:4100 4211)
+#pragma warning(disable:4028 4100 4211)
 #endif
 
 #ifdef __GNUC__
@@ -1019,7 +1029,7 @@ static void yyerror(const char * s)
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(default:4100 4211)
+#pragma warning(default:4028 4100 4211)
 #endif
 
 

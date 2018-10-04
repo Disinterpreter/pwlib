@@ -1,15 +1,10 @@
 AC_INIT(../include/ptlib.h)
 
+AC_PREREQ([2.63])  # sometimes this file gets processed by old autoconf
 AC_PROG_CXX
+AC_PROG_CPP
 
-dnl ########################################################################
-dnl set the PWLIB directory to the current directory
-
-PWLIBDIR=`pwd`
-echo "Plugin source directory is $PWLIBDIR";
-AC_SUBST(PWLIBDIR)
-dnl set the pwlib installation dir for pwlib-config
-AC_SUBST(PWINSTDIR)
+AC_CANONICAL_TARGET()
 
 dnl ########################################################################
 dnl set the PREFIX accordingly
@@ -61,16 +56,50 @@ if test "${enable_alsa}z" = "yesz" ; then
 fi
 
 dnl #########################################################################
+dnl check for ESD sound support
+dnl ########################################################################
+
+AC_ARG_ENABLE(esd, [  --enable-esd            enable ESD audio support],,enable_esd=no)
+
+if test "${enable_esd}z" = "yesz" ; then
+  AC_CHECK_HEADER(esd.h, ESDHDR=1)
+  AC_MSG_CHECKING(for ESD sound support)
+  if test "${ESDHDR}z" != "z"; then
+    AC_SUBST(HAS_ESD, 1)
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+
+dnl #########################################################################
 dnl check for OSS sound support
 dnl ########################################################################
 
-AC_ARG_ENABLE(oss, [  --enable-oss            enable OSS audio support],,enable_oss=yes)
+AC_ARG_ENABLE(oss, [  --enable-oss            enable OSS audio support],,enable_oss=no)
 
 if test "${enable_oss}z" = "yesz" ; then
-  AC_CHECK_HEADER(sys/soundcard.h, SNDCARDHDR=1)
+  AC_CHECK_HEADER(sys/soundcard.h, OSSSNDCARDHDR=1)
   AC_MSG_CHECKING(for OSS sound support)
-  if test "${SNDCARDHDR}z" != "z"; then
+  if test "${OSSSNDCARDHDR}z" != "z"; then
     AC_SUBST(HAS_OSS, 1)
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+dnl #########################################################################
+
+dnl check for Pulse sound support
+dnl ########################################################################
+
+AC_ARG_ENABLE(pulse, [  --enable-pulse       enable Pulse audio support],,enable_pulse=yes)
+
+if test "${enable_pulse}z" = "yesz" ; then
+  AC_CHECK_HEADER(pulse/simple.h, PULSESNDCARDHDR=1)
+  AC_MSG_CHECKING(for Pulse sound support)
+  if test "${PULSESNDCARDHDR}z" != "z"; then
+    AC_SUBST(HAS_PULSE, 1)
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
@@ -84,19 +113,37 @@ dnl ########################################################################
 AC_ARG_ENABLE(sunaudio, [  --enable-sunaudio            enable  Sun audio support],,enable_sunaudio=no)
 
 if test "${enable_sunaudio}z" = "yesz" ; then
-  AC_CHECK_HEADER(sys/conf.h, SNDCARDHDR=1)
+  AC_CHECK_HEADER(sys/conf.h, SUNSNDCARDHDR=1)
   AC_MSG_CHECKING(for Sun audio sound support)
-  if test "${SNDCARDHDR}z" != "z"; then
+  if test "${SUNSNDCARDHDR}z" != "z"; then
     AC_SUBST(HAS_SUNAUDIO, 1)
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
   fi
 fi
+
+dnl #########################################################################
+dnl check for shm sound support
+dnl ########################################################################
+
+AC_ARG_ENABLE(shmaudio, [  --enable-shmaudio       enable shm audio support],,enable_shmaudio=no)
+
+if test "${enable_shmaudio}z" = "yesz" ; then
+  AC_CHECK_FUNC(sem_timedwait, SNDSHMHDR=1)
+  AC_MSG_CHECKING(for shm audio sound support)
+  if test "${SNDSHMHDR}z" != "z"; then
+    AC_SUBST(HAS_AUDIOSHM, 1)
+    AC_MSG_RESULT(yes)
+  else
+    AC_MSG_RESULT(no)
+  fi
+fi
+
 fi # enable_audio
 
 AC_ARG_ENABLE(video,
-       [  --disable-video         disable video device support in PWLIB])
+       [  --disable-video         disable video device support])
 
 if test "${enable_video}z" = "z" ; then
   enable_video=yes
@@ -108,8 +155,7 @@ dnl #########################################################################
 dnl check for V4L video support
 dnl ########################################################################
 
-AC_ARG_ENABLE(v4l, [  --enable-v4l            enable V4L video support],,enable_v4l=yes)
-
+AC_ARG_ENABLE(v4l, [  --enable-v4l            enable V4L video support],,enable_v4l=no)
 if test "${enable_v4l}z" = "yesz" ; then
   AC_CHECK_HEADER(linux/videodev.h, V4LHDR=1)
   AC_MSG_CHECKING(for V4L video support)
@@ -125,16 +171,75 @@ dnl #########################################################################
 dnl check for V4L2 video support
 dnl ########################################################################
 
-AC_ARG_ENABLE(v4l2, [  --enable-v4l2            enable V4L2 video support],,enable_v4l2=no)
+AC_ARG_ENABLE(v4l2, [  --enable-v4l2            enable V4L2 video support],,enable_v4l2=yes)
 
 if test "${enable_v4l2}z" = "yesz" ; then
-  AC_CHECK_HEADER(linux/videodev2.h, V4L2HDR=1)
+  case "$target_os" in
+    solaris* | sunos* ) V4L2_HEADER="sys/videodev2.h"   ; ;;
+    netbsd* )           V4L2_HEADER="sys/videoio.h"     ; ;;
+          * )	        V4L2_HEADER="linux/videodev2.h" ; ;;
+  esac
+
+  AC_CHECK_HEADER([$V4L2_HEADER], 
+                  [HAS_V4L2=1],
+                  [
+		    # We can't use AC_CHECK_HEADER again because
+                    # the value is cached, perhaps we have another
+                    # method to do this more cleanly ?
+		    AC_MSG_CHECKING([for $V4L2_HEADER with sys/types.h])
+		    AC_TRY_COMPILE([
+					#ifdef __linux__
+					#include <sys/types.h>
+					#include <linux/types.h>
+                                        #else
+                                        #ifdef __sun
+                                        #include <sys/types.h>
+                                        #include <sys/time.h>
+                                        #else
+					#error "not supported"
+					#endif
+					#endif
+					#include "$V4L2_HEADER"
+				    ],
+				    [
+				        return 0;
+				    ],
+				    [
+				        HAS_V4L2=1
+				        AC_MSG_RESULT(yes)
+				    ],
+                                    [
+				        HAS_V4L2=
+				        AC_MSG_RESULT(no)
+                                    ])
+                  ], 
+		[
+		#ifdef __linux__
+		#include <linux/types.h>
+		#endif
+		])
   AC_MSG_CHECKING(for V4L2 video support)
-  if test "${V4LHDR}z" != "z"; then
-    AC_SUBST(HAS_V4L2, 1)
+  if test "x${HAS_V4L2}" = "x1"; then
     AC_MSG_RESULT(yes)
+    AC_SUBST([V4L2_CXXFLAGS],[-DV4L2_HEADER=\'\"$V4L2_HEADER\"\'])
   else
+    HAS_V4L2=
     AC_MSG_RESULT(no)
+  fi
+  AC_SUBST(HAS_V4L2)
+
+  if test "x${HAS_V4L2}" = "x1"; then
+    AC_CHECK_HEADER([libv4l2.h], 
+                    [AC_CHECK_LIB([v4l2], [v4l2_fd_open], [HAS_LIBV4L=1])]
+                   )
+                   
+    AC_MSG_CHECKING([for libv4l2 support])
+    if test "x${HAS_LIBV4L}" = "x1"; then
+      AC_MSG_RESULT(yes)
+    else
+      AC_MSG_RESULT(no)
+    fi
+    AC_SUBST(HAS_LIBV4L)
   fi
 fi
 
@@ -161,7 +266,7 @@ dnl #########################################################################
 dnl check for AVC video support
 dnl ########################################################################
 
-AC_ARG_ENABLE(avc, [  --enable-avc            enable IEEE1394/AVC video support],,enable_avc=yes)
+AC_ARG_ENABLE(avc, [  --enable-avc            enable IEEE1394/AVC video support],,enable_avc=no)
 
 if test "${enable_avc}z" = "yesz" ; then
   AC_CHECK_HEADER(libavc1394/avc1394.h, AVC1394HDR=1)
@@ -190,7 +295,7 @@ if test "${enable_dc}z" = "yesz" ; then
     AC_SUBST(HAS_DC1394, 1)
     AC_MSG_RESULT(yes)
     AC_MSG_CHECKING(if dc1394_dma_setup_capture has 12 parms)
-    AC_COMPILE_IFELSE([[
+    AC_COMPILE_IFELSE([AC_LANG_SOURCE([
 #include "libdc1394/dc1394_control.h"
 int main(int ac,char **av)
 {
@@ -210,7 +315,7 @@ int main(int ac,char **av)
 			   do_extra_buffering, drop_frames, dma_device_file, camera);
   return 0;
 }
-]],NEW_DC_API=1, NEW_DC_API=0)
+])],NEW_DC_API=1, NEW_DC_API=0)
     if test "$NEW_DC_API" = "1" ; then
       AC_SUBST(DC_CFLAGS, -DNEW_DC_API)
       AC_MSG_RESULT(yes)
@@ -232,6 +337,7 @@ dnl ########################################################################
 dnl output header file
 
 AC_CONFIG_FILES(Makefile)
+AC_CONFIG_FILES(vidinput_v4l2/Makefile)
 AC_CONFIG_FILES(vidinput_dc/Makefile)
 
 AC_OUTPUT()

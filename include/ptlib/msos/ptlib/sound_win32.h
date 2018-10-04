@@ -26,22 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: sound_win32.h,v $
- * Revision 1.5  2005/11/30 12:47:38  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.4  2005/09/18 13:01:43  dominance
- * fixed pragma warnings when building with gcc.
- *
- * Revision 1.3  2004/10/23 11:32:27  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.2  2003/12/29 03:28:56  csoutheren
- * Allowed access to Windows sound channel declaration, just in case it is required
- *
- * Revision 1.1  2003/12/29 01:59:48  csoutheren
- * Initial version
- *
+ * $Revision: 28275 $
+ * $Author: rjongbloed $
+ * $Date: 2012-08-29 21:42:35 -0500 (Wed, 29 Aug 2012) $
  */
 
 
@@ -73,7 +60,7 @@ class PWaveFormat : public PObject
     void SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample);
     void SetFormat(const void * data, PINDEX size);
 
-    BOOL           SetSize   (PINDEX sz);
+    PBoolean           SetSize   (PINDEX sz);
     PINDEX         GetSize   () const { return  size;       }
     void         * GetPointer() const { return  waveFormat; }
     WAVEFORMATEX * operator->() const { return  waveFormat; }
@@ -84,6 +71,36 @@ class PWaveFormat : public PObject
     PINDEX         size;
     WAVEFORMATEX * waveFormat;
 };
+
+
+class PMultiMediaFile
+{
+  public:
+    PMultiMediaFile();
+    ~PMultiMediaFile();
+
+    PBoolean CreateWaveFile(const PFilePath & filename,
+                        const PWaveFormat & waveFormat,
+                        DWORD dataSize);
+    PBoolean OpenWaveFile(const PFilePath & filename,
+                      PWaveFormat & waveFormat,
+                      DWORD & dataSize);
+
+    PBoolean Open(const PFilePath & filename, DWORD dwOpenFlags, LPMMIOINFO lpmmioinfo = NULL);
+    PBoolean Close(UINT wFlags = 0);
+    PBoolean Ascend(MMCKINFO & ckinfo, UINT wFlags = 0);
+    PBoolean Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent = NULL);
+    PBoolean Read(void * data, PINDEX len);
+    PBoolean CreateChunk(MMCKINFO & ckinfo, UINT wFlags = 0);
+    PBoolean Write(const void * data, PINDEX len);
+
+    DWORD GetLastError() const { return dwLastError; }
+
+  protected:
+    HMMIO hmmio;
+    DWORD dwLastError;
+};
+
 
 class PWaveBuffer : public PBYTEArray
 {
@@ -109,6 +126,7 @@ class PWaveBuffer : public PBYTEArray
 
 PARRAY(PWaveBufferArray, PWaveBuffer);
 
+
 class PSoundChannelWin32: public PSoundChannel
 {
  public:
@@ -121,39 +139,42 @@ class PSoundChannelWin32: public PSoundChannel
                      unsigned bitsPerSample);
     ~PSoundChannelWin32();
     static PStringArray GetDeviceNames(PSoundChannel::Directions = Player);
-    static PString GetDefaultDevice(PSoundChannel::Directions);
-    BOOL Open(const PString & _device,
-              Directions _dir,
-              unsigned _numChannels,
-              unsigned _sampleRate,
-              unsigned _bitsPerSample);
-    BOOL Setup();
-    BOOL Close();
-    BOOL IsOpen() const;
-    BOOL Write(const void * buf, PINDEX len);
-    BOOL Read(void * buf, PINDEX len);
-    BOOL SetFormat(unsigned numChannels,
+    PBoolean Open(
+      const PString & device,
+      Directions dir,
+      unsigned numChannels,
+      unsigned sampleRate,
+      unsigned bitsPerSample
+    );
+    PBoolean Setup();
+    PBoolean Close();
+    PBoolean IsOpen() const;
+    PBoolean Write(const void * buf, PINDEX len);
+    PBoolean Read(void * buf, PINDEX len);
+    PBoolean SetFormat(unsigned numChannels,
                    unsigned sampleRate,
                    unsigned bitsPerSample);
     unsigned GetChannels() const;
     unsigned GetSampleRate() const;
     unsigned GetSampleSize() const;
-    BOOL SetBuffers(PINDEX size, PINDEX count);
-    BOOL GetBuffers(PINDEX & size, PINDEX & count);
-    BOOL PlaySound(const PSound & sound, BOOL wait);
-    BOOL PlayFile(const PFilePath & filename, BOOL wait);
-    BOOL HasPlayCompleted();
-    BOOL WaitForPlayCompletion();
-    BOOL RecordSound(PSound & sound);
-    BOOL RecordFile(const PFilePath & filename);
-    BOOL StartRecording();
-    BOOL IsRecordBufferFull();
-    BOOL AreAllRecordBuffersFull();
-    BOOL WaitForRecordBufferFull();
-    BOOL WaitForAllRecordBuffersFull();
-    BOOL Abort();
-    BOOL SetVolume(unsigned newVal);
-    BOOL GetVolume(unsigned &devVol);
+    PBoolean SetBuffers(PINDEX size, PINDEX count);
+    PBoolean GetBuffers(PINDEX & size, PINDEX & count);
+    PBoolean PlaySound(const PSound & sound, PBoolean wait);
+    PBoolean PlayFile(const PFilePath & filename, PBoolean wait);
+    PBoolean HasPlayCompleted();
+    PBoolean WaitForPlayCompletion();
+    PBoolean RecordSound(PSound & sound);
+    PBoolean RecordFile(const PFilePath & filename);
+    PBoolean StartRecording();
+    PBoolean IsRecordBufferFull();
+    PBoolean AreAllRecordBuffersFull();
+    PBoolean WaitForRecordBufferFull();
+    PBoolean WaitForAllRecordBuffersFull();
+    PBoolean Abort();
+    PBoolean SetVolume(unsigned newVal);
+    PBoolean GetVolume(unsigned &devVol);
+    PBoolean SetMute(bool mute);
+    PBoolean GetMute(bool & mute);
 
   public:
     // Overrides from class PChannel
@@ -164,18 +185,22 @@ class PSoundChannelWin32: public PSoundChannel
     PString GetErrorText(ErrorGroup group = NumErrorGroups) const;
     // Get a text form of the last error encountered.
 
-    BOOL SetFormat(const PWaveFormat & format);
+    PBoolean SetFormat(const PWaveFormat & format);
 
-    BOOL Open(const PString & device, Directions dir,const PWaveFormat & format);
+    PBoolean Open(const PString & device, Directions dir,const PWaveFormat & format);
     // Open with format other than PCM
 
   protected:
-    PString     deviceName;
-    Directions  direction;
-    HWAVEIN     hWaveIn;
-    HWAVEOUT    hWaveOut;
-    HANDLE      hEventDone;
-    PWaveFormat waveFormat;
+    PString      deviceName;
+    Directions   direction;
+    HWAVEIN      hWaveIn;
+    HWAVEOUT     hWaveOut;
+    HMIXER       hMixer;
+    MIXERCONTROL volumeControl;
+    MIXERCONTROL muteControl;
+    HANDLE       hEventDone;
+    PWaveFormat  waveFormat;
+    bool         opened;
 
     PWaveBufferArray buffers;
     PINDEX           bufferIndex;
@@ -183,8 +208,8 @@ class PSoundChannelWin32: public PSoundChannel
     PMutex           bufferMutex;
 
   private:
-    BOOL OpenDevice(unsigned id);
-    BOOL GetDeviceID(const PString & device, Directions dir, unsigned& id);
+    PBoolean OpenDevice(unsigned id);
+    PBoolean GetDeviceID(const PString & device, Directions dir, unsigned& id);
 };
 
 

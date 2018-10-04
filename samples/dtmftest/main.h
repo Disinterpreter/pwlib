@@ -21,17 +21,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: main.h,v $
- * Revision 1.1  2004/09/10 01:59:35  dereksmithies
- * Initial release of program to test Dtmf creation and detection.
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifndef _Dtmftest_MAIN_H
 #define _Dtmftest_MAIN_H
 
-
+#include <ptlib/pprocess.h>
 
 
 class DtmfTest : public PProcess

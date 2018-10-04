@@ -26,224 +26,32 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: sound_win32.cxx,v $
- * Revision 1.16  2006/04/09 11:03:59  csoutheren
- * Remove warnings on VS.net 2005
- *
- * Revision 1.15  2005/11/30 12:47:42  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.14  2005/10/06 08:14:55  csoutheren
- * Fixed race condition in sound driver when shutting down with driver that is not open
- *
- * Revision 1.13  2005/09/18 13:01:43  dominance
- * fixed pragma warnings when building with gcc.
- *
- * Revision 1.12  2005/07/03 13:48:58  shorne
- * Add the ability to play sound to specified device.
- *
- * Revision 1.11  2005/04/21 05:27:04  csoutheren
- * Prevent weird deadlocks when using record-only or play-only sound channels
- *
- * Revision 1.10  2005/01/04 07:44:04  csoutheren
- * More changes to implement the new configuration methodology, and also to
- * attack the global static problem
- *
- * Revision 1.9  2004/10/23 11:16:17  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.8  2004/08/16 06:41:00  csoutheren
- * Added adapters template to make device plugins available via the abstract factory interface
- *
- * Revision 1.7  2004/04/09 06:52:18  rjongbloed
- * Removed #pargma linker command for /delayload of DLL as documentations sais that
- *   you cannot do this.
- *
- * Revision 1.6  2004/02/23 23:52:20  csoutheren
- * Added pragmas to avoid every Windows application needing to include libs explicitly
- *
- * Revision 1.5  2004/02/15 03:59:20  rjongbloed
- * Fixed the default number of buffer to be the value determined emprirically in
- *    OpenH323, thanks Ted Szoczei
- *
- * Revision 1.4  2003/12/29 03:29:26  csoutheren
- * Allowed access to Windows sound channel declaration, just in case it is required
- *
- * Revision 1.3  2003/12/29 02:00:40  csoutheren
- * Moved some declarations to sound_win32.h to allow access
- *
- * Revision 1.2  2003/11/18 10:50:44  csoutheren
- * Changed name of Windows sound device
- *
- * Revision 1.1  2003/11/12 04:39:56  csoutheren
- * Changed to work with new plugin system
- *
- * Revision 1.37  2003/11/05 05:57:58  csoutheren
- * Added #pragma to include required libs
- *
- * Revision 1.36  2003/09/17 05:45:10  csoutheren
- * Removed recursive includes
- *
- * Revision 1.35  2003/06/05 05:20:35  rjongbloed
- * Fixed WinCE compatibility, thanks Yuri Kiryanov
- *
- * Revision 1.34  2003/05/29 08:57:38  rjongbloed
- * Futher changes to not alter balance when changing volume setting, also fixed
- *   correct return of volume level if balance not centred, thanks Diego Tártara
- *
- * Revision 1.33  2003/05/01 00:17:40  robertj
- * Fixed setting of stereo volume levels, thanks Diego Tártara
- *
- * Revision 1.32  2002/08/05 01:22:59  robertj
- * Fixed possible range error on SetVolume(), thanks Sonya Cooper-Hull
- *
- * Revision 1.31  2002/02/08 09:59:45  robertj
- * Slight adjustment to API and documentation for volume functions.
- * Added implementation for volume function on play, still needs recording.
- *
- * Revision 1.30  2002/02/07 20:57:21  dereks
- * add SetVolume and GetVolume methods to PSoundChannel
- *
- * Revision 1.29  2001/10/23 02:49:48  robertj
- * Fixed problem with Abort() not always breaking I/O blocked threads.
- *
- * Revision 1.28  2001/10/12 03:50:27  robertj
- * Fixed race condition on using Abort() which Reading from another thread.
- * Fixed failure to start recording if called WaitForXXXFull() functions.
- *
- * Revision 1.27  2001/10/10 03:29:34  yurik
- * Added open with format other than PCM
- *
- * Revision 1.26  2001/09/22 03:36:56  yurik
- * Put code to prevent audio channel disconnection
- *
- * Revision 1.25  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.24  2001/09/10 02:48:51  robertj
- * Removed previous change as breaks semantics of Read() function, moved test
- *   for zero buffer length to part that waits for buffer to be full.
- *
- * Revision 1.23  2001/09/09 17:37:49  yurik
- * dwBytesRecorded in WAVEHDR could return 0. We should not close the channel in this case
- *
- * Revision 1.22  2001/09/09 02:17:11  yurik
- * Returned to 1.20
- *
- * Revision 1.20  2001/07/01 02:45:01  yurik
- * WinCE compiler wants implicit cast to format
- *
- * Revision 1.19  2001/05/04 09:38:07  robertj
- * Fixed problem with some WAV files having small WAVEFORMATEX chunk.
- *
- * Revision 1.18  2001/04/10 00:51:11  robertj
- * Fixed bug in using incorrect function to delete event handle, thanks Victor H.
- *
- * Revision 1.17  2001/03/15 23:39:29  robertj
- * Fixed bug with trying to write block larger than one buffer, thanks Norbert Oertel
- *
- * Revision 1.16  2001/02/07 04:45:54  robertj
- * Added functions to get current sound channel format parameters.
- *
- * Revision 1.15  2000/07/04 04:30:47  robertj
- * Fixed shutdown issues with buffers in use, again.
- *
- * Revision 1.14  2000/07/01 09:39:31  robertj
- * Fixed shutdown issues with buffers in use.
- *
- * Revision 1.13  2000/06/29 00:39:29  robertj
- * Fixed bug when PWaveFormat is assigned to itself.
- *
- * Revision 1.12  2000/05/22 07:17:50  robertj
- * Fixed missing initialisation of format data block in Win32 PSound::Load().
- *
- * Revision 1.11  2000/05/01 05:59:11  robertj
- * Added mutex to PSoundChannel buffer structure.
- *
- * Revision 1.10  2000/03/04 10:15:32  robertj
- * Added simple play functions for sound files.
- *
- * Revision 1.9  2000/02/17 11:33:33  robertj
- * Changed PSoundChannel::Write so blocks instead of error if no buffers available.
- *
- * Revision 1.8  1999/10/09 01:22:07  robertj
- * Fixed error display for sound channels.
- *
- * Revision 1.7  1999/09/23 04:28:44  robertj
- * Allowed some Win32 only access to wave format in sound channel
- *
- * Revision 1.6  1999/07/08 08:39:53  robertj
- * Fixed bug when breaking block by closing the PSoundChannel in other thread.
- *
- * Revision 1.5  1999/06/24 14:01:25  robertj
- * Fixed bug in not returning correct default recorder (waveIn) device.
- *
- * Revision 1.4  1999/06/07 01:36:28  robertj
- * Fixed incorrect;ly set block alignment in sound structure.
- *
- * Revision 1.3  1999/05/28 14:04:51  robertj
- * Added function to get default audio device.
- *
- * Revision 1.2  1999/02/22 10:15:15  robertj
- * Sound driver interface implementation to Linux OSS specification.
- *
- * Revision 1.1  1999/02/16 06:02:07  robertj
- * Major implementation to Linux OSS model
- *
+ * $Revision: 28468 $
+ * $Author: rjongbloed $
+ * $Date: 2012-10-04 23:20:30 -0500 (Thu, 04 Oct 2012) $
  */
 
-#define P_FORCE_STATIC_PLUGIN
-
 #include <ptlib.h>
-
-#if defined(_WIN32) && !defined(P_FORCE_STATIC_PLUGIN)
-#error "sound_win32.cxx must be compiled without precompiled headers"
-#endif
-
-#include <process.h>
+#include <ptlib/sound.h>
 
 #include <ptlib/plugin.h>
 #include <ptlib/msos/ptlib/sound_win32.h>
+
+#include <math.h>
+
 
 #ifndef _WIN32_WCE
 #ifdef _MSC_VER
 #pragma comment(lib, "winmm.lib")
 #endif
+#else
+#include <ptlib/wm/mmsystemx.h>
 #endif
+
 
 class PSound;
 
 PCREATE_SOUND_PLUGIN(WindowsMultimedia, PSoundChannelWin32);
-
-class PMultiMediaFile
-{
-  public:
-    PMultiMediaFile();
-    ~PMultiMediaFile();
-
-    BOOL CreateWaveFile(const PFilePath & filename,
-                        const PWaveFormat & waveFormat,
-                        DWORD dataSize);
-    BOOL OpenWaveFile(const PFilePath & filename,
-                      PWaveFormat & waveFormat,
-                      DWORD & dataSize);
-
-    BOOL Open(const PFilePath & filename, DWORD dwOpenFlags, LPMMIOINFO lpmmioinfo = NULL);
-    BOOL Close(UINT wFlags = 0);
-    BOOL Ascend(MMCKINFO & ckinfo, UINT wFlags = 0);
-    BOOL Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent = NULL);
-    BOOL Read(void * data, PINDEX len);
-    BOOL CreateChunk(MMCKINFO & ckinfo, UINT wFlags = 0);
-    BOOL Write(const void * data, PINDEX len);
-
-    DWORD GetLastError() const { return dwLastError; }
-
-  protected:
-    HMMIO hmmio;
-    DWORD dwLastError;
-};
-
 
 #define new PNEW
 
@@ -262,12 +70,12 @@ PMultiMediaFile::~PMultiMediaFile()
 }
 
 
-BOOL PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
+PBoolean PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
                                      const PWaveFormat & waveFormat,
                                      DWORD dataSize)
 {
   if (!Open(filename, MMIO_CREATE|MMIO_WRITE))
-    return FALSE;
+    return PFalse;
 
   MMCKINFO mmChunk;
   mmChunk.fccType = mmioFOURCC('W', 'A', 'V', 'E');
@@ -277,16 +85,16 @@ BOOL PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
 
   // Create a RIFF chunk
   if (!CreateChunk(mmChunk, MMIO_CREATERIFF))
-    return FALSE;
+    return PFalse;
 
   // Save the format sub-chunk
   mmChunk.ckid = mmioFOURCC('f', 'm', 't', ' ');
   mmChunk.cksize = waveFormat.GetSize();
   if (!CreateChunk(mmChunk))
-    return FALSE;
+    return PFalse;
 
   if (!Write(waveFormat, waveFormat.GetSize()))
-    return FALSE;
+    return PFalse;
 
   // Save the data sub-chunk
   mmChunk.ckid = mmioFOURCC('d', 'a', 't', 'a');
@@ -295,13 +103,13 @@ BOOL PMultiMediaFile::CreateWaveFile(const PFilePath & filename,
 }
 
 
-BOOL PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
+PBoolean PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
                                    PWaveFormat  & waveFormat,
                                    DWORD & dataSize)
 {
   // Open wave file
   if (!Open(filename, MMIO_READ | MMIO_ALLOCBUF))
-    return FALSE;
+    return PFalse;
 
   MMCKINFO mmParentChunk, mmSubChunk;
   dwLastError = MMSYSERR_NOERROR;
@@ -309,20 +117,20 @@ BOOL PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
   // Locate a 'RIFF' chunk with a 'WAVE' form type
   mmParentChunk.fccType = mmioFOURCC('W', 'A', 'V', 'E');
   if (!Descend(MMIO_FINDRIFF, mmParentChunk))
-    return FALSE;
+    return PFalse;
 
   // Find the format chunk
   mmSubChunk.ckid = mmioFOURCC('f', 'm', 't', ' ');
   if (!Descend(MMIO_FINDCHUNK, mmSubChunk, &mmParentChunk))
-    return FALSE;
+    return PFalse;
 
   // Get the size of the format chunk, allocate memory for it
   if (!waveFormat.SetSize(mmSubChunk.cksize))
-    return FALSE;
+    return PFalse;
 
   // Read the format chunk
   if (!Read(waveFormat.GetPointer(), waveFormat.GetSize()))
-    return FALSE;
+    return PFalse;
 
   // Ascend out of the format subchunk
   Ascend(mmSubChunk);
@@ -330,20 +138,20 @@ BOOL PMultiMediaFile::OpenWaveFile(const PFilePath & filename,
   // Find the data subchunk
   mmSubChunk.ckid = mmioFOURCC('d', 'a', 't', 'a');
   if (!Descend(MMIO_FINDCHUNK, mmSubChunk, &mmParentChunk))
-    return FALSE;
+    return PFalse;
 
   // Get the size of the data subchunk
   if (mmSubChunk.cksize == 0) {
     dwLastError = MMSYSERR_INVALPARAM;
-    return FALSE;
+    return PFalse;
   }
 
   dataSize = mmSubChunk.cksize;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PMultiMediaFile::Open(const PFilePath & filename,
+PBoolean PMultiMediaFile::Open(const PFilePath & filename,
                           DWORD dwOpenFlags,
                           LPMMIOINFO lpmmioinfo)
 {
@@ -361,45 +169,45 @@ BOOL PMultiMediaFile::Open(const PFilePath & filename,
 }
 
 
-BOOL PMultiMediaFile::Close(UINT wFlags)
+PBoolean PMultiMediaFile::Close(UINT wFlags)
 {
   if (hmmio == NULL)
-    return FALSE;
+    return PFalse;
 
   mmioClose(hmmio, wFlags);
   hmmio = NULL;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PMultiMediaFile::Ascend(MMCKINFO & ckinfo, UINT wFlags)
+PBoolean PMultiMediaFile::Ascend(MMCKINFO & ckinfo, UINT wFlags)
 {
   dwLastError = mmioAscend(hmmio, &ckinfo, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-BOOL PMultiMediaFile::Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent)
+PBoolean PMultiMediaFile::Descend(UINT wFlags, MMCKINFO & ckinfo, LPMMCKINFO lpckParent)
 {
   dwLastError = mmioDescend(hmmio, &ckinfo, lpckParent, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-BOOL PMultiMediaFile::Read(void * data, PINDEX len)
+PBoolean PMultiMediaFile::Read(void * data, PINDEX len)
 {
   return mmioRead(hmmio, (char *)data, len) == len;
 }
 
 
-BOOL PMultiMediaFile::CreateChunk(MMCKINFO & ckinfo, UINT wFlags)
+PBoolean PMultiMediaFile::CreateChunk(MMCKINFO & ckinfo, UINT wFlags)
 {
   dwLastError = mmioCreateChunk(hmmio, &ckinfo, wFlags);
   return dwLastError == MMSYSERR_NOERROR;
 }
 
 
-BOOL PMultiMediaFile::Write(const void * data, PINDEX len)
+PBoolean PMultiMediaFile::Write(const void * data, PINDEX len)
 {
   return mmioWrite(hmmio, (char *)data, len) == len;
 }
@@ -493,7 +301,7 @@ void PWaveFormat::SetFormat(unsigned numChannels,
   waveFormat->nChannels = (WORD)numChannels;
   waveFormat->nSamplesPerSec = sampleRate;
   waveFormat->wBitsPerSample = (WORD)bitsPerSample;
-  waveFormat->nBlockAlign = (WORD)(numChannels*(bitsPerSample+7)/8);
+  waveFormat->nBlockAlign = (WORD)(numChannels*bitsPerSample/8);
   waveFormat->nAvgBytesPerSec = waveFormat->nSamplesPerSec*waveFormat->nBlockAlign;
   waveFormat->cbSize = 0;
 }
@@ -506,7 +314,7 @@ void PWaveFormat::SetFormat(const void * data, PINDEX size)
 }
 
 
-BOOL PWaveFormat::SetSize(PINDEX sz)
+PBoolean PWaveFormat::SetSize(PINDEX sz)
 {
   if (waveFormat != NULL)
     free(waveFormat);
@@ -572,7 +380,7 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-BOOL PSound::Load(const PFilePath & filename)
+PBoolean PSound::Load(const PFilePath & filename)
 {
   // Open wave file
   PMultiMediaFile mmio;
@@ -580,7 +388,7 @@ BOOL PSound::Load(const PFilePath & filename)
   DWORD dataSize;
   if (!mmio.OpenWaveFile(filename, waveFormat, dataSize)) {
     dwLastError = mmio.GetLastError();
-    return FALSE;
+    return PFalse;
   }
 
   encoding = waveFormat->wFormatTag;
@@ -596,20 +404,20 @@ BOOL PSound::Load(const PFilePath & filename)
   // Allocate and lock memory for the waveform data.
   if (!SetSize(dataSize)) {
     dwLastError = MMSYSERR_NOMEM;
-    return FALSE;
+    return PFalse;
   }
 
   // Read the waveform data subchunk
   if (!mmio.Read(GetPointer(), GetSize())) {
     dwLastError = mmio.GetLastError();
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSound::Save(const PFilePath & filename)
+PBoolean PSound::Save(const PFilePath & filename)
 {
   PWaveFormat waveFormat;
   if (encoding == 0)
@@ -623,42 +431,43 @@ BOOL PSound::Save(const PFilePath & filename)
   PMultiMediaFile mmio;
   if (!mmio.CreateWaveFile(filename, waveFormat, GetSize())) {
     dwLastError = mmio.GetLastError();
-    return FALSE;
+    return PFalse;
   }
 
   if (!mmio.Write(GetPointer(), GetSize())) {
     dwLastError = mmio.GetLastError();
-    return FALSE;
+    return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSound::Play()
+PBoolean PSound::Play()
 {
   PSoundChannel channel(PSoundChannel::GetDefaultDevice(PSoundChannel::Player),
                         PSoundChannel::Player);
   if (!channel.IsOpen())
-    return FALSE;
+    return PFalse;
 
-  return channel.PlaySound(*this, TRUE);
+  return channel.PlaySound(*this, PTrue);
 }
 
-BOOL PSound::Play(const PString & device)
+PBoolean PSound::Play(const PString & device)
 {
 
   PSoundChannel channel(device,
                        PSoundChannel::Player);
   if (!channel.IsOpen())
-    return FALSE;
+    return PFalse;
 
-  return channel.PlaySound(*this, TRUE);
+  return channel.PlaySound(*this, PTrue);
 }
 
-BOOL PSound::PlayFile(const PFilePath & file, BOOL wait)
+PBoolean PSound::PlayFile(const PFilePath & file, PBoolean wait)
 {
-  return ::PlaySound(file, NULL, SND_FILENAME|(wait ? SND_SYNC : SND_ASYNC));
+  PVarString filename = file;
+  return ::PlaySound(filename, NULL, SND_FILENAME|(wait ? SND_SYNC : SND_ASYNC));
 }
 
 
@@ -768,10 +577,11 @@ PSoundChannelWin32::PSoundChannelWin32(const PString & device,
 
 void PSoundChannelWin32::Construct()
 {
+  opened = false;
   direction = Player;
   hWaveOut = NULL;
   hWaveIn = NULL;
-  hEventDone = CreateEvent(NULL, FALSE, FALSE, NULL);
+  hEventDone = CreateEvent(NULL, PFalse, PFalse, NULL);
 
   waveFormat.SetFormat(1, 8000, 16);
 
@@ -796,134 +606,136 @@ PString PSoundChannelWin32::GetName() const
 }
 
 
+static bool GetWaveOutDeviceName(UINT id, PString & name)
+{
+  if (id == WAVE_MAPPER) {
+    name = "Default";
+    return true;
+  }
+
+  WAVEOUTCAPS caps;
+  if (waveOutGetDevCaps(id, &caps, sizeof(caps)) != 0)
+    return false;
+
+  name = PString(caps.szPname).Trim();
+  return true;
+}
+
+
+static bool GetWaveInDeviceName(UINT id, PString & name)
+{
+  if (id == WAVE_MAPPER) {
+    name = "Default";
+    return true;
+  }
+
+  WAVEINCAPS caps;
+  if (waveInGetDevCaps(id, &caps, sizeof(caps)) != 0)
+    return false;
+
+  name = PString(caps.szPname).Trim();
+  return true;
+}
+
+
 PStringArray PSoundChannelWin32::GetDeviceNames(Directions dir)
 {
-  PStringArray array;
+  PStringArray devices;
 
-  unsigned numDevs, id;
+  UINT numDevs;
+  UINT id = WAVE_MAPPER;
 
   switch (dir) {
     case Player :
       numDevs = waveOutGetNumDevs();
-      for (id = 0; id < numDevs; id++) {
-        WAVEOUTCAPS caps;
-        if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0)
-          array[array.GetSize()] = caps.szPname;
-      }
+      do {
+        PCaselessString dev;
+        if (GetWaveOutDeviceName(id, dev))
+          devices.AppendString(dev);
+      } while (++id < numDevs);
       break;
 
     case Recorder :
       numDevs = waveInGetNumDevs();
-      for (id = 0; id < numDevs; id++) {
-        WAVEINCAPS caps;
-        if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0)
-          array[array.GetSize()] = caps.szPname;
-      }
+      do {
+        PCaselessString dev;
+        if (GetWaveInDeviceName(id, dev))
+          devices.AppendString(dev);
+      } while (++id < numDevs);
       break;
   }
 
-  return array;
+  return devices;
 }
 
 
-PString PSoundChannelWin32::GetDefaultDevice(Directions dir)
+PBoolean PSoundChannelWin32::GetDeviceID(const PString & device, Directions dir, unsigned& id)
 {
-  RegistryKey registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Multimedia\\Sound Mapper",
-                       RegistryKey::ReadOnly);
+  PINDEX offset = device.Find(PDevicePluginServiceDescriptor::SeparatorChar);
+  if (offset == P_MAX_INDEX)
+    offset = 0;
+  else
+    offset++;
 
-  PString str;
-
-  if (dir == Player) {
-    if (!registry.QueryValue("Playback", str)) {
-      WAVEOUTCAPS caps;
-      if (waveOutGetDevCaps(0, &caps, sizeof(caps)) == 0)
-        str = caps.szPname;
-    }
-  }
-  else {
-    if (!registry.QueryValue("Record", str)) {
-      WAVEINCAPS caps;
-      if (waveInGetDevCaps(0, &caps, sizeof(caps)) == 0)
-        str = caps.szPname;
-    }
-  }
-
-  return str;
-}
-
-BOOL PSoundChannelWin32::GetDeviceID(const PString & device, Directions dir, unsigned& id)
-{
-  BOOL bad = TRUE;
-
-  if (device[0] == '#') {
-    id = device.Mid(1).AsUnsigned();
+  if (device[offset] == '#') {
+    id = device.Mid(offset+1).AsUnsigned();
     switch (dir) {
       case Player :
-        if (id < waveOutGetNumDevs()) {
-          WAVEOUTCAPS caps;
-          if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0) {
-            deviceName = caps.szPname;
-            bad = FALSE;
-          }
-        }
+        if (id < waveOutGetNumDevs())
+          GetWaveOutDeviceName(id, deviceName);
         break;
 
       case Recorder :
-        if (id < waveInGetNumDevs()) {
-          WAVEINCAPS caps;
-          if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0) {
-            deviceName = caps.szPname;
-            bad = FALSE;
-          }
-        }
+        if (id < waveInGetNumDevs())
+          GetWaveInDeviceName(id, deviceName);
         break;
     }
   }
   else {
+    id = WAVE_MAPPER;
+    UINT numDevs;
     switch (dir) {
       case Player :
-        for (id = 0; id < waveOutGetNumDevs(); id++) {
-          WAVEOUTCAPS caps;
-          if (waveOutGetDevCaps(id, &caps, sizeof(caps)) == 0 &&
-              strcasecmp(caps.szPname, device) == 0) {
-            deviceName = caps.szPname;
-            bad = FALSE;
+        numDevs = waveOutGetNumDevs();
+        do {
+          PCaselessString str;
+          if (GetWaveOutDeviceName(id, str) && str == device.Mid(offset)) {
+            deviceName = str;
             break;
           }
-        }
+        } while (++id < numDevs);
         break;
 
       case Recorder :
-        for (id = 0; id < waveInGetNumDevs(); id++) {
-          WAVEINCAPS caps;
-          if (waveInGetDevCaps(id, &caps, sizeof(caps)) == 0 &&
-              strcasecmp(caps.szPname, device) == 0) {
-            deviceName = caps.szPname;
-            bad = FALSE;
+        numDevs = waveInGetNumDevs();
+        do {
+          PCaselessString str;
+          if (GetWaveInDeviceName(id, str) && str == device.Mid(offset)) {
+            deviceName = str;
             break;
           }
-        }
+        } while (++id < numDevs);
         break;
     }
   }
 
-  if (bad)
+  if (deviceName.IsEmpty())
     return SetErrorValues(NotFound, MMSYSERR_BADDEVICEID|PWIN32ErrorFlag);
 
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PSoundChannelWin32::Open(const PString & device,
-                         Directions dir,
-                         unsigned numChannels,
-                         unsigned sampleRate,
-                         unsigned bitsPerSample)
+PBoolean PSoundChannelWin32::Open(const PString & device,
+                                  Directions dir,
+                                  unsigned numChannels,
+                                  unsigned sampleRate,
+                                  unsigned bitsPerSample)
 {
   Close();
   unsigned id = 0;
 
   if( !GetDeviceID(device, dir, id) )
-    return FALSE;
+    return PFalse;
 
   waveFormat.SetFormat(numChannels, sampleRate, bitsPerSample);
 
@@ -931,15 +743,15 @@ BOOL PSoundChannelWin32::Open(const PString & device,
   return OpenDevice(id);
 }
 
-BOOL PSoundChannelWin32::Open(const PString & device,
-                         Directions dir,
-             const PWaveFormat& format)
+PBoolean PSoundChannelWin32::Open(const PString & device,
+                                  Directions dir,
+                                  const PWaveFormat& format)
 {
   Close();
   unsigned id = 0;
 
   if( !GetDeviceID(device, dir, id) )
-    return FALSE;
+    return PFalse;
 
   waveFormat = format;
 
@@ -947,7 +759,8 @@ BOOL PSoundChannelWin32::Open(const PString & device,
   return OpenDevice(id);
 }
 
-BOOL PSoundChannelWin32::OpenDevice(unsigned id)
+
+PBoolean PSoundChannelWin32::OpenDevice(unsigned id)
 {
   Close();
 
@@ -958,32 +771,180 @@ BOOL PSoundChannelWin32::OpenDevice(unsigned id)
 
   WAVEFORMATEX* format = (WAVEFORMATEX*) waveFormat;
 
+  MIXERLINE line;
+
   DWORD osError = MMSYSERR_BADDEVICEID;
   switch (direction) {
     case Player :
-      osError = waveOutOpen(&hWaveOut, id, format,
-                            (DWORD)hEventDone, 0, CALLBACK_EVENT);
+      osError = waveOutOpen(&hWaveOut, id, format, (DWORD)hEventDone, 0, CALLBACK_EVENT);
+      if (osError == MMSYSERR_NOERROR) {
+        mixerOpen(&hMixer, (UINT)hWaveOut, NULL, NULL, MIXER_OBJECTF_HWAVEOUT);
+        line.dwComponentType = MIXERLINE_COMPONENTTYPE_SRC_WAVEOUT;
+      }
       break;
 
     case Recorder :
-      osError = waveInOpen(&hWaveIn, id, format,
-                           (DWORD)hEventDone, 0, CALLBACK_EVENT);
+      osError = waveInOpen(&hWaveIn, id, format, (DWORD)hEventDone, 0, CALLBACK_EVENT);
+      if (osError == MMSYSERR_NOERROR) {
+        mixerOpen(&hMixer, (UINT)hWaveIn, NULL, NULL, MIXER_OBJECTF_HWAVEIN);
+        line.dwComponentType = MIXERLINE_COMPONENTTYPE_DST_WAVEIN;
+      }
       break;
   }
 
   if (osError != MMSYSERR_NOERROR)
     return SetErrorValues(NotFound, osError|PWIN32ErrorFlag);
 
+  opened = true;
   os_handle = id;
-  return TRUE;
+
+  if (hMixer == NULL) {
+    PTRACE(2, "WinSnd\tNo mixer available");
+    return true; // Still return true as have actual device
+  }
+
+  line.cbStruct = sizeof(line);
+  if ((osError = mixerGetLineInfo((HMIXEROBJ)hMixer, &line,
+            MIXER_OBJECTF_HMIXER | MIXER_GETLINEINFOF_COMPONENTTYPE)) != MMSYSERR_NOERROR) {
+    PTRACE(2, "WinSnd\tFailed to get mixer info, error=" << osError);
+  }
+  else {
+    bool haveControl = true;
+    MIXERLINECONTROLS controls;
+
+    if ((direction == Recorder)
+#ifndef _WIN32_WCE
+      && ((DWORD)(LOBYTE(LOWORD(GetVersion()))) < 6)
+#endif
+      ) { //5=XP/win2003
+      /* There is no "master" for the recording side, so need to find the
+         single selected input or at least individual microphone input
+         No need to do all of these on Vista/Win7/Win2008 as there is
+         a "master" for every input on those OS */
+
+      DWORD iConn = line.cConnections; //should save first
+      
+      //1)Attempt to find currently selected input
+      MIXERCONTROL muxControl;
+      muxControl.cbStruct = sizeof(muxControl);
+      controls.cbStruct = sizeof(controls);
+      controls.dwLineID = line.dwLineID;
+      controls.dwControlType = MIXERCONTROL_CONTROLTYPE_MUX;
+      controls.cControls = 1;
+      controls.pamxctrl = &muxControl;
+      controls.cbmxctrl = muxControl.cbStruct;
+      if ((osError = mixerGetLineControls((HMIXEROBJ)hMixer, &controls,
+                                          MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE)) == MMSYSERR_NOERROR) {
+        MIXERCONTROLDETAILS mxcd;
+        mxcd.cbStruct = sizeof(mxcd);
+        mxcd.dwControlID = muxControl.dwControlID;
+        mxcd.cChannels = 1;
+        mxcd.cMultipleItems = muxControl.cMultipleItems;
+        mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_LISTTEXT);
+        std::vector<MIXERCONTROLDETAILS_LISTTEXT> mxcdlt(mxcd.cChannels * mxcd.cMultipleItems); 
+        mxcd.paDetails = &mxcdlt[0];
+        // Get the control list text items (input lines id's)
+        if ((osError = mixerGetControlDetails((HMIXEROBJ)hMixer, &mxcd,
+                                              MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_LISTTEXT)) == MMSYSERR_NOERROR) {
+          mxcd.cbDetails = sizeof(MIXERCONTROLDETAILS_BOOLEAN);
+          std::vector<MIXERCONTROLDETAILS_BOOLEAN> mxcdb(mxcd.cChannels * mxcd.cMultipleItems);
+          mxcd.paDetails = &mxcdb[0];
+          // Get the control values for line states (selected/not selected)
+          if ((osError = mixerGetControlDetails((HMIXEROBJ)hMixer, &mxcd,
+                                                MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE)) == MMSYSERR_NOERROR) {
+            DWORD iMult = mxcd.cMultipleItems;
+            while (iMult > 0) {
+              line.dwLineID = mxcdlt[--iMult].dwParam1;
+              if ((osError = mixerGetLineInfo((HMIXEROBJ)hMixer, &line,
+                                              MIXER_OBJECTF_HMIXER | MIXER_GETLINEINFOF_LINEID)) != MMSYSERR_NOERROR)
+                PTRACE(2, "WinSnd\tRecorder: Failed to get mixer info, error=" << osError);
+              else {
+                if (mxcdb[iMult].fValue == 1) {
+                  PTRACE(2, "WinSnd\tRecorder: Found selected input device: " << line.szName);
+                  break;
+                }
+
+                if (iMult == 0) {
+                  haveControl = false;
+                  PTRACE(2, "WinSnd\tRecorder: Failed to find selected input device");
+                }
+              }
+            }
+          }
+          else {
+            haveControl = false;
+            PTRACE(2, "WinSnd\tRecorder: failed to get info about states of input lines, error=" << osError);
+          }
+        }
+        else {
+          haveControl = false;
+          PTRACE(2, "WinSnd\tRecorder: failed to get info about input lines, error=" << osError);
+        }
+      }
+      else {
+        haveControl = false;
+        PTRACE(2, "WinSnd\tRecorder: failed to get mixer line mux control, error=" << osError);
+      }
+
+      //2) Attempt to find microphone input if not seccessfull with selected input
+      if (!haveControl) {
+        haveControl = true;
+        PTRACE(2, "WinSnd\tRecorder: trying to find microphone now...");
+        while (iConn > 0) {
+          line.dwSource = --iConn;
+          if ((osError = mixerGetLineInfo((HMIXEROBJ)hMixer, &line, MIXER_GETLINEINFOF_SOURCE)) != MMSYSERR_NOERROR)
+            PTRACE(2, "WinSnd\tFailed to get mixer info, error=" << osError);
+          else if (line.dwComponentType == MIXERLINE_COMPONENTTYPE_SRC_MICROPHONE) {
+            PTRACE(5, "WinSnd\tFfound microphone, source=" << iConn);
+            break;
+          }
+
+          if (iConn == 0) {
+            PTRACE(2, "WinSnd\tFailed to find microphone info");
+            haveControl = false;
+          }
+        }
+      }
+    }
+
+    if (haveControl) {
+      volumeControl.cbStruct = sizeof(volumeControl);
+
+      controls.cbStruct = sizeof(controls);
+      controls.dwLineID = line.dwLineID;
+      controls.dwControlType = MIXERCONTROL_CONTROLTYPE_VOLUME;
+      controls.cControls = 1;
+      controls.pamxctrl = &volumeControl;
+      controls.cbmxctrl = volumeControl.cbStruct;
+
+      if ((osError = mixerGetLineControls((HMIXEROBJ)hMixer, &controls,
+                MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE)) == MMSYSERR_NOERROR) {
+        muteControl.cbStruct = sizeof(muteControl);
+        controls.dwControlType = MIXERCONTROL_CONTROLTYPE_MUTE;
+        controls.pamxctrl = &muteControl;
+        controls.cbmxctrl = muteControl.cbStruct;
+        if ((osError = mixerGetLineControls((HMIXEROBJ)hMixer, &controls,
+                MIXER_OBJECTF_HMIXER | MIXER_GETLINECONTROLSF_ONEBYTYPE)) != MMSYSERR_NOERROR) {
+          PTRACE(2, "WinSnd\tFailed to get mixer line mute control ("
+                 << (direction == Recorder ? "Recorder" : "Player") << "), error=" << osError);
+        }
+        return true;
+      }
+      PTRACE(2, "WinSnd\tFailed to get mixer line control, error=" << osError);
+    }
+  }
+
+  mixerClose(hMixer);
+  hMixer = NULL;
+  return true; // Still return true as have actual device
 }
 
-BOOL PSoundChannelWin32::IsOpen() const
+PBoolean PSoundChannelWin32::IsOpen() const
 { 
-  return os_handle >= 0;
+  return opened ? PTrue : PFalse;
 }
 
-BOOL PSoundChannelWin32::SetFormat(unsigned numChannels,
+PBoolean PSoundChannelWin32::SetFormat(unsigned numChannels,
                               unsigned sampleRate,
                               unsigned bitsPerSample)
 {
@@ -995,7 +956,7 @@ BOOL PSoundChannelWin32::SetFormat(unsigned numChannels,
 }
 
 
-BOOL PSoundChannelWin32::SetFormat(const PWaveFormat & format)
+PBoolean PSoundChannelWin32::SetFormat(const PWaveFormat & format)
 {
   Abort();
 
@@ -1023,10 +984,12 @@ unsigned PSoundChannelWin32::GetSampleSize() const
 }
 
 
-BOOL PSoundChannelWin32::Close()
+PBoolean PSoundChannelWin32::Close()
 {
   if (!IsOpen())
     return SetErrorValues(NotOpen, EBADF);
+
+  PWaitAndSignal mutex(bufferMutex);
 
   Abort();
 
@@ -1042,31 +1005,40 @@ BOOL PSoundChannelWin32::Close()
     hWaveIn = NULL;
   }
 
-  Abort();
+  if (hMixer != NULL) {
+    mixerClose(hMixer);
+    hMixer = NULL;
+  }
 
+  opened = false;
   os_handle = -1;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
+PBoolean PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 {
+  if (count == buffers.GetSize() && size == buffers[0].GetSize())
+	  return true;
+
   Abort();
 
   PAssert(size > 0 && count > 0, PInvalidParameter);
 
-  BOOL ok = TRUE;
+  PTRACE(3, "WinSnd\tSetting sounds buffers to " << count << " x " << size);
+
+  PBoolean ok = PTrue;
 
   PWaitAndSignal mutex(bufferMutex);
 
   if (!buffers.SetSize(count))
-    ok = FALSE;
+    ok = PFalse;
   else {
     for (PINDEX i = 0; i < count; i++) {
       if (buffers.GetAt(i) == NULL)
         buffers.SetAt(i, new PWaveBuffer(size));
       if (!buffers[i].SetSize(size))
-        ok = FALSE;
+        ok = PFalse;
     }
   }
 
@@ -1077,7 +1049,7 @@ BOOL PSoundChannelWin32::SetBuffers(PINDEX size, PINDEX count)
 }
 
 
-BOOL PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
+PBoolean PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1088,11 +1060,11 @@ BOOL PSoundChannelWin32::GetBuffers(PINDEX & size, PINDEX & count)
   else
     size = buffers[0].GetSize();
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::Write(const void * data, PINDEX size)
+PBoolean PSoundChannelWin32::Write(const void * data, PINDEX size)
 {
   lastWriteCount = 0;
 
@@ -1135,15 +1107,15 @@ BOOL PSoundChannelWin32::Write(const void * data, PINDEX size)
   if (size != 0)
     return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::PlaySound(const PSound & sound, BOOL wait)
+PBoolean PSoundChannelWin32::PlaySound(const PSound & sound, PBoolean wait)
 {
   Abort();
 
-  BOOL ok = FALSE;
+  PBoolean ok = PFalse;
 
   PINDEX bufferSize;
   PINDEX bufferCount;
@@ -1177,7 +1149,7 @@ BOOL PSoundChannelWin32::PlaySound(const PSound & sound, BOOL wait)
     }
     else {
       SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
-      ok = FALSE;
+      ok = PFalse;
     }
 
     bufferMutex.Signal();
@@ -1189,7 +1161,7 @@ BOOL PSoundChannelWin32::PlaySound(const PSound & sound, BOOL wait)
 }
 
 
-BOOL PSoundChannelWin32::PlayFile(const PFilePath & filename, BOOL wait)
+PBoolean PSoundChannelWin32::PlayFile(const PFilePath & filename, PBoolean wait)
 {
   Abort();
 
@@ -1206,7 +1178,7 @@ BOOL PSoundChannelWin32::PlayFile(const PFilePath & filename, BOOL wait)
   waveFormat = fileFormat;
   if (!OpenDevice(os_handle)) {
     SetFormat(numChannels, sampleRate, bitsPerSample);
-    return FALSE;
+    return PFalse;
   }
 
   bufferMutex.Wait();
@@ -1218,8 +1190,9 @@ BOOL PSoundChannelWin32::PlayFile(const PFilePath & filename, BOOL wait)
       bufferMutex.Signal();
       // No free buffers, so wait for one
       if (WaitForSingleObject(hEventDone, INFINITE) != WAIT_OBJECT_0) {
+        osError = ::GetLastError();
         SetFormat(numChannels, sampleRate, bitsPerSample);
-        return SetErrorValues(Miscellaneous, ::GetLastError()|PWIN32ErrorFlag, LastWriteError);
+        return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
       }
       bufferMutex.Wait();
     }
@@ -1244,48 +1217,51 @@ BOOL PSoundChannelWin32::PlayFile(const PFilePath & filename, BOOL wait)
 
   bufferMutex.Signal();
 
-  if (dataSize == 0 && wait)
-    WaitForPlayCompletion();
-
-  SetFormat(numChannels, sampleRate, bitsPerSample);
-  if (osError != MMSYSERR_NOERROR)
+  if (osError != MMSYSERR_NOERROR) {
+    SetFormat(numChannels, sampleRate, bitsPerSample);
     return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastWriteError);
+  }
 
-  return TRUE;
+  if (dataSize == 0 && wait) {
+    WaitForPlayCompletion();
+    SetFormat(numChannels, sampleRate, bitsPerSample);
+  }
+
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::HasPlayCompleted()
+PBoolean PSoundChannelWin32::HasPlayCompleted()
 {
   PWaitAndSignal mutex(bufferMutex);
 
   for (PINDEX i = 0; i < buffers.GetSize(); i++) {
     if ((buffers[i].header.dwFlags&WHDR_DONE) == 0)
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::WaitForPlayCompletion()
+PBoolean PSoundChannelWin32::WaitForPlayCompletion()
 {
   while (!HasPlayCompleted()) {
     if (WaitForSingleObject(hEventDone, INFINITE) != WAIT_OBJECT_0)
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::StartRecording()
+PBoolean PSoundChannelWin32::StartRecording()
 {
   PWaitAndSignal mutex(bufferMutex);
 
   // See if has started already.
   if (bufferByteOffset != P_MAX_INDEX)
-    return TRUE;
+    return PTrue;
 
   DWORD osError;
 
@@ -1293,22 +1269,22 @@ BOOL PSoundChannelWin32::StartRecording()
   for (PINDEX i = 0; i < buffers.GetSize(); i++) {
     PWaveBuffer & buffer = buffers[i];
     if ((osError = buffer.Prepare(hWaveIn)) != MMSYSERR_NOERROR)
-      return FALSE;
+      return PFalse;
     if ((osError = waveInAddBuffer(hWaveIn, &buffer.header, sizeof(WAVEHDR))) != MMSYSERR_NOERROR)
-      return FALSE;
+      return PFalse;
   }
 
   bufferByteOffset = 0;
 
   if ((osError = waveInStart(hWaveIn)) == MMSYSERR_NOERROR) // start recording
-    return TRUE;
+    return PTrue;
 
   bufferByteOffset = P_MAX_INDEX;
   return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag, LastReadError);
 }
 
 
-BOOL PSoundChannelWin32::Read(void * data, PINDEX size)
+PBoolean PSoundChannelWin32::Read(void * data, PINDEX size)
 {
   lastReadCount = 0;
 
@@ -1316,13 +1292,13 @@ BOOL PSoundChannelWin32::Read(void * data, PINDEX size)
     return SetErrorValues(NotOpen, EBADF, LastReadError);
 
   if (!WaitForRecordBufferFull())
-    return FALSE;
+    return PFalse;
 
   PWaitAndSignal mutex(bufferMutex);
 
   // Check to see if Abort() was called in another thread
   if (bufferByteOffset == P_MAX_INDEX)
-    return FALSE;
+    return PFalse;
 
   PWaveBuffer & buffer = buffers[bufferIndex];
 
@@ -1344,14 +1320,14 @@ BOOL PSoundChannelWin32::Read(void * data, PINDEX size)
     bufferByteOffset = 0;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::RecordSound(PSound & sound)
+PBoolean PSoundChannelWin32::RecordSound(PSound & sound)
 {
   if (!WaitForAllRecordBuffersFull())
-    return FALSE;
+    return PFalse;
 
   sound.SetFormat(waveFormat->nChannels,
                   waveFormat->nSamplesPerSec,
@@ -1379,14 +1355,14 @@ BOOL PSoundChannelWin32::RecordSound(PSound & sound)
     }
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::RecordFile(const PFilePath & filename)
+PBoolean PSoundChannelWin32::RecordFile(const PFilePath & filename)
 {
   if (!WaitForAllRecordBuffersFull())
-    return FALSE;
+    return PFalse;
 
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1404,11 +1380,11 @@ BOOL PSoundChannelWin32::RecordFile(const PFilePath & filename)
       return SetErrorValues(Miscellaneous, mmio.GetLastError()|PWIN32ErrorFlag, LastReadError);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::IsRecordBufferFull()
+PBoolean PSoundChannelWin32::IsRecordBufferFull()
 {
   PWaitAndSignal mutex(bufferMutex);
 
@@ -1417,77 +1393,71 @@ BOOL PSoundChannelWin32::IsRecordBufferFull()
 }
 
 
-BOOL PSoundChannelWin32::AreAllRecordBuffersFull()
+PBoolean PSoundChannelWin32::AreAllRecordBuffersFull()
 {
   PWaitAndSignal mutex(bufferMutex);
 
   for (PINDEX i = 0; i < buffers.GetSize(); i++) {
     if ((buffers[i].header.dwFlags&WHDR_DONE) == 0 ||
          buffers[i].header.dwBytesRecorded    == 0)
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::WaitForRecordBufferFull()
+PBoolean PSoundChannelWin32::WaitForRecordBufferFull()
 {
   if (!StartRecording())  // Start the first read, queue all the buffers
-    return FALSE;
+    return PFalse;
 
   while (!IsRecordBufferFull()) {
     if (WaitForSingleObject(hEventDone, INFINITE) != WAIT_OBJECT_0)
-      return FALSE;
+      return PFalse;
 
     PWaitAndSignal mutex(bufferMutex);
     if (bufferByteOffset == P_MAX_INDEX)
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::WaitForAllRecordBuffersFull()
+PBoolean PSoundChannelWin32::WaitForAllRecordBuffersFull()
 {
   if (!StartRecording())  // Start the first read, queue all the buffers
-    return FALSE;
+    return PFalse;
 
   while (!AreAllRecordBuffersFull()) {
     if (WaitForSingleObject(hEventDone, INFINITE) != WAIT_OBJECT_0)
-      return FALSE;
+      return PFalse;
 
     PWaitAndSignal mutex(bufferMutex);
     if (bufferByteOffset == P_MAX_INDEX)
-      return FALSE;
+      return PFalse;
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PSoundChannelWin32::Abort()
+PBoolean PSoundChannelWin32::Abort()
 {
   DWORD osError = MMSYSERR_NOERROR;
-
-  if (hWaveOut != NULL)
-    osError = waveOutReset(hWaveOut);
-
-  if (hWaveIn != NULL)
-    osError = waveInReset(hWaveIn);
 
   {
     PWaitAndSignal mutex(bufferMutex);
 
     if (hWaveOut != NULL || hWaveIn != NULL) {
       for (PINDEX i = 0; i < buffers.GetSize(); i++) {
-        while (buffers[i].Release() == WAVERR_STILLPLAYING) {
+        do {
           if (hWaveOut != NULL)
             waveOutReset(hWaveOut);
           if (hWaveIn != NULL)
             waveInReset(hWaveIn);
-        }
+        } while (buffers[i].Release() == WAVERR_STILLPLAYING);
       }
     }
 
@@ -1502,7 +1472,7 @@ BOOL PSoundChannelWin32::Abort()
   if (osError != MMSYSERR_NOERROR)
     return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag);
 
-  return TRUE;
+  return PTrue;
 }
 
 
@@ -1527,109 +1497,108 @@ PString PSoundChannelWin32::GetErrorText(ErrorGroup group) const
 }
 
 
-BOOL PSoundChannelWin32::SetVolume(unsigned newVolume)
+PBoolean PSoundChannelWin32::SetVolume(unsigned newVolume)
 {
-   if (!IsOpen())
-     return SetErrorValues(NotOpen, EBADF);
+  if (!IsOpen() || hMixer == NULL)
+    return SetErrorValues(NotOpen, EBADF);
 
-   DWORD rawVolume = newVolume*65536/100;
-   if (rawVolume > 65535)
-     rawVolume = 65535;
+  MIXERCONTROLDETAILS_UNSIGNED volume;
+  if (newVolume >= MaxVolume)
+    volume.dwValue = volumeControl.Bounds.dwMaximum;
+  else
+    volume.dwValue = volumeControl.Bounds.dwMinimum +
+            (DWORD)((volumeControl.Bounds.dwMaximum - volumeControl.Bounds.dwMinimum)*newVolume/MaxVolume);
+  PTRACE(5, "WinSnd\tVolume set to " << newVolume << " -> " << volume.dwValue);
 
-   WAVEOUTCAPS caps;
-   if (waveOutGetDevCaps((UINT) hWaveOut, &caps, sizeof(caps)) == MMSYSERR_NOERROR) {
-     // If the device does not support L/R volume only the low word matters
-     if ((caps.dwSupport & WAVECAPS_LRVOLUME) != 0) {
-       // Mantain balance
-       DWORD oldVolume = 0;
-       if (waveOutGetVolume(hWaveOut, &oldVolume) == MMSYSERR_NOERROR) {
-         // GetVolume() is supposed to return the value we intended to set.
-         // So do the proper calculations
-         // 1. (L + R) / 2 = rawVolume      -> GetVolume() formula
-         // 2. L / R       = oldL / oldR    -> Unmodified balance
-         // Being:
-         // oldL = LOWORD(oldVolume)
-         // oldR = HIWORD(oldVolume)
-         
-         DWORD rVol, lVol;
-         DWORD oldL, oldR;
-         
-         // Old volume values
-         oldL = LOWORD(oldVolume);
-         oldR = HIWORD(oldVolume);
-         
-         lVol = rVol = 0;
-         
-         // First sort out extreme cases
-         if ( oldL == oldR )
-           rVol = lVol = rawVolume;
-         else if ( oldL == 0 )
-           rVol = rawVolume;
-         else if ( oldR == 0 )
-           lVol = rawVolume;
-         else {
-#ifndef _WIN32_WCE
-           rVol = ::MulDiv( 2 * rawVolume, oldR, oldL + oldR );
-           lVol = ::MulDiv( rVol, oldL, oldR );
-#else
-           rVol = 2 * rawVolume * oldR / ( oldL + oldR );
-           lVol = rVol * oldL / oldR;
-#endif
-         }
-         
-         rawVolume = MAKELPARAM(lVol, rVol);
-       }
-       else {
-         // Couldn't get current volume. Assume centered balance
-         rawVolume = MAKELPARAM(rawVolume, rawVolume);
-       }
-     }
-   }
-   else {
-     // Couldn't get device caps. Assume centered balance
-     // If the device does not support independant L/R volume
-     // the high-order word (R) is ignored
-     rawVolume = MAKELPARAM(rawVolume, rawVolume);
-   }
+  MIXERCONTROLDETAILS details;
+  details.cbStruct = sizeof(details);
+  details.dwControlID = volumeControl.dwControlID;
+  details.cChannels = 1;
+  details.cMultipleItems = 0;
+  details.cbDetails = sizeof(volume);
+  details.paDetails = &volume;
 
-   if (direction == Recorder) {
-     // Does not appear to be an input volume!!
-   }
-   else {
-     DWORD osError = waveOutSetVolume(hWaveOut, rawVolume);
-     if (osError != MMSYSERR_NOERROR)
-       return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag);
-   }
+  MMRESULT result = mixerSetControlDetails((HMIXEROBJ)hMixer, &details, MIXER_OBJECTF_HMIXER | MIXER_SETCONTROLDETAILSF_VALUE);
+  if (result != MMSYSERR_NOERROR)
+    return SetErrorValues(Miscellaneous, result|PWIN32ErrorFlag);
 
-   return TRUE;
+  return true;
 }
 
 
 
-BOOL PSoundChannelWin32::GetVolume(unsigned & oldVolume)
+PBoolean PSoundChannelWin32::GetVolume(unsigned & oldVolume)
 {
-   if (!IsOpen())
-     return SetErrorValues(NotOpen, EBADF);
+  if (!IsOpen() || hMixer == NULL)
+    return SetErrorValues(NotOpen, EBADF);
 
-   DWORD rawVolume = 0;
+  MIXERCONTROLDETAILS_UNSIGNED volume;
 
-   if (direction == Recorder) {
-     // Does not appear to be an input volume!!
-   }
-   else {
-     DWORD osError = waveOutGetVolume(hWaveOut, &rawVolume);
-     if (osError != MMSYSERR_NOERROR)
-       return SetErrorValues(Miscellaneous, osError|PWIN32ErrorFlag);
-   }
+  MIXERCONTROLDETAILS details;
+  details.cbStruct = sizeof(details);
+  details.dwControlID = volumeControl.dwControlID;
+  details.cChannels = 1;
+  details.cMultipleItems = 0;
+  details.cbDetails = sizeof(volume);
+  details.paDetails = &volume;
 
-   WAVEOUTCAPS caps;
-   if (waveOutGetDevCaps((UINT) hWaveOut, &caps, sizeof(caps)) == MMSYSERR_NOERROR &&
-                                               (caps.dwSupport & WAVECAPS_LRVOLUME) != 0)
-     rawVolume = (HIWORD(rawVolume) + LOWORD(rawVolume)) / 2;
+  MMRESULT result = mixerGetControlDetails((HMIXEROBJ)hMixer, &details, MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+  if (result != MMSYSERR_NOERROR)
+    return SetErrorValues(Miscellaneous, result|PWIN32ErrorFlag);
 
-   oldVolume = rawVolume*100/65536;
-   return TRUE;
+  oldVolume = MaxVolume*(volume.dwValue + 1 - volumeControl.Bounds.dwMinimum)/(volumeControl.Bounds.dwMaximum - volumeControl.Bounds.dwMinimum);
+  return true;
 }
+
+
+bool PSoundChannelWin32::SetMute(bool newMute)
+{
+  if (!IsOpen() || hMixer == NULL)
+    return SetErrorValues(NotOpen, EBADF);
+
+  MIXERCONTROLDETAILS_UNSIGNED mute;
+  mute.dwValue = newMute;
+  PTRACE(5, "WinSnd\tMute set to " << newMute << " -> " << mute.dwValue);
+
+  MIXERCONTROLDETAILS details;
+  details.cbStruct = sizeof(details);
+  details.dwControlID = muteControl.dwControlID;
+  details.cChannels = 1;
+  details.cMultipleItems = 0;
+  details.cbDetails = sizeof(mute);
+  details.paDetails = &mute;
+
+  MMRESULT result = mixerSetControlDetails((HMIXEROBJ)hMixer, &details, MIXER_OBJECTF_HMIXER | MIXER_SETCONTROLDETAILSF_VALUE);
+  if (result != MMSYSERR_NOERROR)
+    return SetErrorValues(Miscellaneous, result|PWIN32ErrorFlag);
+
+  return true;
+}
+
+
+bool PSoundChannelWin32::GetMute(bool & oldMute)
+{
+  if (!IsOpen() || hMixer == NULL)
+    return SetErrorValues(NotOpen, EBADF);
+
+  MIXERCONTROLDETAILS_UNSIGNED mute;
+
+  MIXERCONTROLDETAILS details;
+  details.cbStruct = sizeof(details);
+  details.dwControlID = muteControl.dwControlID;
+  details.cChannels = 1;
+  details.cMultipleItems = 0;
+  details.cbDetails = sizeof(mute);
+  details.paDetails = &mute;
+
+  MMRESULT result = mixerGetControlDetails((HMIXEROBJ)hMixer, &details, MIXER_OBJECTF_HMIXER | MIXER_GETCONTROLDETAILSF_VALUE);
+  if (result != MMSYSERR_NOERROR)
+    return SetErrorValues(Miscellaneous, result|PWIN32ErrorFlag);
+
+  oldMute = mute.dwValue;
+  return true;
+}
+
 
 // End of File ///////////////////////////////////////////////////////////////
 

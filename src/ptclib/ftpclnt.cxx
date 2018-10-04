@@ -23,46 +23,18 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: ftpclnt.cxx,v $
- * Revision 1.11  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.10  2002/10/10 04:43:44  robertj
- * VxWorks port, thanks Martijn Roest
- *
- * Revision 1.9  2000/06/21 01:14:23  robertj
- * AIX port, thanks Wolfgang Platzer (wolfgang.platzer@infonova.at).
- *
- * Revision 1.8  2000/04/07 06:29:46  rogerh
- * Add a short term workaround for an Internal Compiler Error on MAC OS X when
- * returning certain types of PString. Submitted by Kevin Packard.
- *
- * Revision 1.7  1998/12/23 00:34:55  robertj
- * Fixed normal TCP socket support after adding SOCKS support.
- *
- * Revision 1.6  1998/12/22 10:29:42  robertj
- * Added support for SOCKS based channels.
- *
- * Revision 1.5  1998/12/18 03:48:32  robertj
- * Fixed wanring on PPC linux compile
- *
- * Revision 1.4  1998/11/30 04:50:47  robertj
- * New directory structure
- *
- * Revision 1.3  1998/09/23 06:22:00  robertj
- * Added open source copyright license.
- *
- * Revision 1.2  1997/03/28 13:06:58  robertj
- * made STAT command more robust for getting file info from weird FTP servers.
- *
- * Revision 1.1  1996/09/14 13:02:18  robertj
- * Initial revision
- *
+ * $Revision: 25012 $
+ * $Author: rjongbloed $
+ * $Date: 2011-01-06 01:01:23 -0600 (Thu, 06 Jan 2011) $
  */
 
 #include <ptlib.h>
 #include <ptlib/sockets.h>
 #include <ptclib/ftp.h>
+#include <ptclib/url.h>
+
+
+#define new PNEW
 
 
 /////////////////////////////////////////////////////////
@@ -79,35 +51,46 @@ PFTPClient::~PFTPClient()
 }
 
 
-BOOL PFTPClient::Close()
+PBoolean PFTPClient::Close()
 {
   if (!IsOpen())
-    return FALSE;
-  BOOL ok = ExecuteCommand(QUIT)/100 == 2;
+    return PFalse;
+  PBoolean ok = ExecuteCommand(QUIT)/100 == 2;
   return PFTP::Close() && ok;
 }
 
-BOOL PFTPClient::OnOpen()
+PBoolean PFTPClient::OnOpen()
 {
   if (!ReadResponse() || lastResponseCode != 220)
-    return FALSE;
+    return PFalse;
 
   // the default data port for a server is the adjacent port
   PIPSocket::Address remoteHost;
   PIPSocket * socket = GetSocket();
   if (socket == NULL)
-    return FALSE;
+    return PFalse;
 
   socket->GetPeerAddress(remoteHost, remotePort);
   remotePort--;
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PFTPClient::LogIn(const PString & username, const PString & password)
+bool PFTPClient::OpenHost(const PString & host, WORD port)
+{
+  PTCPSocket * socket = new PTCPSocket(port);
+  if (socket->Connect(host) && Open(socket))
+    return true;
+
+  delete socket;
+  return false;
+}
+
+
+PBoolean PFTPClient::LogIn(const PString & username, const PString & password)
 {
   if (ExecuteCommand(USER, username)/100 != 3)
-    return FALSE;
+    return PFalse;
   return ExecuteCommand(PASS, password)/100 == 2;
 }
 
@@ -121,7 +104,7 @@ PString PFTPClient::GetSystemType()
 }
 
 
-BOOL PFTPClient::SetType(RepresentationType type)
+PBoolean PFTPClient::SetType(RepresentationType type)
 {
   static const char * const typeCode[] = { "A", "E", "I" };
   PAssert((PINDEX)type < PARRAYSIZE(typeCode), PInvalidParameter);
@@ -129,7 +112,7 @@ BOOL PFTPClient::SetType(RepresentationType type)
 }
 
 
-BOOL PFTPClient::ChangeDirectory(const PString & dirPath)
+PBoolean PFTPClient::ChangeDirectory(const PString & dirPath)
 {
   return ExecuteCommand(CWD, dirPath)/100 == 2;
 }
@@ -191,6 +174,12 @@ PStringArray PFTPClient::GetDirectoryNames(const PString & path,
   ReadResponse();
   lastResponseInfo = response + '\n' + lastResponseInfo;
   return str.Lines();
+}
+
+
+PBoolean PFTPClient::CreateDirectory(const PString & path)
+{
+  return ExecuteCommand (MKD, path) / 100 == 2;
 }
 
 
@@ -308,6 +297,81 @@ PTCPSocket * PFTPClient::PutFile(const PString & filename,
                             : PassiveClientTransfer(STOR, filename);
 }
 
+
+PTCPSocket * PFTPClient::GetURL(const PURL & url, RepresentationType type, DataChannelType channel)
+{
+  PStringArray path = url.GetPath();
+  if (path.IsEmpty())
+    return NULL;
+
+  if (!OpenHost(url.GetHostName(), url.GetPort()))
+    return NULL;
+
+  PString user, pass;
+  user = url.GetUserName();
+  if (!user.IsEmpty())
+    pass = url.GetPassword();
+  else {
+    user = "anonymous";
+    pass = "user@host";
+  }
+
+  if (!LogIn(user, pass))
+    return NULL;
+
+  if (!SetType(type))
+    return NULL;
+
+  PINDEX lastPathIndex = path.GetSize()-1;
+  for (PINDEX i = 0; i < lastPathIndex; ++i) {
+    if (!ChangeDirectory(path[i]))
+      return NULL;
+  }
+
+  return GetFile(path[lastPathIndex], channel);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////
+
+#undef new
+
+class PURL_FtpLoader : public PURLLoader
+{
+    PCLASSINFO(PURL_FtpLoader, PURLLoader);
+  public:
+    virtual bool Load(const PURL & url, PString & str, const PString &)
+    {
+      PFTPClient ftp;
+      PTCPSocket * socket = ftp.GetURL(url, PFTP::ASCII);
+      if (socket == NULL)
+        return false;
+      str = socket->ReadString(P_MAX_INDEX);
+      delete socket;
+      return true;
+    }
+
+    virtual bool Load(const PURL & url, PBYTEArray & data, const PString &)
+    {
+      PFTPClient ftp;
+      PTCPSocket * socket = ftp.GetURL(url, PFTP::Image);
+      if (socket == NULL)
+        return false;
+
+      static const PINDEX chunk = 10000;
+      PINDEX total = 0;
+      BYTE * ptr = data.GetPointer(chunk);
+      while (socket->Read(ptr, chunk)) {
+        total += socket->GetLastReadCount();
+        ptr = data.GetPointer(total+chunk)+total;
+      }
+      data.SetSize(total);
+      delete socket;
+      return true;
+    }
+};
+
+PFACTORY_CREATE(PURLLoaderFactory, PURL_FtpLoader, "ftp", true);
 
 
 // End of File ///////////////////////////////////////////////////////////////

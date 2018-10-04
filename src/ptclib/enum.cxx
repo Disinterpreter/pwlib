@@ -21,34 +21,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: enum.cxx,v $
- * Revision 1.9  2005/11/30 12:47:41  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.8  2005/08/31 05:55:03  shorne
- * Reworked ENUM to craigs' exacting requirements
- *
- * Revision 1.7  2005/08/31 04:07:53  shorne
- * added ability to set ENUM Servers at runtime
- *
- * Revision 1.6  2004/08/04 10:26:39  csoutheren
- * Changed service to be case insignificant
- *
- * Revision 1.5  2004/08/03 13:37:45  csoutheren
- * Added ability to set ENUM search path from environment variable
- *
- * Revision 1.4  2004/07/19 13:55:41  csoutheren
- * Work-around for crash on gcc 3.5-20040704
- *
- * Revision 1.3  2004/06/05 01:58:37  rjongbloed
- * Fixed MSVC 6 compatibility
- *
- * Revision 1.2  2004/05/31 23:14:17  csoutheren
- * Fixed warnings under VS.net and fixed problem with SRV records when returning multiple records
- *
- * Revision 1.1  2004/05/31 13:56:37  csoutheren
- * Added implementation of ENUM resolution of E.164 numbers by DNS
- *
+ * $Revision: 24534 $
+ * $Author: rjongbloed $
+ * $Date: 2010-06-23 06:14:27 -0500 (Wed, 23 Jun 2010) $
  */
 
 #ifdef __GNUC__
@@ -58,6 +33,9 @@
 #include <ptlib.h>
 #include <ptclib/pdns.h>
 #include <ptclib/enum.h>
+
+#define new PNEW
+
 
 #if P_DNS
 
@@ -127,6 +105,33 @@ struct NAPTR_DNS {
   PString GetReplacement() const    { return PString(GetReplacementBase()+1, GetReplacementLen()); }
 };
 
+
+void ResolveNAPTR(PDNS_RECORD dnsRecord, PDNS::NAPTRRecord & record)
+{
+#ifdef _WIN32
+  if (PProcess::IsOSVersion(6)) {
+    DNS_NAPTR_DATA * naptr = (DNS_NAPTR_DATA *)&dnsRecord->Data;
+    record.order       = naptr->wOrder; 
+    record.preference  = naptr->wPreference; 
+    record.flags       = naptr->pFlags; 
+    record.service     = naptr->pService; 
+    record.regex       = naptr->pRegularExpression; 
+    record.replacement = naptr->pReplacement; 
+  }
+  else
+#endif
+  {
+    NAPTR_DNS * naptr = (NAPTR_DNS *)&dnsRecord->Data; 
+    record.order       = naptr->order; 
+    record.preference  = naptr->preference; 
+    record.flags       = naptr->GetFlags(); 
+    record.service     = naptr->GetService(); 
+    record.regex       = naptr->GetRegex(); 
+    record.replacement = naptr->GetReplacement(); 
+  }
+}
+
+
 PDNS::NAPTRRecord * PDNS::NAPTRRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord, PDNS_RECORD /*results*/)
 {
   PDNS::NAPTRRecord * record = NULL;
@@ -137,14 +142,8 @@ PDNS::NAPTRRecord * PDNS::NAPTRRecordList::HandleDNSRecord(PDNS_RECORD dnsRecord
       ) {
     record = new NAPTRRecord();
 
-    NAPTR_DNS * naptr = (NAPTR_DNS *)&dnsRecord->Data;
+	ResolveNAPTR(dnsRecord, *record);
 
-    record->order       = naptr->order;
-    record->preference  = naptr->preference;
-    record->flags       = naptr->GetFlags();
-    record->service     = naptr->GetService();
-    record->regex       = naptr->GetRegex();
-    record->replacement = naptr->GetReplacement();
   }
 
   return record;
@@ -165,7 +164,7 @@ PDNS::NAPTRRecord * PDNS::NAPTRRecordList::GetFirst(const char * service)
 
   currentPos   = 0;
   lastOrder = operator[](0).order;
-  orderLocked = FALSE;
+  orderLocked = PFalse;
 
   return GetNext(service);
 }
@@ -189,7 +188,7 @@ PDNS::NAPTRRecord * PDNS::NAPTRRecordList::GetNext(const char * service)
       lastOrder   = record.order;
       if (record.order == lastOrder) {
         if ((service == NULL) || (record.service *= service)) {
-          orderLocked = TRUE;
+          orderLocked = PTrue;
           return &record;
         }
       }
@@ -203,7 +202,7 @@ static PString ApplyRegex(const PString & orig, const PString & regexStr)
 {
   // must have at least 3 delimiters and two chars of text
   if (regexStr.GetLength() < 5) { 
-    PTRACE(1, "ENUM regex is too short: " << regexStr);
+    PTRACE(1, "ENUM\tregex is too short: " << regexStr);
     return PString::Empty();
   }
 
@@ -233,7 +232,7 @@ static PString ApplyRegex(const PString & orig, const PString & regexStr)
   PString & str1 = strings[0]; 
   PString & str2 = strings[1]; 
   if (str1.IsEmpty() || str2.IsEmpty()) {
-    PTRACE(1, "ENUM regex does not parse into two string: " << regexStr);
+    PTRACE(1, "ENUM\tregex does not parse into two string: " << regexStr);
     return PString::Empty();
   }
 
@@ -250,14 +249,14 @@ static PString ApplyRegex(const PString & orig, const PString & regexStr)
   if (flags.Find('i') != P_MAX_INDEX)
     regexFlags += PRegularExpression::IgnoreCase;
   if (!regex.Compile(strings[0], regexFlags)) {
-    PTRACE(1, "ENUM regex does not compile : " << regexStr);
+    PTRACE(1, "ENUM\tregex does not compile : " << regexStr);
     return PString();
   }
 
   // apply the regular expression to the original string
   PIntArray starts(10), ends(10);
   if (!regex.Execute(orig, starts, ends)) {
-    PTRACE(1, "ENUM regex does not execute : " << regexStr);
+    PTRACE(1, "ENUM\tregex does not execute : " << regexStr);
     return PString();
   }
 
@@ -278,7 +277,7 @@ static PString ApplyRegex(const PString & orig, const PString & regexStr)
 
 static PStringArray & GetENUMServers()
 {
-  static const char * defaultDomains[] = { "e164.voxgratia.net","e164.org","e164.arpa"};
+  static const char * defaultDomains[] = { "e164.org","e164.arpa"};
   static PStringArray servers(
           sizeof(defaultDomains)/sizeof(defaultDomains[0]),
           defaultDomains
@@ -298,7 +297,7 @@ void PDNS::SetENUMServers(const PStringArray & servers)
      GetENUMServers() = servers;
 }
 
-BOOL PDNS::ENUMLookup(const PString & e164,
+PBoolean PDNS::ENUMLookup(const PString & e164,
       const PString & service,PString & dn)
 {
   PWaitAndSignal m(GetENUMServerMutex());
@@ -312,9 +311,9 @@ BOOL PDNS::ENUMLookup(const PString & e164,
   return PDNS::ENUMLookup(e164, service, domains, dn);
 }
 
-static BOOL InternalENUMLookup(const PString & e164, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
+static PBoolean InternalENUMLookup(const PString & e164, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
 {
-  BOOL result = FALSE;
+  PBoolean result = PFalse;
 
   // get the first record that matches the service. 
   PDNS::NAPTRRecord * rec = records.GetFirst(service);
@@ -326,39 +325,39 @@ static BOOL InternalENUMLookup(const PString & e164, const PString & service, PD
       break;
 
     // process the flags
-    BOOL handled  = FALSE;
-    BOOL terminal = TRUE;
+    PBoolean handled  = PFalse;
+    PBoolean terminal = PTrue;
 
     for (PINDEX f = 0; !handled && f < rec->flags.GetLength(); ++f) {
       switch (tolower(rec->flags[f])) {
 
         // do an SRV lookup
         case 's':
-          terminal = TRUE;
-          handled = FALSE;
+          terminal = PTrue;
+          handled = PFalse;
           break;
 
         // do an A lookup
         case 'a':
-          terminal = TRUE;
-          handled = FALSE;
+          terminal = PTrue;
+          handled = PFalse;
           break;
 
         // apply regex and do the lookup
         case 'u':
           returnStr = ApplyRegex(e164, rec->regex);
-          result   = TRUE;
-          terminal = TRUE;
-          handled  = TRUE;
+          result   = PTrue;
+          terminal = PTrue;
+          handled  = PTrue;
           break;
 
         // handle in a protocol specific way - not supported
         case 'p':
-          handled = FALSE;
+          handled = PFalse;
           break;
   
         default:
-          handled = FALSE;
+          handled = PFalse;
       }
     }
 
@@ -378,7 +377,7 @@ static BOOL InternalENUMLookup(const PString & e164, const PString & service, PD
   return result;
 }
 
-BOOL PDNS::ENUMLookup(
+PBoolean PDNS::ENUMLookup(
         const PString & _e164,
         const PString & service,
    const PStringArray & enumSpaces,
@@ -419,11 +418,208 @@ BOOL PDNS::ENUMLookup(
       continue;
 
     if (InternalENUMLookup(e164, service, records, returnStr))
-      return TRUE;
+      return PTrue;
   }
 
-  return FALSE;
+  return PFalse;
 }
+
+////////////////////////////////////////////////////////////////////////
+
+static const char * PWLIB_RDS_PATH = "PWLIB_RDS_PATH";
+
+static PStringArray & GetRDSServers()
+{
+  static const char * defaultDomains[] = {"rds.voxgratia.org"};
+  static PStringArray servers(
+          sizeof(defaultDomains)/sizeof(defaultDomains[0]),
+          defaultDomains
+  );
+  return servers;
+}
+
+static PBoolean RewriteDomain(const PString & original, PDNS::NAPTRRecordList & records, PString & returnStr)
+{
+   PBoolean result = PFalse;
+
+  // get the first record that matches the service. 
+  PDNS::NAPTRRecord * rec = records.GetFirst();
+
+  do {
+
+    // if no more records that match this service, then fail
+    if (rec == NULL)
+      break;
+
+    // process the flags
+    PBoolean handled  = PFalse;
+
+	// General domain rewrites has no flag
+    if (rec->flags.IsEmpty()) {
+        returnStr = ApplyRegex(original, rec->regex);
+		if (returnStr.GetLength() > 0) {
+            result   = PTrue;
+            handled  = PTrue;
+			break;
+		}
+	} else {
+	   break;   // We have other types of records which we don't want.
+	}
+	
+    // if no flags were accepted, then unlock the order on the record and get the next record
+    if (!handled) {
+      records.UnlockOrder();
+      rec = records.GetNext();
+      continue;
+    }
+
+  } while (!result);
+
+  return result;   
+}
+
+static PBoolean InternalRDSLookup(const PString & rds, const PString & service, PDNS::NAPTRRecordList & records, PString & returnStr)
+{
+  PBoolean result = PFalse;
+
+  // get the first record that matches the service. 
+  PDNS::NAPTRRecord * rec = records.GetFirst(service);
+
+  do {
+
+    // if no more records that match this service, then fail
+    if (rec == NULL)
+      break;
+
+    // process the flags
+    PBoolean handled  = PFalse;
+    PBoolean terminal = PTrue;
+
+    for (PINDEX f = 0; !handled && f < rec->flags.GetLength(); ++f) {
+      switch (tolower(rec->flags[f])) {
+
+        // do an SRV lookup
+        case 's':
+		  // apply regex and do the lookup
+          returnStr = ApplyRegex(rds, rec->regex);
+          result   = PTrue;
+          terminal = PTrue;
+          handled  = PTrue;
+          break;
+ 
+        case 'a':            // A lookup
+        case 'u':            // U Lookup
+          terminal = PTrue;
+          handled = PFalse;
+          break;
+ 
+        case 'p':           // P specific
+		default:
+          handled = PFalse;
+          break;
+      }
+    }
+
+    // if no flags were accepted, then unlock the order on the record and get the next record
+    if (!handled) {
+      records.UnlockOrder();
+      rec = records.GetNext(service);
+      continue;
+    }
+
+    // if this was a terminal lookup, finish now
+    if (terminal)
+      break;
+
+  } while (!result);
+
+  return result;
+}
+
+
+static PMutex & GetRDSServerMutex()
+{
+  static PMutex mutex;
+  return mutex;
+}
+
+void PDNS::SetRDSServers(const PStringArray & servers)
+{
+     PWaitAndSignal m(GetRDSServerMutex());
+     GetRDSServers() = servers;
+}
+
+PBoolean PDNS::RDSLookup(const PURL & url,
+      const PString & service,PStringList & dn)
+{
+  PWaitAndSignal m(GetRDSServerMutex());
+  PStringArray domains;
+  char * env = ::getenv(PWLIB_RDS_PATH);
+  if (env == NULL)
+    domains += GetRDSServers();
+  else
+    domains += PString(env).Tokenise(PATH_SEP);
+
+  return PDNS::RDSLookup(url, service, domains, dn);
+}
+
+PBoolean PDNS::RDSLookup(
+        const PURL & url,
+        const PString & service,
+   const PStringArray & naptrSpaces,
+         PStringList & returnStr
+)
+{
+
+  for (PINDEX i = 0; i < naptrSpaces.GetSize(); i++) {
+
+    PDNS::NAPTRRecordList records;
+
+    // do the initial lookup - if no answer then no URN RDS records for that domain
+    if (!PDNS::GetRecords(naptrSpaces[i], records))
+      continue;
+     
+	// Do a universal domain rewrite Ref: RFC 2915 sect 7.1 
+    PString newURL = PString();
+	if (!RewriteDomain(url.AsString(), records, newURL))
+	  continue;
+
+	// Retrieve the NAPTR records associated with that rewritten domain.
+	PDNS::NAPTRRecordList subrecords;
+    if (!PDNS::GetRecords(newURL, subrecords))
+        continue;
+
+	// Retrieve the SRV records for the service 
+    PString srvRecord = PString(); 
+	if (!InternalRDSLookup(url.AsString(),service,subrecords,srvRecord))
+	    continue;
+
+	// Should be in the form "_h323ls._udp.mydomain.com";
+	// Need to find the second "." to retrieve the service record type
+    PINDEX dot = 0;
+	for (PINDEX i = 0;  i < 2; i++) {
+	   dot = srvRecord.Find('.',dot+1);
+	}
+
+	// Rewrite the userName
+	PString finaluser = url.GetScheme() + ":" + url.GetUserName() + "@" + srvRecord.Mid(dot+1); 
+	// Retrieve the service record type
+	PString srvrec = srvRecord.Left(dot+1);
+
+	// Lookup the SRV record for the hosted domain.
+	PStringList retStr;
+	if (!PDNS::LookupSRV(finaluser,srvrec,retStr)) 
+	    continue;
+		
+	if (retStr.GetSize() > 0) {   // We have found records 
+		returnStr = retStr;
+	    return PTrue;
+	}
+  }
+
+  return PFalse;
+}
+
 
 #endif
 

@@ -26,108 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: timeint.h,v $
- * Revision 1.31  2005/11/25 03:43:47  csoutheren
- * Fixed function argument comments to be compatible with Doxygen
- *
- * Revision 1.30  2004/04/18 04:33:36  rjongbloed
- * Changed all operators that return BOOL to return standard type bool. This is primarily
- *   for improved compatibility with std STL usage removing many warnings.
- *
- * Revision 1.29  2003/09/17 05:41:59  csoutheren
- * Removed recursive includes
- *
- * Revision 1.28  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.27  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.26  2002/05/28 13:05:26  robertj
- * Fixed PTimer::SetInterval so it restarts timer as per operator=()
- *
- * Revision 1.25  2001/10/16 07:44:06  robertj
- * Added AsString() function to PTimeInterval.
- *
- * Revision 1.24  2001/07/10 02:55:16  robertj
- * Added unary minus operator
- *
- * Revision 1.23  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.22  2000/10/05 23:36:26  robertj
- * Fixed compiler ambiguities in PTimeInterval constructor.
- *
- * Revision 1.21  2000/03/06 04:09:23  robertj
- * Added constructor to do PString conversion to PTimeInterval
- *
- * Revision 1.20  1999/07/06 04:46:00  robertj
- * Fixed being able to case an unsigned to a PTimeInterval.
- * Improved resolution of PTimer::Tick() to be millisecond accurate.
- *
- * Revision 1.19  1999/03/09 02:59:51  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.18  1999/02/16 08:11:17  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.17  1998/09/23 06:21:43  robertj
- * Added open source copyright license.
- *
- * Revision 1.16  1998/01/26 00:49:53  robertj
- * Added multiply and divide operators to PTimeInterval.
- *
- * Revision 1.15  1996/05/15 10:19:29  robertj
- * Changed millisecond access functions to get 64 bit integer.
- *
- * Revision 1.14  1996/05/09 12:22:09  robertj
- * Resolved C++ problems with 64 bit PTimeInterval for Mac platform.
- *
- * Revision 1.13  1996/03/17 05:52:02  robertj
- * Changed PTimeInterval to 64 bit integer.
- *
- * Revision 1.12  1995/03/14 12:42:50  robertj
- * Updated documentation to use HTML codes.
- *
- * Revision 1.11  1995/01/18  09:01:32  robertj
- * Documentation.
- *
- * Revision 1.10  1995/01/09  12:29:41  robertj
- * Removed unnecesary return value from I/O functions.
- *
- * Revision 1.9  1994/08/23  11:32:52  robertj
- * Oops
- *
- * Revision 1.8  1994/08/22  00:46:48  robertj
- * Added pragma fro GNU C++ compiler.
- *
- * Revision 1.7  1994/07/02  03:03:49  robertj
- * Timer redesign consequences and ability to compare a time interval against
- * ordinary integer milliseconds.
- *
- * Revision 1.6  1994/06/25  11:55:15  robertj
- * Unix version synchronisation.
- *
- * Revision 1.5  1994/01/03  04:42:23  robertj
- * Mass changes to common container classes and interactors etc etc etc.
- *
- * Revision 1.4  1993/08/31  03:38:02  robertj
- * Added copy constructor and assignement oeprator due to G++ strangeness.
- *
- * Revision 1.3  1993/08/27  18:17:47  robertj
- * Added function to set the interval of a PTieInterval object.
- * Used a common type for number of milliseconds.
- *
- * Revision 1.2  1993/07/14  12:49:16  robertj
- * Fixed RCS keywords.
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PTIMEINTERVAL
-#define _PTIMEINTERVAL
+#ifndef PTLIB_TIMEINTERVAL_H
+#define PTLIB_TIMEINTERVAL_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -144,7 +49,7 @@
    (found in the standard C header file limits.h) milliseconds. This is
    approximately 596 hours for 32 bit integers.
    
-   There is a constant, #PMaxTimeInterval# which defines the
+   There is a constant, <code>PMaxTimeInterval</code> which defines the
    maximum number of milliseconds that a time interval may be.
  */
 class PTimeInterval : public PObject
@@ -157,13 +62,13 @@ class PTimeInterval : public PObject
     /** Create a new time interval object. The time interval, in milliseconds,
        is the sum of all of the parameters. For example all of the following
        are equivalent:
-\begin{verbatim}
+<pre><code>
               PTimeInterval(120000)
               PTimeInterval(60000, 60)
               PTimeInterval(60000, 0, 1)
               PTimeInterval(0, 60, 1)
               PTimeInterval(0, 0, 2)
-\end{verbatim}
+</code></pre>
      */
     PTimeInterval(
       PInt64 millisecs = 0   ///< Number of milliseconds for interval.
@@ -194,7 +99,7 @@ class PTimeInterval : public PObject
        expect for two integers.
        
        @return
-       #EqualTo#, #LessThan# or #GreaterThan#
+       <code>EqualTo</code>, <code>LessThan</code> or <code>GreaterThan</code>
        depending on their relative rank.
      */
     virtual Comparison Compare(
@@ -238,7 +143,11 @@ class PTimeInterval : public PObject
        @return
        very long integer number of milliseconds.
      */
-    PInt64 GetMilliSeconds() const;
+    virtual PInt64 GetMilliSeconds() const;
+
+    /** Set the number of milliseconds for the time interval.
+     */
+    virtual void SetMilliSeconds(PInt64 msecs);
 
     /** Get the number of whole seconds for the time interval.
     
@@ -278,13 +187,13 @@ class PTimeInterval : public PObject
     /** Set the value of the time interval. The time interval, in milliseconds,
        is the sum of all of the parameters. For example all of the following
        are equivalent:
-\begin{verbatim}
+<pre><code>
               SetInterval(120000)
               SetInterval(60000, 60)
               SetInterval(60000, 0, 1)
               SetInterval(0, 60, 1)
               SetInterval(0, 0, 2)
-\end{verbatim}
+</code></pre>
      */
     virtual void SetInterval(
       PInt64 milliseconds = 0,  ///< Number of milliseconds for interval.
@@ -358,6 +267,15 @@ class PTimeInterval : public PObject
       int factor   ///< factor to multiply.
     );
 
+    /** Divide the time interval by another interval yielding a count.
+    
+       @return
+       the number of times the second interval occurs in the larger.
+     */
+    int operator/(
+      const PTimeInterval & smaller   ///< factor to divide.
+    ) const;
+
     /** Divide the time interval by a factor yielding a third time interval.
     
        @return
@@ -384,7 +302,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are equal.
+       true if intervals are equal.
      */
     bool operator==(
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -398,7 +316,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are not equal.
+       true if intervals are not equal.
      */
     bool operator!=(
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -412,7 +330,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are greater than.
+       true if intervals are greater than.
      */
     bool operator> (
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -426,7 +344,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are greater than or equal.
+       true if intervals are greater than or equal.
      */
     bool operator>=(
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -440,7 +358,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are less than.
+       true if intervals are less than.
      */
     bool operator< (
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -454,7 +372,7 @@ class PTimeInterval : public PObject
        literals that represent milliseconds.
 
        @return
-       TRUE if intervals are less than or equal.
+       true if intervals are less than or equal.
      */
     bool operator<=(
       const PTimeInterval & interval   ///< Time interval to compare.
@@ -464,10 +382,10 @@ class PTimeInterval : public PObject
     ) const;
   //@}
 
-  protected:
+  private:
   // Member variables
     /// Number of milliseconds in time interval.
-    PInt64 milliseconds;
+    PInt64 m_milliseconds;
 
 
 // Include platform dependent part of class
@@ -478,7 +396,7 @@ class PTimeInterval : public PObject
 #endif
 };
 
-#endif
+#endif // PTLIB_TIMEINTERVAL_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

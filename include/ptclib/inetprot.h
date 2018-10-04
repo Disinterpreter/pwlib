@@ -23,80 +23,18 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: inetprot.h,v $
- * Revision 1.19  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.18  2004/11/11 07:34:50  csoutheren
- * Added #include <ptlib.h>
- *
- * Revision 1.17  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.16  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.15  2001/09/26 09:37:04  robertj
- * Added virtual keyword to a lot of functions so can be overridden.
- *
- * Revision 1.14  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.13  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.12  1998/09/23 06:19:40  robertj
- * Added open source copyright license.
- *
- * Revision 1.11  1996/09/14 13:09:13  robertj
- * Major upgrade:
- *   rearranged sockets to help support IPX.
- *   added indirect channel class and moved all protocols to descend from it,
- *   separating the protocol from the low level byte transport.
- *
- * Revision 1.10  1996/05/15 10:07:00  robertj
- * Added access function to set intercharacter line read timeout.
- *
- * Revision 1.9  1996/05/09 12:14:02  robertj
- * Rewrote the "unread" buffer usage and then used it to improve ReadLine() performance.
- *
- * Revision 1.8  1996/03/31 08:43:38  robertj
- * Added version of WriteCommand() and ExecteCommand() without argument string.
- *
- * Revision 1.7  1996/03/16 04:35:32  robertj
- * Added PString parameter version of UnRead().
- * Changed lastResponseCode to an integer.
- * Added ParseReponse() for splitting reponse line into code and info.
- *
- * Revision 1.6  1996/02/13 12:57:05  robertj
- * Added access to the last response in an application socket.
- *
- * Revision 1.5  1996/02/03 11:33:16  robertj
- * Changed RadCmd() so can distinguish between I/O error and unknown command.
- *
- * Revision 1.4  1996/01/23 13:08:43  robertj
- * Major rewrite for HTTP support.
- *
- * Revision 1.3  1995/06/17 11:12:15  robertj
- * Documentation update.
- *
- * Revision 1.2  1995/06/17 00:39:53  robertj
- * More implementation.
- *
- * Revision 1.1  1995/06/04 13:17:16  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PINTERNETPROTOCOL
-#define _PINTERNETPROTOCOL
+#ifndef PTLIB_INETPROT_H
+#define PTLIB_INETPROT_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
 
 class PSocket;
 class PIPSocket;
@@ -145,9 +83,9 @@ class PInternetProtocol : public PIndirectChannel
        not support the level of timeout control required by the protocols.
 
        @return
-       TRUE if at least len bytes were written to the channel.
+       true if at least len bytes were written to the channel.
      */
-    virtual BOOL Read(
+    virtual PBoolean Read(
       void * buf,   ///< Pointer to a block of memory to receive the read bytes.
       PINDEX len    ///< Maximum number of bytes to read into the buffer.
     );
@@ -161,13 +99,13 @@ class PInternetProtocol : public PIndirectChannel
        Note that this only occurs if the member variable
        <CODE>stuffingState</CODE> has been set to some value other than
        <CODE>DontStuff</CODE>, usually <CODE>StuffIdle</CODE>. Also, if the
-       <CODE>newLineToCRLF</CODE> member variable is TRUE then all occurrences
-       of a '\n' character will be translated to a CR/LF pair.
+       <CODE>newLineToCRLF</CODE> member variable is true then all occurrences
+       of a '\\n' character will be translated to a CR/LF pair.
 
        @return
-       TRUE if at least len bytes were written to the channel.
+       true if at least len bytes were written to the channel.
      */
-    virtual BOOL Write(
+    virtual PBoolean Write(
       const void * buf, ///< Pointer to a block of memory to write.
       PINDEX len        ///< Number of bytes to write.
     );
@@ -183,13 +121,13 @@ class PInternetProtocol : public PIndirectChannel
     /** Connect a socket to a remote host for the internet protocol.
 
        @return
-       TRUE if the channel was successfully connected to the remote host.
+       true if the channel was successfully connected to the remote host.
      */
-    virtual BOOL Connect(
+    virtual PBoolean Connect(
       const PString & address,    ///< Address of remote machine to connect to.
       WORD port = 0               ///< Port number to use for the connection.
     );
-    virtual BOOL Connect(
+    virtual PBoolean Connect(
       const PString & address,    ///< Address of remote machine to connect to.
       const PString & service     ///< Service name to use for the connection.
     );
@@ -197,9 +135,9 @@ class PInternetProtocol : public PIndirectChannel
     /** Accept a server socket to a remote host for the internet protocol.
 
        @return
-       TRUE if the channel was successfully connected to the remote host.
+       true if the channel was successfully connected to the remote host.
      */
-    virtual BOOL Accept(
+    virtual PBoolean Accept(
       PSocket & listener    ///< Address of remote machine to connect to.
     );
 
@@ -217,7 +155,7 @@ class PInternetProtocol : public PIndirectChannel
        This will assert if the I/O channel is not an IP socket.
 
        @return
-       TRUE if the string and CR/LF were completely written.
+       true if the string and CR/LF were completely written.
      */
     PIPSocket * GetSocket() const;
 
@@ -226,9 +164,9 @@ class PInternetProtocol : public PIndirectChannel
        string, then these are translated into CR/LF pairs.
 
        @return
-       TRUE if the string and CR/LF were completely written.
+       true if the string and CR/LF were completely written.
      */
-    virtual BOOL WriteLine(
+    virtual PBoolean WriteLine(
       const PString & line ///< String to write as a command line.
     );
 
@@ -237,7 +175,7 @@ class PInternetProtocol : public PIndirectChannel
        If the <CODE>unstuffLine</CODE> parameter is set then the function will
        remove the '.' character from the start of any line that begins with
        two consecutive '.' characters. A line that has is exclusively a '.'
-       character will make the function return FALSE.
+       character will make the function return false.
 
        Note this function will block for the time specified by the
        <A>PChannel::SetReadTimeout()</A> function for only the first character
@@ -246,11 +184,11 @@ class PInternetProtocol : public PIndirectChannel
        set back to the original setting when the function returns.
 
        @return
-       TRUE if a CR/LF pair was received, FALSE if a timeout or error occurred.
+       true if a CR/LF pair was received, false if a timeout or error occurred.
      */
-    virtual BOOL ReadLine(
+    virtual PBoolean ReadLine(
       PString & line,             ///< String to receive a CR/LF terminated line.
-      BOOL allowContinuation = FALSE  ///< Flag to handle continued lines.
+      PBoolean allowContinuation = false  ///< Flag to handle continued lines.
     );
 
     /** Put back the characters into the data stream so that the next
@@ -273,17 +211,17 @@ class PInternetProtocol : public PIndirectChannel
 
        If the <CODE>cmdNumber</CODE> parameter is outside of the range of
        valid command names, then the function does not send anything and
-       returns FALSE.
+       returns false.
 
        This function is typically used by client forms of the socket.
 
        @return
-       TRUE if the command was completely written.
+       true if the command was completely written.
      */
-    virtual BOOL WriteCommand(
+    virtual PBoolean WriteCommand(
       PINDEX cmdNumber       ///< Number of command to write.
     );
-    virtual BOOL WriteCommand(
+    virtual PBoolean WriteCommand(
       PINDEX cmdNumber,      ///< Number of command to write.
       const PString & param  ///< Extra parameters required by the command.
     );
@@ -303,9 +241,9 @@ class PInternetProtocol : public PIndirectChannel
        This function is typically used by server forms of the socket.
 
        @return
-       TRUE if something was read, otherwise an I/O error occurred.
+       true if something was read, otherwise an I/O error occurred.
      */
-    virtual BOOL ReadCommand(
+    virtual PBoolean ReadCommand(
       PINDEX & num,
        ///< Number of the command parsed from the command line, or P_MAX_INDEX
        ///< if no match.
@@ -326,13 +264,13 @@ class PInternetProtocol : public PIndirectChannel
        This function is typically used by server forms of the socket.
 
        @return
-       TRUE if the response was completely written.
+       true if the response was completely written.
      */
-    virtual BOOL WriteResponse(
+    virtual PBoolean WriteResponse(
       unsigned numericCode, ///< Response code for command response.
       const PString & info  ///< Extra information available after response code.
     );
-    virtual BOOL WriteResponse(
+    virtual PBoolean WriteResponse(
       const PString & code, ///< Response code for command response.
       const PString & info  ///< Extra information available after response code.
     );
@@ -344,7 +282,7 @@ class PInternetProtocol : public PIndirectChannel
        The response may have multiple lines in it. A '-' character separates
        the code from the text on all lines but the last where a ' ' character
        is used. The <CODE>info</CODE> parameter will have placed in it all of
-       the response lines separated by a single '\n' character.
+       the response lines separated by a single '\\n' character.
 
        The first form places the response code and info into the protected
        member variables <CODE>lastResponseCode</CODE> and
@@ -353,10 +291,10 @@ class PInternetProtocol : public PIndirectChannel
        This function is typically used by client forms of the socket.
 
        @return
-       TRUE if the response was completely read without a socket error.
+       true if the response was completely read without a socket error.
      */
-    virtual BOOL ReadResponse();
-    virtual BOOL ReadResponse(
+    virtual PBoolean ReadResponse();
+    virtual PBoolean ReadResponse(
       int & code,      ///< Response code for command response.
       PString & info   ///< Extra information available after response code.
     );
@@ -370,7 +308,7 @@ class PInternetProtocol : public PIndirectChannel
        This function is typically used by client forms of the socket.
 
        @return
-       First character of response string or '\0' if a socket error occurred.
+       First character of response string or '\\0' if a socket error occurred.
      */
     virtual int ExecuteCommand(
       PINDEX cmdNumber       ///< Number of command to write.
@@ -402,7 +340,7 @@ class PInternetProtocol : public PIndirectChannel
        <CODE>lastResponseCode</CODE> and <CODE>lastResponseInfo</CODE>.
 
        The default bahaviour looks for a space or a '-' and splits the code
-       and info either side of that character, then returns FALSE.
+       and info either side of that character, then returns false.
 
        @return
        Position of continuation character in response, 0 if no continuation
@@ -433,20 +371,20 @@ class PInternetProtocol : public PIndirectChannel
     } stuffingState;
     // Do byte stuffing of '.' characters in output to the socket channel.
 
-    BOOL newLineToCRLF;
-    // Translate \n characters to CR/LF pairs.
+    PBoolean newLineToCRLF;
+    // Translate \\n characters to CR/LF pairs.
 
     int     lastResponseCode;
     PString lastResponseInfo;
     // Responses
 
   private:
-    BOOL AttachSocket(PIPSocket * socket);
+    PBoolean AttachSocket(PIPSocket * socket);
 };
 
 
 
-#endif
+#endif // PTLIB_INETPROT_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

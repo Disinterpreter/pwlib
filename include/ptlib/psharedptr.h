@@ -23,20 +23,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psharedptr.h,v $
- * Revision 1.3  2004/10/21 09:20:33  csoutheren
- * Fixed compile problems on gcc 2.95.x
- *
- * Revision 1.2  2004/10/01 08:08:50  csoutheren
- * Added Reset and auto_ptr conversions
- *
- * Revision 1.1  2004/10/01 07:17:18  csoutheren
- * Added PSharedptr class
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PSHAREDPTR_H
-#define _PSHAREDPTR_H
+#ifndef PTLIB_SHAREDPTR_H
+#define PTLIB_SHAREDPTR_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -60,8 +53,8 @@ class PSharedPtr : public PContainer
   public:
     typedef T element_type;
 
-    PSharedPtr(element_type * _ptr = NULL)
-    { ptr = _ptr; }
+    PSharedPtr(element_type * p = NULL)
+    { ptr = p; }
 
     PSharedPtr(const PSharedPtr & c)
       : PContainer(c)
@@ -76,10 +69,10 @@ class PSharedPtr : public PContainer
     virtual ~PSharedPtr()
     { Destruct(); } 
 
-    virtual BOOL MakeUnique() 
-    { if (PContainer::MakeUnique()) return TRUE; CloneContents(this); return FALSE; } 
+    virtual PBoolean MakeUnique() 
+    { if (PContainer::MakeUnique()) return true; CloneContents(this); return false; } 
 
-    BOOL SetSize(PINDEX)
+    PBoolean SetSize(PINDEX)
     { return false; }
 
     T * Get() const
@@ -116,5 +109,8 @@ class PSharedPtr : public PContainer
     T * ptr;
 };
 
-#endif // _PSHAREDPTR_H
 
+#endif // PTLIB_SHAREDPTR_H
+
+
+// End Of File ///////////////////////////////////////////////////////////////

@@ -25,18 +25,15 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: odbctest.cxx,v $
- * Revision 1.2  2005/08/09 09:08:13  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.1.2.1  2005/04/25 13:55:19  shorne
- * Initial version
- *
- *
-*/
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
+ */
 
 
 #include <ptlib.h>
+#include <ptlib/pprocess.h>
+#include <ptclib/podbc.h>
 
 class ODBCtest : public PProcess
 {

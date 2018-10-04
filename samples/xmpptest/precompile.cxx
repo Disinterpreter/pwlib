@@ -7,14 +7,9 @@
  *
  * Copyright 2004 Reitek S.p.A.
  *
- * $Log: precompile.cxx,v $
- * Revision 1.2  2005/08/08 08:15:59  rjongbloed
- * Fixed precompiled header usage
- *
- * Revision 1.1  2004/04/26 01:51:58  rjongbloed
- * More implementation of XMPP, thanks a lot to Federico Pinna & Reitek S.p.A.
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #include "main.h"

@@ -24,52 +24,9 @@
  * Contributor(s): Craig Southeren
  *                 Snark at GnomeMeeting
  *
- * $Log: sound.cxx,v $
- * Revision 1.11  2005/08/09 09:08:11  rjongbloed
- * Merged new video code from branch back to the trunk.
- *
- * Revision 1.10.8.1  2005/07/17 09:27:08  rjongbloed
- * Major revisions of the PWLib video subsystem including:
- *   removal of F suffix on colour formats for vertical flipping, all done with existing bool
- *   working through use of RGB and BGR formats so now consistent
- *   cleaning up the plug in system to use virtuals instead of pointers to functions.
- *   rewrite of SDL to be a plug in compatible video output device.
- *   extensive enhancement of video test program
- *
- * Revision 1.10  2004/11/17 10:13:14  csoutheren
- * Fixed compilation with gcc 4.0.0
- *
- * Revision 1.9  2004/10/28 20:07:10  csoutheren
- * Fixes for MacOSX platforms, thanks to Hannes Friederich
- *
- * Revision 1.8  2004/08/16 06:40:59  csoutheren
- * Added adapters template to make device plugins available via the abstract factory interface
- *
- * Revision 1.7  2004/04/03 23:53:10  csoutheren
- * Added various changes to improce compatibility with the Sun Forte compiler
- *   Thanks to Brian Cameron
- * Added detection of readdir_r version
- *
- * Revision 1.6  2004/04/02 04:07:54  ykiryanov
- * Added ifndef BeOS for PSound
- *
- * Revision 1.5  2003/11/12 08:55:58  csoutheren
- * Added newline at end of file to remove gcc warning
- *
- * Revision 1.4  2003/11/12 05:17:25  csoutheren
- * Added more backwards compatibility functions for PSoundChannel
- *
- * Revision 1.3  2003/11/12 04:42:02  csoutheren
- * Removed non-specific code when compiling for WIn32
- *
- * Revision 1.2  2003/11/12 03:27:25  csoutheren
- * Initial version of plugin code from Snark of GnomeMeeting with changes
- *    by Craig Southeren of Post Increment
- *
- * Revision 1.1.2.1  2003/10/07 01:33:19  csoutheren
- * Initial checkin of pwlib code to do plugins.
- * Modified from original code and concept provided by Snark of Gnomemeeting
- *
+ * $Revision: 28580 $
+ * $Author: rjongbloed $
+ * $Date: 2012-11-26 01:31:08 -0600 (Mon, 26 Nov 2012) $
  */
 
 #ifdef __GNUC__
@@ -80,24 +37,22 @@
 
 #include <ptlib/sound.h>
 #include <ptlib/pluginmgr.h>
+#include <ptclib/delaychan.h>
+
 
 static const char soundPluginBaseClass[] = "PSoundChannel";
+
 
 template <> PSoundChannel * PDevicePluginFactory<PSoundChannel>::Worker::Create(const PString & type) const
 {
   return PSoundChannel::CreateChannel(type);
 }
 
-namespace PWLib {
-  PFactory<PDevicePluginAdapterBase>::Worker< PDevicePluginAdapter<PSoundChannel> > soundChannelFactoryAdapter("PSoundChannel", TRUE);
-};
-
-namespace PWLibStupidWindowsHacks {
-  int loadSoundStuff;
-};
+typedef PDevicePluginAdapter<PSoundChannel> PDevicePluginSoundChannel;
+PFACTORY_CREATE(PFactory<PDevicePluginAdapterBase>, PDevicePluginSoundChannel, "PSoundChannel", true);
 
 
-PStringList PSoundChannel::GetDriverNames(PPluginManager * pluginMgr)
+PStringArray PSoundChannel::GetDriverNames(PPluginManager * pluginMgr)
 {
   if (pluginMgr == NULL)
     pluginMgr = &PPluginManager::GetPluginManager();
@@ -106,9 +61,9 @@ PStringList PSoundChannel::GetDriverNames(PPluginManager * pluginMgr)
 }
 
 
-PStringList PSoundChannel::GetDriversDeviceNames(const PString & driverName,
-                                                 PSoundChannel::Directions dir,
-                                                 PPluginManager * pluginMgr)
+PStringArray PSoundChannel::GetDriversDeviceNames(const PString & driverName,
+                                                  PSoundChannel::Directions dir,
+                                                  PPluginManager * pluginMgr)
 {
   if (pluginMgr == NULL)
     pluginMgr = &PPluginManager::GetPluginManager();
@@ -145,13 +100,24 @@ PSoundChannel * PSoundChannel::CreateOpenedChannel(const PString & driverName,
                                                    unsigned bitsPerSample,
                                                    PPluginManager * pluginMgr)
 {
+  PString adjustedDeviceName = deviceName;
   PSoundChannel * sndChan;
-  if (driverName.IsEmpty() || driverName == "*")
-    sndChan = CreateChannelByName(deviceName, dir, pluginMgr);
-  else
+  if (driverName.IsEmpty() || driverName == "*") {
+    if (deviceName.IsEmpty() || deviceName == "*")
+      adjustedDeviceName = PSoundChannel::GetDefaultDevice(dir);
+    sndChan = CreateChannelByName(adjustedDeviceName, dir, pluginMgr);
+  }
+  else {
+    if (deviceName.IsEmpty() || deviceName == "*") {
+      PStringArray devices = PSoundChannel::GetDriversDeviceNames(driverName, PSoundChannel::Player);
+      if (devices.IsEmpty())
+        return NULL;
+      adjustedDeviceName = devices[0];
+    }
     sndChan = CreateChannel(driverName, pluginMgr);
+  }
 
-  if (sndChan != NULL && sndChan->Open(deviceName, dir, numChannels, sampleRate, bitsPerSample))
+  if (sndChan != NULL && sndChan->Open(adjustedDeviceName, dir, numChannels, sampleRate, bitsPerSample))
     return sndChan;
 
   delete sndChan;
@@ -159,7 +125,7 @@ PSoundChannel * PSoundChannel::CreateOpenedChannel(const PString & driverName,
 }
 
 
-PStringList PSoundChannel::GetDeviceNames(PSoundChannel::Directions dir, PPluginManager * pluginMgr)
+PStringArray PSoundChannel::GetDeviceNames(PSoundChannel::Directions dir, PPluginManager * pluginMgr)
 {
   if (pluginMgr == NULL)
     pluginMgr = &PPluginManager::GetPluginManager();
@@ -170,53 +136,343 @@ PStringList PSoundChannel::GetDeviceNames(PSoundChannel::Directions dir, PPlugin
 
 PString PSoundChannel::GetDefaultDevice(Directions dir)
 {
-  PStringList devices = GetDeviceNames(dir);
-  if (devices.GetSize() > 0)
-    return devices[0];
+#ifdef _WIN32
+  RegistryKey registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Multimedia\\Sound Mapper",
+                       RegistryKey::ReadOnly);
 
-  return PString::Empty();
+  PString str;
+
+  if (dir == Player) {
+    if (registry.QueryValue("ConsoleVoiceComPlayback", str) )
+      return str;
+    if (registry.QueryValue("Playback", str))
+      return str;
+  }
+  else {
+    if (registry.QueryValue("ConsoleVoiceComRecord", str))
+      return str;
+    if (registry.QueryValue("Record", str))
+      return str;
+  }
+#endif
+
+  PStringArray devices = GetDeviceNames(dir);
+
+  if (devices.GetSize() == 0)
+    return PString::Empty();
+
+  for (PINDEX i = 0; i < devices.GetSize(); ++i) {
+    if (!(devices[i] *= "NULL"))
+      return devices[i];
+  }
+
+  return devices[0];
 }
 
 
 PSoundChannel::PSoundChannel()
+  : m_baseChannel(NULL)
+  , activeDirection(Closed)
 {
-  baseChannel = NULL;
 }
 
 PSoundChannel::~PSoundChannel()
 {
-  delete baseChannel;
+  delete m_baseChannel;
 }
+
 
 PSoundChannel::PSoundChannel(const PString & device,
                              Directions dir,
                              unsigned numChannels,
                              unsigned sampleRate,
                              unsigned bitsPerSample)
+  : m_baseChannel(NULL)
+  , activeDirection(dir)
 {
-  baseChannel = NULL;
   Open(device, dir, numChannels, sampleRate, bitsPerSample);
 }
 
-BOOL PSoundChannel::Open(const PString & device,
+
+PBoolean PSoundChannel::Open(const PString & devSpec,
                          Directions dir,
                          unsigned numChannels,
                          unsigned sampleRate,
                          unsigned bitsPerSample)
 {
-  if (baseChannel == NULL) {
-    PStringArray names = GetDriverNames();
-    if (names.GetSize() == 0)
-      return FALSE;
-
-    baseChannel = CreateChannel(names[0]);
+  PString driver, device;
+  PINDEX colon = devSpec.Find(':');
+  if (colon == P_MAX_INDEX)
+    device = devSpec;
+  else {
+    driver = devSpec.Left(colon);
+    device = devSpec.Mid(colon+1).Trim();
   }
 
-  if (baseChannel == NULL)
-    return FALSE;
+  m_baseMutex.StartWrite();
 
-  return baseChannel->Open(device, dir, numChannels, sampleRate, bitsPerSample);
+  delete m_baseChannel;
+  activeDirection = dir;
+
+  m_baseChannel = CreateOpenedChannel(driver, device, dir, numChannels, sampleRate, bitsPerSample);
+  if (m_baseChannel == NULL && !driver.IsEmpty())
+    m_baseChannel = CreateOpenedChannel(PString::Empty(), devSpec, dir, numChannels, sampleRate, bitsPerSample);
+
+  m_baseMutex.EndWrite();
+
+  return m_baseChannel != NULL;
 }
+
+
+PString PSoundChannel::GetName() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL ? m_baseChannel->GetName() : PString::Empty();
+}
+
+
+PBoolean PSoundChannel::IsOpen() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->PChannel::IsOpen();
+}
+
+
+PBoolean PSoundChannel::Close()
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL || m_baseChannel->Close();
+}
+
+
+int PSoundChannel::GetHandle() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL ? -1 : m_baseChannel->PChannel::GetHandle();
+}
+
+
+PBoolean PSoundChannel::Abort()
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL || m_baseChannel->Abort();
+}
+
+
+PBoolean PSoundChannel::SetFormat(unsigned numChannels, unsigned sampleRate, unsigned bitsPerSample)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->SetFormat(numChannels, sampleRate, bitsPerSample);
+}
+
+
+unsigned PSoundChannel::GetChannels() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL ? 0 : m_baseChannel->GetChannels();
+}
+
+
+unsigned PSoundChannel::GetSampleRate() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL ? 0 : m_baseChannel->GetSampleRate();
+}
+
+
+unsigned PSoundChannel::GetSampleSize() const 
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel == NULL ? 0 : m_baseChannel->GetSampleSize();
+}
+
+
+PBoolean PSoundChannel::SetBuffers(PINDEX size, PINDEX count)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->SetBuffers(size, count);
+}
+
+
+PBoolean PSoundChannel::GetBuffers(PINDEX & size, PINDEX & count)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->GetBuffers(size, count);
+}
+
+
+PBoolean PSoundChannel::SetVolume(unsigned volume)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->SetVolume(volume);
+}
+
+
+PBoolean PSoundChannel::GetMute(bool & mute)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->GetMute(mute);
+}
+
+
+PBoolean PSoundChannel::SetMute(bool mute)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->SetMute(mute);
+}
+
+
+PBoolean PSoundChannel::GetVolume(unsigned & volume)
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->GetVolume(volume);
+}
+
+
+PBoolean PSoundChannel::Write(const void * buf, PINDEX len)
+{
+  PAssert(activeDirection == Player, PLogicError);
+
+  if (len == 0)
+    return IsOpen();
+
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->Write(buf, len);
+}
+
+PBoolean PSoundChannel::Write(const void * buf, PINDEX len, const void * /*mark*/)
+{
+  return Write(buf, len);
+}
+
+PINDEX PSoundChannel::GetLastWriteCount() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL ? m_baseChannel->GetLastWriteCount() : PChannel::GetLastWriteCount();
+}
+
+
+PBoolean PSoundChannel::PlaySound(const PSound & sound, PBoolean wait)
+{
+  PAssert(activeDirection == Player, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->PlaySound(sound, wait);
+}
+
+
+PBoolean PSoundChannel::PlayFile(const PFilePath & file, PBoolean wait)
+{
+  PAssert(activeDirection == Player, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->PlayFile(file, wait);
+}
+
+
+PBoolean PSoundChannel::HasPlayCompleted()
+{
+  PAssert(activeDirection == Player, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->HasPlayCompleted();
+}
+
+
+PBoolean PSoundChannel::WaitForPlayCompletion() 
+{
+  PAssert(activeDirection == Player, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->WaitForPlayCompletion();
+}
+
+
+PBoolean PSoundChannel::Read(void * buf, PINDEX len)
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+
+  if (len == 0)
+    return IsOpen();
+
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->Read(buf, len);
+}
+
+
+PINDEX PSoundChannel::GetLastReadCount() const
+{
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL ? m_baseChannel->GetLastReadCount() : PChannel::GetLastReadCount();
+}
+
+
+PBoolean PSoundChannel::RecordSound(PSound & sound)
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->RecordSound(sound);
+}
+
+
+PBoolean PSoundChannel::RecordFile(const PFilePath & file)
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->RecordFile(file);
+}
+
+
+PBoolean PSoundChannel::StartRecording()
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->StartRecording();
+}
+
+
+PBoolean PSoundChannel::IsRecordBufferFull() 
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->IsRecordBufferFull();
+}
+
+
+PBoolean PSoundChannel::AreAllRecordBuffersFull() 
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->AreAllRecordBuffersFull();
+}
+
+
+PBoolean PSoundChannel::WaitForRecordBufferFull() 
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->WaitForRecordBufferFull();
+}
+
+
+PBoolean PSoundChannel::WaitForAllRecordBuffersFull() 
+{
+  PAssert(activeDirection == Recorder, PLogicError);
+  PReadWaitAndSignal mutex(m_baseMutex);
+  return m_baseChannel != NULL && m_baseChannel->WaitForAllRecordBuffersFull();
+}
+
+
+const char * PSoundChannel::GetDirectionText(Directions dir)
+{
+  switch (dir) {
+    case Player :
+      return "Playback";
+    case Recorder :
+      return "Recording";
+    case Closed :
+      return "Closed";
+  }
+
+  return "<Unknown>";
+}
+
 
 ///////////////////////////////////////////////////////////////////////////
 
@@ -267,44 +523,163 @@ void PSound::SetFormat(unsigned channels,
 }
 
 
-BOOL PSound::Load(const PFilePath & /*filename*/)
+PBoolean PSound::Load(const PFilePath & /*filename*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSound::Save(const PFilePath & /*filename*/)
+PBoolean PSound::Save(const PFilePath & /*filename*/)
 {
-  return FALSE;
+  return PFalse;
 }
 
 
-BOOL PSound::Play()
+PBoolean PSound::Play()
 {
   return Play(PSoundChannel::GetDefaultDevice(PSoundChannel::Player));
 }
 
 
-BOOL PSound::Play(const PString & device)
+PBoolean PSound::Play(const PString & device)
 {
 
   PSoundChannel channel(device, PSoundChannel::Player);
   if (!channel.IsOpen())
-    return FALSE;
+    return PFalse;
 
-  return channel.PlaySound(*this, TRUE);
+  return channel.PlaySound(*this, PTrue);
 }
 
 
-BOOL PSound::PlayFile(const PFilePath & file, BOOL wait)
+PBoolean PSound::PlayFile(const PFilePath & file, PBoolean wait)
 {
   PSoundChannel channel(PSoundChannel::GetDefaultDevice(PSoundChannel::Player),
                         PSoundChannel::Player);
   if (!channel.IsOpen())
-    return FALSE;
+    return PFalse;
 
   return channel.PlayFile(file, wait);
 }
 
 
 #endif //_WIN32
+
+///////////////////////////////////////////////////////////////////////////
+
+static const PConstString NullAudio("Null Audio");
+
+class PSoundChannelNull : public PSoundChannel
+{
+ PCLASSINFO(PSoundChannelNull, PSoundChannel);
+ public:
+    PSoundChannelNull()
+      : m_sampleRate(0)
+    {
+    }
+
+    PSoundChannelNull(
+      const PString &device,
+      PSoundChannel::Directions dir,
+      unsigned numChannels,
+      unsigned sampleRate,
+      unsigned bitsPerSample
+    ) : m_sampleRate(0)
+    {
+      Open(device, dir, numChannels, sampleRate, bitsPerSample);
+    }
+
+    static PStringArray GetDeviceNames(PSoundChannel::Directions = Player)
+    {
+      return NullAudio;
+    }
+
+    PBoolean Open(const PString &,
+                  Directions dir,
+                  unsigned numChannels,
+                  unsigned sampleRate,
+                  unsigned bitsPerSample)
+    {
+      activeDirection = dir;
+      return SetFormat(numChannels, sampleRate, bitsPerSample);
+    }
+
+    virtual PString GetName() const
+    {
+      return NullAudio;
+    }
+
+    PBoolean Close()
+    {
+      m_sampleRate = 0;
+      return true;
+    }
+
+    PBoolean IsOpen() const
+    {
+      return m_sampleRate > 0;
+    }
+
+    PBoolean Write(const void *, PINDEX len)
+    {
+      if (m_sampleRate <= 0)
+        return false;
+
+      lastWriteCount = len;
+      m_Pacing.Delay(len/2*1000/m_sampleRate);
+      return true;
+    }
+
+    PBoolean Read(void * buf, PINDEX len)
+    {
+      if (m_sampleRate <= 0)
+        return false;
+
+      memset(buf, 0, len);
+      lastReadCount = len;
+      m_Pacing.Delay(len/2*1000/m_sampleRate);
+      return true;
+    }
+
+    PBoolean SetFormat(unsigned numChannels,
+                   unsigned sampleRate,
+                   unsigned bitsPerSample)
+    {
+      m_sampleRate = sampleRate;
+      return numChannels == 1 && bitsPerSample == 16;
+    }
+
+    unsigned GetChannels() const
+    {
+      return 1;
+    }
+
+    unsigned GetSampleRate() const
+    {
+      return m_sampleRate;
+    }
+
+    unsigned GetSampleSize() const
+    {
+      return 16;
+    }
+
+    PBoolean SetBuffers(PINDEX, PINDEX)
+    {
+      return true;
+    }
+
+    PBoolean GetBuffers(PINDEX & size, PINDEX & count)
+    {
+      size = 2;
+      count = 1;
+      return true;
+    }
+
+protected:
+    unsigned       m_sampleRate;
+    PAdaptiveDelay m_Pacing;
+};
+
+
+PCREATE_SOUND_PLUGIN(NullAudio, PSoundChannelNull)

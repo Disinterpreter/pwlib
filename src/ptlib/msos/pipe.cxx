@@ -26,23 +26,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pipe.cxx,v $
- * Revision 1.5  2004/10/23 10:51:59  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.4  2004/04/03 06:54:30  rjongbloed
- * Many and various changes to support new Visual C++ 2003
- *
- * Revision 1.3  2001/09/10 02:51:23  robertj
- * Major change to fix problem with error codes being corrupted in a
- *   PChannel when have simultaneous reads and writes in threads.
- *
- * Revision 1.2  1998/11/30 07:37:56  robertj
- * Fixed (previous bug) of incorrect handle values.
- *
- * Revision 1.1  1998/11/30 04:57:42  robertj
- * Initial revision
- *
+ * $Revision: 24756 $
+ * $Author: rjongbloed $
+ * $Date: 2010-09-28 03:40:17 -0500 (Tue, 28 Sep 2010) $
  */
 
 #include <ptlib.h>
@@ -59,11 +45,17 @@ PPipeChannel::PPipeChannel()
 }
 
 
-BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
+#ifdef _WIN32_WCE
+PBoolean PPipeChannel::PlatformOpen(const PString &, const PStringArray &, OpenMode, PBoolean, PBoolean, const PStringToString *)
+{
+  return PFalse;
+}
+#else
+PBoolean PPipeChannel::PlatformOpen(const PString & subProgram,
                                 const PStringArray & argumentList,
                                 OpenMode mode,
-                                BOOL searchPath,
-                                BOOL stderrSeparate,
+                                PBoolean searchPath,
+                                PBoolean stderrSeparate,
                                 const PStringToString * environment)
 {
   subProgName = subProgram;
@@ -99,8 +91,9 @@ BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
     envStr = envBuf.GetPointer();
   }
 
-#ifndef _WIN32_WCE
-
+  //
+  // this code comes from http://msdn.microsoft.com/en-us/library/ms682499(VS.85).aspx
+  //
   STARTUPINFO startup;
   memset(&startup, 0, sizeof(startup));
   startup.cb = sizeof(startup);
@@ -115,16 +108,22 @@ BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
   security.lpSecurityDescriptor = NULL;
   security.bInheritHandle = TRUE;
 
+  // ReadOnly means child has no stdin
+  // otherwise create a pipe for us to send data to child
   if (mode == ReadOnly)
     hToChild = INVALID_HANDLE_VALUE;
   else {
     HANDLE writeEnd;
     PAssertOS(CreatePipe(&startup.hStdInput, &writeEnd, &security, 0));
+    PAssertOS(SetHandleInformation(writeEnd, HANDLE_FLAG_INHERIT, 0));
     PAssertOS(DuplicateHandle(GetCurrentProcess(), writeEnd,
-                              GetCurrentProcess(), &hToChild, 0, FALSE,
+                              GetCurrentProcess(), &hToChild, 0, PFalse,
                               DUPLICATE_CLOSE_SOURCE|DUPLICATE_SAME_ACCESS));
   }
 
+  // WriteOnly means child has no stdout
+  // ReadWriteStd means child uses our stdout and stderr
+  // otherwise, create a pipe to read stdout from child, and perhaps a seperate one for stderr too
   if (mode == WriteOnly)
     hFromChild = INVALID_HANDLE_VALUE;
   else if (mode == ReadWriteStd) {
@@ -133,9 +132,12 @@ BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
     startup.hStdError = GetStdHandle(STD_ERROR_HANDLE);
   }
   else {
-    PAssertOS(CreatePipe(&hFromChild, &startup.hStdOutput, &security, 0));
-    if (stderrSeparate)
-      PAssertOS(CreatePipe(&hStandardError, &startup.hStdError, &security, 0));
+    PAssertOS(CreatePipe(&hFromChild, &startup.hStdOutput, &security, 1));
+    PAssertOS(SetHandleInformation(hFromChild, HANDLE_FLAG_INHERIT, 0));
+    if (stderrSeparate) {
+      PAssertOS(CreatePipe(&hStandardError, &startup.hStdError, &security, 1));
+      PAssertOS(SetHandleInformation(hStandardError, HANDLE_FLAG_INHERIT, 0));
+    }
     else {
       startup.hStdError = startup.hStdOutput;
       hStandardError = INVALID_HANDLE_VALUE;
@@ -143,7 +145,7 @@ BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
   }
 
   if (ConvertOSError(CreateProcess(prog, cmdLine.GetPointer(),
-                                   NULL, NULL, TRUE, 0, envStr,
+                                   NULL, NULL, PTrue, 0, envStr,
                                    NULL, &startup, &info) ? 0 : -2))
     os_handle = info.dwProcessId;
   else {
@@ -164,10 +166,11 @@ BOOL PPipeChannel::PlatformOpen(const PString & subProgram,
     if (startup.hStdOutput != startup.hStdError)
       CloseHandle(startup.hStdError);
   }
-#endif // !_WIN32_WCE
 
   return IsOpen();
 }
+#endif // !_WIN32_WCE
+
 
 
 PPipeChannel::~PPipeChannel()
@@ -176,7 +179,7 @@ PPipeChannel::~PPipeChannel()
 }
 
 
-BOOL PPipeChannel::IsOpen() const
+PBoolean PPipeChannel::IsOpen() const
 {
   return os_handle != -1;
 }
@@ -185,23 +188,22 @@ BOOL PPipeChannel::IsOpen() const
 int PPipeChannel::GetReturnCode() const
 {
   DWORD code;
-  if (GetExitCodeProcess(info.hProcess, &code) && (code != STILL_ACTIVE))
-    return code;
+  if (GetExitCodeProcess(info.hProcess, &code))
+    return code != STILL_ACTIVE ? code : -2;
 
   ((PPipeChannel*)this)->ConvertOSError(-2);
   return -1;
 }
 
 
-BOOL PPipeChannel::CanReadAndWrite()
+PBoolean PPipeChannel::CanReadAndWrite()
 {
-  return TRUE;
+  return PTrue;
 }
 
-BOOL PPipeChannel::IsRunning() const
+PBoolean PPipeChannel::IsRunning() const
 {
-  DWORD code;
-  return GetExitCodeProcess(info.hProcess, &code) && (code == STILL_ACTIVE);
+  return GetReturnCode() == -2;
 }
 
 
@@ -225,35 +227,81 @@ int PPipeChannel::WaitForTermination(const PTimeInterval & timeout)
 }
 
 
-BOOL PPipeChannel::Kill(int signal)
+PBoolean PPipeChannel::Kill(int signal)
 {
   return ConvertOSError(TerminateProcess(info.hProcess, signal) ? 0 : -2);
 }
 
 
-BOOL PPipeChannel::Read(void * buffer, PINDEX len)
+PBoolean PPipeChannel::Read(void * buffer, PINDEX len)
 {
   lastReadCount = 0;
-  DWORD count;
-  if (!ConvertOSError(ReadFile(hFromChild, buffer, len, &count, NULL) ? 0 :-2, LastReadError))
-    return FALSE;
-  lastReadCount = count;
+
+  DWORD count = 0;
+
+#ifndef _WIN32_WCE
+  // Cannot use overlapped I/O with anonymous pipe.
+  // So have all this hideous code. :-(
+
+  if (readTimeout == PMaxTimeInterval) {
+    if (!ConvertOSError(ReadFile(hFromChild, buffer, 1, &count, NULL) ? 0 : -2, LastReadError))
+      return false;
+
+    lastReadCount = 1;
+    if (len == 1)
+      return true;
+
+    if (!PeekNamedPipe(hFromChild, NULL, 0, NULL, &count, NULL))
+      return ConvertOSError(-2, LastReadError);
+
+    if (count == 0)
+      return true;
+
+    ++((BYTE * &)buffer);
+    --len;
+  }
+  else {
+    PSimpleTimer timeout(readTimeout);
+    for (;;) {
+      if (!PeekNamedPipe(hFromChild, NULL, 0, NULL, &count, NULL))
+        return ConvertOSError(-2, LastReadError);
+
+      if (count > 0)
+        break;
+
+      if (timeout.HasExpired()) {
+        SetErrorValues(Timeout, EAGAIN, LastReadError);
+        return false;
+      }
+
+      Sleep(10);
+    }
+  }
+
+  if (len > (PINDEX)count)
+    len = count;
+#endif
+
+  if (!ConvertOSError(ReadFile(hFromChild, buffer, len, &count, NULL) ? 0 : -2, LastReadError))
+    return false;
+
+  lastReadCount += count;
   return lastReadCount > 0;
 }
       
 
-BOOL PPipeChannel::Write(const void * buffer, PINDEX len)
+PBoolean PPipeChannel::Write(const void * buffer, PINDEX len)
 {
   lastWriteCount = 0;
   DWORD count;
   if (!ConvertOSError(WriteFile(hToChild, buffer, len, &count, NULL) ? 0 : -2, LastWriteError))
-    return FALSE;
+    return PFalse;
   lastWriteCount = count;
   return lastWriteCount >= len;
 }
 
 
-BOOL PPipeChannel::Close()
+PBoolean PPipeChannel::Close()
 {
   if (IsOpen()) {
     os_handle = -1;
@@ -264,26 +312,31 @@ BOOL PPipeChannel::Close()
     if (hStandardError != INVALID_HANDLE_VALUE)
       CloseHandle(hStandardError);
     if (!TerminateProcess(info.hProcess, 1))
-      return FALSE;
+      return PFalse;
   }
-  return TRUE;
+  return PTrue;
 }
 
 
-BOOL PPipeChannel::Execute()
+PBoolean PPipeChannel::Execute()
 {
   flush();
   clear();
   if (hToChild != INVALID_HANDLE_VALUE)
     CloseHandle(hToChild);
   hToChild = INVALID_HANDLE_VALUE;
-  return TRUE;
+  return IsRunning();
 }
 
 
-BOOL PPipeChannel::ReadStandardError(PString & errors, BOOL wait)
+#ifdef _WIN32_WCE
+PBoolean PPipeChannel::ReadStandardError(PString &, PBoolean)
 {
-#ifndef _WIN32_WCE
+  return PFalse;
+}
+#else
+PBoolean PPipeChannel::ReadStandardError(PString & errors, PBoolean wait)
+{
   DWORD available, bytesRead;
   if (!PeekNamedPipe(hStandardError, NULL, 0, NULL, &available, NULL))
     return ConvertOSError(-2, LastReadError);
@@ -293,8 +346,8 @@ BOOL PPipeChannel::ReadStandardError(PString & errors, BOOL wait)
                           errors.GetPointer(available+1), available,
                           &bytesRead, NULL) ? 0 : -2, LastReadError);
 
-  if (wait)
-    return FALSE;
+  if (!wait)
+    return PFalse;
 
   char firstByte;
   if (!ReadFile(hStandardError, &firstByte, 1, &bytesRead, NULL))
@@ -306,16 +359,13 @@ BOOL PPipeChannel::ReadStandardError(PString & errors, BOOL wait)
     return ConvertOSError(-2, LastReadError);
 
   if (available == 0)
-    return TRUE;
+    return PTrue;
 
   return ConvertOSError(ReadFile(hStandardError,
                         errors.GetPointer(available+2)+1, available,
                         &bytesRead, NULL) ? 0 : -2, LastReadError);
-
-#else
-  return FALSE;
-#endif // !_WIN32_WCE
 }
+#endif // !_WIN32_WCE
 
 
 // End Of File ///////////////////////////////////////////////////////////////

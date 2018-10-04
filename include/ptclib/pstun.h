@@ -23,59 +23,19 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: pstun.h,v $
- * Revision 1.12  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.11  2005/07/13 11:15:15  csoutheren
- * Backported NAT abstraction files from isvo branch
- *
- * Revision 1.10  2005/06/20 10:55:16  rjongbloed
- * Changed the timeout and retries so if there is a blocking firewall it does not take 15 seconds to find out!
- * Added access functions so timeout and retries are application configurable.
- * Added function (and << operator) to get NAT type enum as string.
- *
- * Revision 1.9.4.1  2005/04/25 13:21:36  shorne
- * Add Support for other NAT methods
- *
- * Revision 1.9  2004/11/25 07:23:46  csoutheren
- * Added IsSupportingRTP function to simplify detecting when STUN supports RTP
- *
- * Revision 1.8  2004/03/14 05:47:52  rjongbloed
- * Fixed incorrect detection of symmetric NAT (eg Linux masquerading) and also
- *   some NAT systems which are partially blocked due to firewall rules.
- *
- * Revision 1.7  2004/02/24 11:15:48  rjongbloed
- * Added function to get external router address, also did a bunch of documentation.
- *
- * Revision 1.6  2004/01/17 17:54:02  rjongbloed
- * Added function to get server name from STUN client.
- *
- * Revision 1.5  2003/10/05 00:56:25  rjongbloed
- * Rewrite of STUN to not to use imported code with undesirable license.
- *
- * Revision 1.4  2003/02/05 06:26:49  robertj
- * More work in making the STUN usable for Symmetric NAT systems.
- *
- * Revision 1.3  2003/02/04 07:01:02  robertj
- * Added ip/port version of constructor.
- *
- * Revision 1.2  2003/02/04 05:05:55  craigs
- * Added new functions
- *
- * Revision 1.1  2003/02/04 03:31:04  robertj
- * Added STUN
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PSTUN_H
-#define _PSTUN_H
+#ifndef PTLIB_PSTUN_H
+#define PTLIB_PSTUN_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
-#include <ptlib.h>
+
 #include <ptclib/pnat.h>
 #include <ptlib/sockets.h>
 
@@ -88,10 +48,10 @@ class PSTUNUDPSocket : public PUDPSocket
   public:
     PSTUNUDPSocket();
 
-    virtual BOOL GetLocalAddress(
+    virtual PBoolean GetLocalAddress(
       Address & addr    ///< Variable to receive hosts IP address
     );
-    virtual BOOL GetLocalAddress(
+    virtual PBoolean GetLocalAddress(
       Address & addr,    ///< Variable to receive peer hosts IP address
       WORD & port        ///< Variable to receive peer hosts port number
     );
@@ -113,6 +73,8 @@ class PSTUNClient : public PNatMethod
       DefaultPort = 3478
     };
 
+    PSTUNClient();
+
     PSTUNClient(
       const PString & server,
       WORD portBase = 0,
@@ -130,9 +92,28 @@ class PSTUNClient : public PNatMethod
     );
 
 
-    /**Get the current STUN server address and port being used.
+    void Initialise(
+      const PString & server,
+      WORD portBase = 0, 
+      WORD portMax = 0,
+      WORD portPairBase = 0, 
+      WORD portPairMax = 0
+    );
+
+    /**Get the NAT Method Name
+     */
+    static PStringList GetNatMethodName() { return PStringList("STUN"); }
+
+    /** Get the NAT traversal method name
+    */
+    virtual PString GetName() const { return "STUN"; }
+
+    /**Get the current server address and port being used.
       */
-    PString GetServer() const;
+    virtual bool GetServerAddress(
+      PIPSocket::Address & address,   ///< Address of server
+      WORD & port                     ///< Port server is using.
+    ) const;
 
     /**Set the STUN server to use.
        The server string may be of the form host:port. If :port is absent
@@ -140,14 +121,14 @@ class PSTUNClient : public PNatMethod
        a service name as found in /etc/services. The host substring may be
        a DNS name or explicit IP address.
       */
-    BOOL SetServer(
+    PBoolean SetServer(
       const PString & server
     );
 
     /**Set the STUN server to use by IP address and port.
        If serverPort is zero then the default port of 3478 is used.
       */
-    BOOL SetServer(
+    PBoolean SetServer(
       const PIPSocket::Address & serverAddress,
       WORD serverPort = 0
     );
@@ -170,14 +151,14 @@ class PSTUNClient : public PNatMethod
        guarantee an up to date value.
       */
     NatTypes GetNatType(
-      BOOL force = FALSE    ///< Force a new check
+      PBoolean force = false    ///< Force a new check
     );
 
     /**Determine via the STUN protocol the NAT type for the router.
        As for GetNatType() but returns an English string for the type.
       */
     PString GetNatTypeName(
-      BOOL force = FALSE    ///< Force a new check
+      PBoolean force = false    ///< Force a new check
     ) { return GetNatTypeString(GetNatType(force)); }
 
     /**Get NatTypes enumeration as an English string for the type.
@@ -186,18 +167,11 @@ class PSTUNClient : public PNatMethod
       NatTypes type   ///< NAT Type to get name of
     );
 
-    enum RTPSupportTypes {
-      RTPOK,
-      RTPUnknown,
-      RTPUnsupported,
-      RTPIfSendMedia
-    };
-
     /**Return an indication if the current STUN type supports RTP
       Use the force variable to guarantee an up to date test
       */
-    RTPSupportTypes IsSupportingRTP(
-      BOOL force = FALSE    ///< Force a new check
+    RTPSupportTypes GetRTPSupport(
+      PBoolean force = false    ///< Force a new check
     );
 
     /**Determine the external router address.
@@ -207,10 +181,22 @@ class PSTUNClient : public PNatMethod
        A cached address is returned provided it is no older than the time
        specified.
       */
-    virtual BOOL GetExternalAddress(
+    virtual PBoolean GetExternalAddress(
       PIPSocket::Address & externalAddress, ///< External address of router
       const PTimeInterval & maxAge = 1000   ///< Maximum age for caching
     );
+
+    /**Return the interface NAT router is using.
+      */
+    virtual bool GetInterfaceAddress(
+      PIPSocket::Address & internalAddress
+    ) const;
+
+    /**Invalidates the cached addresses and modes.
+       This allows to lazily update the external address cache at the next 
+       attempt to get the external address.
+      */
+    void InvalidateCache();
 
     /**Create a single socket.
        The STUN protocol is used to create a socket for which the external IP
@@ -222,10 +208,12 @@ class PSTUNClient : public PNatMethod
        sure the socket is deleted to avoid memory leaks.
 
        The socket pointer is set to NULL if the function fails and returns
-       FALSE.
+       false.
       */
-    BOOL CreateSocket(
-      PUDPSocket * & socket
+    PBoolean CreateSocket(
+      PUDPSocket * & socket,
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny(),
+      WORD localPort = 0
     );
 
     /**Create a socket pair.
@@ -239,11 +227,12 @@ class PSTUNClient : public PNatMethod
        sure the sockets are deleted to avoid memory leaks.
 
        The socket pointers are set to NULL if the function fails and returns
-       FALSE.
+       false.
       */
-    virtual BOOL CreateSocketPair(
+    virtual PBoolean CreateSocketPair(
       PUDPSocket * & socket1,
-      PUDPSocket * & socket2
+      PUDPSocket * & socket2,
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()
     );
 
     /**Get the timeout for responses from STUN server.
@@ -289,19 +278,23 @@ class PSTUNClient : public PNatMethod
        The availablity of the STUN Method is dependant on the Type
        of NAT being used.
      */
-    virtual BOOL IsAvailable();
+    virtual bool IsAvailable(
+      const PIPSocket::Address & binding = PIPSocket::GetDefaultIpAny()  ///< Interface to see if NAT is available on
+    );
 
   protected:
-    PIPSocket::Address serverAddress;
+    PString            serverHost;
     WORD               serverPort;
     PTimeInterval      replyTimeout;
     PINDEX             pollRetries;
     PINDEX             numSocketsForPairing;
 
-    bool OpenSocket(PUDPSocket & socket, PortInfo & portInfo) const;
+    bool OpenSocket(PUDPSocket & socket, PortInfo & portInfo, const PIPSocket::Address & binding);
 
     NatTypes           natType;
+    PIPSocket::Address cachedServerAddress;
     PIPSocket::Address cachedExternalAddress;
+    PIPSocket::Address interfaceAddress;
     PTime              timeAddressObtained;
 };
 
@@ -309,7 +302,7 @@ class PSTUNClient : public PNatMethod
 inline ostream & operator<<(ostream & strm, PSTUNClient::NatTypes type) { return strm << PSTUNClient::GetNatTypeString(type); }
 
 
-#endif // _PSTUN_H
+#endif // PTLIB_PSTUN_H
 
 
 // End of file ////////////////////////////////////////////////////////////////

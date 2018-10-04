@@ -23,25 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: psasl.cxx,v $
- * Revision 1.5  2004/05/09 07:23:50  rjongbloed
- * More work on XMPP, thanks Federico Pinna and Reitek S.p.A.
- *
- * Revision 1.4  2004/04/28 11:26:43  csoutheren
- * Hopefully fixed SASL and SASL2 problems
- *
- * Revision 1.3  2004/04/24 06:27:56  rjongbloed
- * Fixed GCC 3.4.0 warnings about PAssertNULL and improved recoverability on
- *   NULL pointer usage in various bits of code.
- *
- * Revision 1.2  2004/04/18 12:34:22  csoutheren
- * Modified to compile under Unix
- *
- * Revision 1.1  2004/04/18 12:02:31  csoutheren
- * Added classes for SASL authentication
- * Thanks to Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 24875 $
+ * $Author: rjongbloed $
+ * $Date: 2010-11-12 02:03:15 -0600 (Fri, 12 Nov 2010) $
  */
 
 #ifdef __GNUC__
@@ -53,7 +37,7 @@
 #include <ptclib/psasl.h>
 #include <ptclib/cypher.h>
 
-#if P_SASL2
+#if P_SASL
 
 extern "C" {
 
@@ -67,9 +51,8 @@ extern "C" {
 
 
 #ifdef _MSC_VER
-
-#pragma comment(lib, P_SASL_LIBRARY)
-
+  #pragma comment(lib, P_SASL_LIBRARY)
+  #pragma message("SASL support enabled")
 #endif
 
 ///////////////////////////////////////////////////////
@@ -217,7 +200,7 @@ PSASLClient::~PSASLClient()
 }
 
 
-BOOL PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
+PBoolean PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
 {
     if (!m_CallBacks)
     {
@@ -245,10 +228,11 @@ BOOL PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
     if (m_ConnState)
         End();
 
-    int result = sasl_client_new(m_Service, fqdn, 0, 0, (const sasl_callback_t *)m_CallBacks, 0, (sasl_conn_t **)&m_ConnState);
+    sasl_conn_t** s = (sasl_conn_t **)&m_ConnState;
+    int result = sasl_client_new(m_Service, fqdn, 0, 0, (const sasl_callback_t *)m_CallBacks, 0, s);
 
     if (result != SASL_OK)
-        return FALSE;
+        return PFalse;
 
     const char * list;
     unsigned plen;
@@ -261,11 +245,11 @@ BOOL PSASLClient::Init(const PString& fqdn, PStringSet& supportedMechanisms)
     for (PINDEX i = 0, max = a.GetSize() ; i < max ; i++)
         supportedMechanisms.Include(a[i]);
 
-    return  TRUE;
+    return  PTrue;
 }
 
 
-BOOL PSASLClient::Start(const PString& mechanism, PString& output)
+PBoolean PSASLClient::Start(const PString& mechanism, PString& output)
 {
     const char * _output = 0;
     unsigned _len = 0;
@@ -278,27 +262,27 @@ BOOL PSASLClient::Start(const PString& mechanism, PString& output)
             b64.StartEncoding();
             b64.ProcessEncoding(_output, _len);
             output = b64.CompleteEncoding();
-            output.Replace("\r\n", PString::Empty(), TRUE);
+            output.Replace("\r\n", PString::Empty(), PTrue);
         }
 
-        return TRUE;
+        return PTrue;
     }
 
-    return FALSE;
+    return PFalse;
 }
 
 
-BOOL PSASLClient::Start(const PString& mechanism, const char ** output, unsigned& len)
+PBoolean PSASLClient::Start(const PString& mechanism, const char ** output, unsigned& len)
 {
     if (!m_ConnState)
-        return FALSE;
+        return PFalse;
 
     int result = sasl_client_start((sasl_conn_t *)m_ConnState, mechanism, 0, output, &len, 0);
 
     if (result == SASL_OK || result == SASL_CONTINUE)
-        return TRUE;
+        return PTrue;
 
-    return FALSE;
+    return PFalse;
 }
 
 
@@ -321,7 +305,7 @@ PSASLClient::PSASLResult PSASLClient::Negotiate(const PString& input, PString& o
         b64.StartEncoding();
         b64.ProcessEncoding(_output);
         output = b64.CompleteEncoding();
-        output.Replace("\r\n", PString::Empty(), TRUE);
+        output.Replace("\r\n", PString::Empty(), PTrue);
     }
 
     return result;
@@ -344,19 +328,27 @@ PSASLClient::PSASLResult PSASLClient::Negotiate(const char * input, const char *
 }
 
 
-BOOL PSASLClient::End()
+PBoolean PSASLClient::End()
 {
     if (m_ConnState)
     {
-        sasl_dispose((sasl_conn_t **)&m_ConnState);
+        sasl_conn_t * s = (sasl_conn_t *)m_ConnState;
+        sasl_dispose(&s);
         m_ConnState = 0;
-        return TRUE;
+        return PTrue;
     }
 
-    return FALSE;
+    return PFalse;
 }
 
-#endif // P_SASL2
+
+#else
+
+  #ifdef _MSC_VER
+    #pragma message("SASL support DISABLED")
+  #endif
+
+#endif // P_SASL
 
 // End of File ///////////////////////////////////////////////////////////////
 

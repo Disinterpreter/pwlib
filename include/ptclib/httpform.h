@@ -23,79 +23,28 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: httpform.h,v $
- * Revision 1.18  2005/11/30 12:47:37  csoutheren
- * Removed tabs, reformatted some code, and changed tags for Doxygen
- *
- * Revision 1.17  2003/03/24 04:30:41  robertj
- * Added function to set and get strings from PConfig in correct format for
- *   use with HTTP form array contsructs.
- *
- * Revision 1.16  2002/11/06 22:47:24  robertj
- * Fixed header comment (copyright etc)
- *
- * Revision 1.15  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.14  2001/10/10 08:07:48  robertj
- * Fixed large memory leak of strings when doing POST to a form.
- *
- * Revision 1.13  2000/12/18 07:12:37  robertj
- * Added ability to have fixed length array fields.
- *
- * Revision 1.12  1999/03/09 08:01:46  robertj
- * Changed comments for doc++ support (more to come).
- *
- * Revision 1.11  1999/02/16 08:07:10  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.10  1998/11/30 02:50:48  robertj
- * New directory structure
- *
- * Revision 1.9  1998/09/23 06:19:31  robertj
- * Added open source copyright license.
- *
- * Revision 1.8  1998/08/20 05:45:33  robertj
- * Fixed bug where substitutions did not always occur if near end of macro block.
- *
- * Revision 1.7  1998/01/26 00:25:24  robertj
- * Major rewrite of HTTP forms management.
- *
- * Revision 1.6  1997/08/09 07:46:51  robertj
- * Fixed problems with value of SELECT fields in form
- *
- * Revision 1.5  1997/07/26 11:38:17  robertj
- * Support for overridable pages in HTTP service applications.
- *
- * Revision 1.4  1997/07/08 13:16:12  robertj
- * Major HTTP form enhancements for lists and arrays of fields.
- *
- * Revision 1.3  1997/06/08 04:49:40  robertj
- * Adding new llist based form field.
- *
- * Revision 1.2  1997/04/01 06:01:39  robertj
- * Allowed value list in drop down box to be modified once created.
- *
- * Revision 1.1  1996/06/28 12:55:56  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PHTTPFORM
-#define _PHTTPFORM
+#ifndef PTLIB_HTTPFORM_H
+#define PTLIB_HTTPFORM_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
 #endif
 
+#if P_HTTPFORMS
+
 #include <ptclib/http.h>
+#include <ptclib/html.h>
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // PHTTPField
 
-/** This class is the abstract base class for fields in a #PHTTPForm#
+/** This class is the abstract base class for fields in a <code>PHTTPForm</code>
    resource type.
  */
 class PHTTPField : public PObject
@@ -214,7 +163,7 @@ class PHTTPField : public PObject
        @return
        String for field value.
      */
-    virtual PString GetValue(BOOL dflt = FALSE) const = 0;
+    virtual PString GetValue(PBoolean dflt = false) const = 0;
 
     /** Set the value of the field.
      */
@@ -236,12 +185,12 @@ class PHTTPField : public PObject
       PConfig & cfg   // Configuration for value transfer.
     ) const;
 
-    /** Validate the new field value before #SetValue()# is called.
+    /** Validate the new field value before <code>SetValue()</code> is called.
 
        @return
-       BOOL if the new field value is OK.
+       PBoolean if the new field value is OK.
      */
-    virtual BOOL Validated(
+    virtual PBoolean Validated(
       const PString & newVal, // Proposed new value for the field.
       PStringStream & msg     // Stream to take error HTML if value not valid.
     ) const;
@@ -250,9 +199,9 @@ class PHTTPField : public PObject
     /** Retrieve all the names in the field and subfields.
 
        @return
-       List of strings for each subfield.
+       Array of strings for each subfield.
      */
-    virtual void GetAllNames(PStringList & list) const;
+    virtual void GetAllNames(PStringArray & names) const;
 
     /** Set the value of the field in a list of fields.
      */
@@ -260,30 +209,30 @@ class PHTTPField : public PObject
       const PStringToString & data   // New value for the field.
     );
 
-    /** Validate the new field value in a list before #SetValue()# is called.
+    /** Validate the new field value in a list before <code>SetValue()</code> is called.
 
        @return
-       BOOL if the all the new field values are OK.
+       PBoolean if the all the new field values are OK.
      */
-    virtual BOOL ValidateAll(
+    virtual PBoolean ValidateAll(
       const PStringToString & data, // Proposed new value for the field.
       PStringStream & msg     // Stream to take error HTML if value not valid.
     ) const;
 
 
-    BOOL NotYetInHTML() const { return notInHTML; }
-    void SetInHTML() { notInHTML = FALSE; }
+    PBoolean NotYetInHTML() const { return notInHTML; }
+    void SetInHTML() { notInHTML = false; }
 
   protected:
     PCaselessString baseName;
     PCaselessString fullName;
     PString title;
     PString help;
-    BOOL notInHTML;
+    PBoolean notInHTML;
 };
 
 
-PLIST(PHTTPFieldList, PHTTPField);
+PARRAY(PHTTPFields, PHTTPField);
 
 class PHTTPCompositeField : public PHTTPField
 {
@@ -292,7 +241,8 @@ class PHTTPCompositeField : public PHTTPField
     PHTTPCompositeField(
       const char * name,          // Name (identifier) for the field.
       const char * title = NULL,  // Title text for field (defaults to name).
-      const char * help = NULL    // Help text for the field.
+      const char * help = NULL,   // Help text for the field.
+      bool includeHeaders = false // Make a sub-table and put headers on HTML fields.
     );
 
     virtual void SetName(
@@ -319,7 +269,7 @@ class PHTTPCompositeField : public PHTTPField
       PHTML & html    // HTML to receive the field info.
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newValue   // New value for the field.
@@ -332,12 +282,12 @@ class PHTTPCompositeField : public PHTTPField
       PConfig & cfg   // Configuration for value transfer.
     ) const;
 
-    virtual void GetAllNames(PStringList & list) const;
+    virtual void GetAllNames(PStringArray & names) const;
     virtual void SetAllValues(
       const PStringToString & data   // New value for the field.
     );
 
-    virtual BOOL ValidateAll(
+    virtual PBoolean ValidateAll(
       const PStringToString & data, // Proposed new value for the field.
       PStringStream & msg     // Stream to take error HTML if value not valid.
     ) const;
@@ -358,7 +308,8 @@ class PHTTPCompositeField : public PHTTPField
     void RemoveAll() { fields.RemoveAll(); }
 
   protected:
-    PHTTPFieldList fields;
+    PHTTPFields fields;
+    bool        m_includeHeaders;
 };
 
 
@@ -391,7 +342,7 @@ class PHTTPFieldArray : public PHTTPCompositeField
   public:
     PHTTPFieldArray(
       PHTTPField * baseField,
-      BOOL ordered,
+      PBoolean ordered,
       PINDEX fixedSize = 0
     );
 
@@ -436,8 +387,8 @@ class PHTTPFieldArray : public PHTTPCompositeField
     void SetArrayFieldName(PINDEX idx) const;
 
     PHTTPField * baseField;
-    BOOL orderedArray;
-    BOOL canAddElements;
+    PBoolean orderedArray;
+    PBoolean canAddElements;
 };
 
 
@@ -465,7 +416,7 @@ class PHTTPStringField : public PHTTPField
       PHTML & html    ///< HTML to receive the field info.
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
@@ -503,13 +454,39 @@ class PHTTPPasswordField : public PHTTPStringField
       PHTML & html    ///< HTML to receive the field info.
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
     );
 
     static PString Decrypt(const PString & pword);
+};
+
+
+class PHTTPDateField : public PHTTPStringField
+{
+  PCLASSINFO(PHTTPDateField, PHTTPStringField)
+  public:
+    PHTTPDateField(
+      const char * name,
+      const PTime & initVal = PTime(0),
+      PTime::TimeFormat fmt = PTime::ShortDate
+    );
+
+    virtual PHTTPField * NewField() const;
+
+    virtual void SetValue(
+      const PString & newValue
+    );
+
+    virtual PBoolean Validated(
+      const PString & newValue,
+      PStringStream & msg
+    ) const;
+
+  protected:
+    PTime::TimeFormat m_format;
 };
 
 
@@ -539,7 +516,7 @@ class PHTTPIntegerField : public PHTTPField
       PHTML & html    ///< HTML to receive the field info.
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
@@ -552,7 +529,7 @@ class PHTTPIntegerField : public PHTTPField
       PConfig & cfg   ///< Configuration for value transfer.
     ) const;
 
-    virtual BOOL Validated(
+    virtual PBoolean Validated(
       const PString & newVal,
       PStringStream & msg
     ) const;
@@ -571,13 +548,13 @@ class PHTTPBooleanField : public PHTTPField
   public:
     PHTTPBooleanField(
       const char * name,
-      BOOL initVal = FALSE,
+      PBoolean initVal = false,
       const char * help = NULL
     );
     PHTTPBooleanField(
       const char * name,
       const char * title,
-      BOOL initVal = FALSE,
+      PBoolean initVal = false,
       const char * help = NULL
     );
 
@@ -591,7 +568,7 @@ class PHTTPBooleanField : public PHTTPField
       const PString & input
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
@@ -606,7 +583,7 @@ class PHTTPBooleanField : public PHTTPField
 
 
   protected:
-    BOOL value, initialValue;
+    PBoolean value, initialValue;
 };
 
 
@@ -685,7 +662,7 @@ class PHTTPRadioField : public PHTTPField
       const PString & input
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
@@ -739,7 +716,7 @@ class PHTTPSelectField : public PHTTPField
       PHTML & html    ///< HTML to receive the field info.
     ) const;
 
-    virtual PString GetValue(BOOL dflt = FALSE) const;
+    virtual PString GetValue(PBoolean dflt = false) const;
 
     virtual void SetValue(
       const PString & newVal
@@ -784,7 +761,7 @@ class PHTTPForm : public PHTTPString
       PHTTPRequest & request,    ///< Information on this request.
       PString & text             ///< Data used in reply.
     );
-    virtual BOOL Post(
+    virtual PBoolean Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
@@ -853,7 +830,7 @@ class PHTTPConfig : public PHTTPForm
       PHTTPRequest & request,    ///< Information on this request.
       PString & text             ///< Data used in reply.
     );
-    virtual BOOL Post(
+    virtual PBoolean Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
@@ -930,7 +907,7 @@ class PHTTPConfigSectionList : public PHTTPString
       PHTTPRequest & request,    ///< Information on this request.
       PString & text             ///< Data used in reply.
     );
-    virtual BOOL Post(
+    virtual PBoolean Post(
       PHTTPRequest & request,       ///< Information on this request.
       const PStringToString & data, ///< Variables in the POST data.
       PHTML & replyMessage          ///< Reply message for post.
@@ -945,7 +922,9 @@ class PHTTPConfigSectionList : public PHTTPString
 };
 
 
-#endif
+#endif // P_HTTPFORMS
+
+#endif // PTLIB_HTTPFORM_H
 
 
 // End Of File ///////////////////////////////////////////////////////////////

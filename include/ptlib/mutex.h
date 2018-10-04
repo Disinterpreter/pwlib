@@ -26,67 +26,13 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: mutex.h,v $
- * Revision 1.14  2005/11/25 00:06:12  csoutheren
- * Applied patch #1364593 from Hannes Friederich
- * Also changed so PTimesMutex is no longer descended from PSemaphore on
- * non-Windows platforms
- *
- * Revision 1.13  2005/11/08 22:31:00  csoutheren
- * Moved declaration of PMutex
- *
- * Revision 1.12  2005/11/08 22:18:31  csoutheren
- * Changed PMutex to use PTimedMutex on non-Windows platforms because
- * sem_wait is not recursive. Very sad.
- * Thanks to Frederic Heem for finding this problem
- *
- * Revision 1.11  2005/11/04 06:34:20  csoutheren
- * Added new class PSync as abstract base class for all mutex/sempahore classes
- * Changed PCriticalSection to use Wait/Signal rather than Enter/Leave
- * Changed Wait/Signal to be const member functions
- * Renamed PMutex to PTimedMutex and made PMutex synonym for PCriticalSection.
- * This allows use of very efficient mutex primitives in 99% of cases where timed waits
- * are not needed
- *
- * Revision 1.10  2003/09/17 05:41:58  csoutheren
- * Removed recursive includes
- *
- * Revision 1.9  2003/09/17 01:18:02  csoutheren
- * Removed recursive include file system and removed all references
- * to deprecated coooperative threading support
- *
- * Revision 1.8  2002/09/16 01:08:59  robertj
- * Added #define so can select if #pragma interface/implementation is used on
- *   platform basis (eg MacOS) rather than compiler, thanks Robert Monaghan.
- *
- * Revision 1.7  2002/01/23 04:26:36  craigs
- * Added copy constructors for PSemaphore, PMutex and PSyncPoint to allow
- * use of default copy constructors for objects containing instances of
- * these classes
- *
- * Revision 1.6  2001/05/22 12:49:32  robertj
- * Did some seriously wierd rewrite of platform headers to eliminate the
- *   stupid GNU compiler warning about braces not matching.
- *
- * Revision 1.5  1999/03/09 02:59:50  robertj
- * Changed comments to doc++ compatible documentation.
- *
- * Revision 1.4  1999/02/16 08:12:22  robertj
- * MSVC 6.0 compatibility changes.
- *
- * Revision 1.3  1998/11/30 02:50:59  robertj
- * New directory structure
- *
- * Revision 1.2  1998/09/23 06:20:55  robertj
- * Added open source copyright license.
- *
- * Revision 1.1  1998/03/23 02:41:31  robertj
- * Initial revision
- *
+ * $Revision: 24177 $
+ * $Author: rjongbloed $
+ * $Date: 2010-04-05 06:52:04 -0500 (Mon, 05 Apr 2010) $
  */
 
-#ifndef _PMUTEX
-#define _PMUTEX
+#ifndef PTLIB_MUTEX_H
+#define PTLIB_MUTEX_H
 
 #ifdef P_USE_PRAGMA
 #pragma interface
@@ -98,7 +44,7 @@
 /**This class defines a thread mutual exclusion object. A mutex is where a
    piece of code or data cannot be accessed by more than one thread at a time.
    To prevent this the PMutex is used in the following manner:
-\begin{verbatim}
+<pre><code>
       PMutex mutex;
 
       ...
@@ -110,10 +56,10 @@
       mutex.Signal();
 
       ...
-\end{verbatim}
-    The first thread will pass through the #Wait()# function, a second
+</code></pre>
+    The first thread will pass through the <code>Wait()</code> function, a second
     thread will block on that function until the first calls the
-    #Signal()# function, releasing the second thread.
+    <code>Signal()</code> function, releasing the second thread.
  */
 
 /*
@@ -141,6 +87,11 @@ class PTimedMutex : public PSync
     PTimedMutex();
     PTimedMutex(const PTimedMutex & mutex);
 
+    /** Try to enter the critical section for exlusive access. Does not wait.
+        @return true if cirical section entered, leave/Signal must be called.
+      */
+    PINLINE bool Try() { return Wait(0); }
+
 // Include platform dependent part of class
 #ifdef _WIN32
 #include "msos/ptlib/mutex.h"
@@ -152,11 +103,20 @@ class PTimedMutex : public PSync
 // On Windows, critical sections are recursive and so we can use them for mutexes
 // The only Posix mutex that is recursive is pthread_mutex, so we have to use that
 #ifdef _WIN32
+/** \class PMutex
+    Synonym for PCriticalSection
+  */
 typedef PCriticalSection PMutex;
 #else
+/** \class PMutex
+    Synonym for PTimedMutex
+  */
 typedef PTimedMutex PMutex;
+#define	PCriticalSection PTimedMutex
 #endif
 
-#endif
+
+#endif // PTLIB_MUTEX_H
+
 
 // End Of File ///////////////////////////////////////////////////////////////

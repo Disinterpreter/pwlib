@@ -26,23 +26,26 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: dllmain.cxx,v $
- * Revision 1.3  2005/09/18 13:01:43  dominance
- * fixed pragma warnings when building with gcc.
- *
- * Revision 1.2  2004/10/23 10:53:19  ykiryanov
- * Added ifdef _WIN32_WCE for PocketPC 2003 SDK port
- *
- * Revision 1.1  1998/09/25 11:04:09  craigs
- * Initial revision
- *
+ * $Revision: 22704 $
+ * $Author: rjongbloed $
+ * $Date: 2009-05-23 07:00:11 -0500 (Sat, 23 May 2009) $
  */
 
 #ifdef _MSC_VER
 #pragma warning(disable:4201 4514)
 #endif
 
-#include <windows.h>
+#include <ptbuildopts.h>
+
+// Include header files for everything that uses factories or plugins
+#include <ptlib.h>
+#include <ptlib/plugin.h>
+#include <ptlib/sound.h>
+#include <ptlib/videoio.h>
+#include <ptclib/pwavfile.h>
+#include <ptclib/pvidfile.h>
+#include <ptclib/ptts.h>
+
 
 #ifndef _WIN32_WCE
 HINSTANCE PDllInstance;

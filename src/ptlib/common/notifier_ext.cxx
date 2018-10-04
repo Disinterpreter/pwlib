@@ -23,12 +23,9 @@
  *
  * Contributor(s): ______________________________________.
  *
- * $Log: notifier_ext.cxx,v $
- * Revision 1.1  2004/04/22 12:31:01  rjongbloed
- * Added PNotifier extensions and XMPP (Jabber) support,
- *   thanks to Federico Pinna and Reitek S.p.A.
- *
- *
+ * $Revision: 20385 $
+ * $Author: rjongbloed $
+ * $Date: 2008-06-04 05:40:38 -0500 (Wed, 04 Jun 2008) $
  */
 
 #ifdef __GNUC__
@@ -67,23 +64,23 @@ unsigned PSmartNotifieeRegistrar::RegisterNotifiee(void * obj)
 }
 
 
-BOOL PSmartNotifieeRegistrar::UnregisterNotifiee(unsigned id)
+PBoolean PSmartNotifieeRegistrar::UnregisterNotifiee(unsigned id)
 {
   PWaitAndSignal l(s_BrokerLock);
   if (s_Broker.Contains(id))
   {
     s_Broker.RemoveAt(id);
-    return TRUE;
+    return PTrue;
   }
   else
-    return FALSE;
+    return PFalse;
 }
 
 
-BOOL PSmartNotifieeRegistrar::UnregisterNotifiee(void * /*obj*/)
+PBoolean PSmartNotifieeRegistrar::UnregisterNotifiee(void * /*obj*/)
 {
   PAssertAlways(PUnimplementedFunction);
-  return FALSE;
+  return PFalse;
 }
 
 
@@ -141,24 +138,20 @@ void * PSmartPtrInspector::GetTarget() const
 
 //////////////////////////////////////////////////////////////////////////////
 
-BOOL PNotifierList::RemoveTarget(PObject * obj)
+PBoolean PNotifierList::RemoveTarget(PObject * obj)
 {
   Cleanup();
 
-  for (PINDEX i = 0 ; i < m_TheList.GetSize() ; i++)
-  {
-    PSmartPtrInspector sptr(m_TheList[i]);
+  for (_PNotifierList::iterator i = m_TheList.begin(); i != m_TheList.end() ; i++) {
+    PSmartPtrInspector sptr(*i);
 
-    void * target = sptr.GetTarget();
-
-    if (target == obj)
-    {
-      m_TheList.RemoveAt(i);
-      return TRUE;
+    if (sptr.GetTarget() == obj) {
+      m_TheList.erase(i);
+      return true;
     }
   }
 
-  return FALSE;
+  return false;
 }
 
 
@@ -171,35 +164,35 @@ void PNotifierList::Move(PNotifierList& that)
 
   while (that.m_TheList.GetSize())
     m_TheList.Append(that.m_TheList.RemoveAt(0));
+
+  that.m_TheList.AllowDeleteObjects();
 }
 
 
 void PNotifierList::Cleanup()
 {
-  for (PINDEX i = 0 ; i < m_TheList.GetSize() ; i++)
-  {
-    PNotifier& n = m_TheList[i];
-    PSmartPtrInspector sptr(n);
+  for (_PNotifierList::iterator i = m_TheList.begin(); i != m_TheList.end() ; i++) {
+    PSmartPtrInspector sptr(*i);
     PObject * ptr = (PObject *)sptr.GetObject();
 
     if (!ptr || (PIsDescendant(ptr, PSmartNotifierFunction) &&
       ((PSmartNotifierFunction *)ptr)->GetNotifiee() == 0))
     {
       PTRACE(2, "PNotifierList\tRemoving invalid notifier " << ((PSmartNotifierFunction *)ptr)->GetNotifieeID());
-      m_TheList.RemoveAt(i);
-      i--;
+      m_TheList.erase(i);
+      i = m_TheList.begin();
     }
   }
 }
 
 
-BOOL PNotifierList::Fire(PObject& obj, INT val)
+PBoolean PNotifierList::Fire(PObject& obj, INT val)
 {
-  if (!m_TheList.GetSize()) return FALSE;
+  if (!m_TheList.GetSize()) return PFalse;
 
-  for (PINDEX i = 0 ; i < m_TheList.GetSize() ; i++)
+  for (_PNotifierList::iterator i = m_TheList.begin(); i != m_TheList.end() ; i++)
   {
-    PNotifier& n = m_TheList[i];
+    PNotifier& n = *i;
 
 #ifdef _DEBUG
     if (PTrace::CanTrace(6)) // Debug only
@@ -217,7 +210,7 @@ BOOL PNotifierList::Fire(PObject& obj, INT val)
     n(obj, val);
   }
 
-  return TRUE;
+  return PTrue;
 }
 
 // End of File ///////////////////////////////////////////////////////////////
